@@ -14,7 +14,7 @@ class CommuneController extends Controller
     public function index()
     {
         // Récupérer toutes les communes triées par ordre décroissant
-        $communes = Commune::latest()->paginate(200);
+        $communes = Commune::latest()->paginate(1000);
 
         // Retourner la réponse formatée avec PostResource
         return new PostResource(true, 'Liste des communes', $communes);

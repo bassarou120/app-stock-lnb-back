@@ -14,7 +14,7 @@ class CompagniePetrolierController extends Controller
     public function index()
     {
         // Récupérer toutes les compagnies pétrolières triées par ordre décroissant
-        $compagnies = CompagniePetrolier::latest()->paginate(100);
+        $compagnies = CompagniePetrolier::latest()->paginate(1000);
 
         // Retourner la réponse formatée avec PostResource
         return new PostResource(true, 'Liste des compagnies pétrolières', $compagnies);

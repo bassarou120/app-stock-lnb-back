@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Parametrage;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Parametrage\Bureau;
+    use App\Models\Parametrage\Bureau;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 

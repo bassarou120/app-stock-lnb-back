@@ -21,6 +21,8 @@ class DatabaseSeeder extends Seeder
         // ]);
         $this->call([
             RoleSeeder::class,
+            TypeMouvementSeeder::class,
+            CategorieSeeder::class,
         ]);
     }
 }

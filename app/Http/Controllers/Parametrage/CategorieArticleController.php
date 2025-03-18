@@ -13,7 +13,7 @@ class CategorieArticleController extends Controller
     // Afficher la liste des catégories d'articles
     public function index()
     {
-        $categories = CategorieArticle::latest()->paginate(100);
+        $categories = CategorieArticle::latest()->paginate(1000);
         return new PostResource(true, 'Liste des catégories d\'articles', $categories);
     }
 
@@ -40,7 +40,7 @@ class CategorieArticleController extends Controller
     }
 
     // Mettre à jour une catégorie d'article existante
-    public function update(Request $request, CategorieArticle $categorie)
+    public function update(Request $request, CategorieArticle $categorie_article)
     {
         $validator = Validator::make($request->all(), [
             'libelle_categorie_article' => 'required|string|max:255',
@@ -52,19 +52,19 @@ class CategorieArticleController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $categorie->update([
+        $categorie_article->update([
             'libelle_categorie_article' => $request->libelle_categorie_article,
             'valeur' => $request->valeur,
             'taux' => $request->taux,
         ]);
 
-        return new PostResource(true, 'Catégorie d\'article mise à jour avec succès', $categorie);
+        return new PostResource(true, 'Catégorie d\'article mise à jour avec succès', $categorie_article);
     }
 
     // Supprimer une catégorie d'article
-    public function destroy(CategorieArticle $categorie)
+    public function destroy(CategorieArticle $categorie_article)
     {
-        $categorie->delete();
+        $categorie_article->delete();
         return new PostResource(true, 'Catégorie d\'article supprimée avec succès', null);
     }
 }

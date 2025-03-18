@@ -22,6 +22,8 @@ use App\Http\Controllers\Parametrage\ModuleController;
 use App\Http\Controllers\Parametrage\FonctionnaliteController;
 use App\Http\Controllers\Parametrage\PermissionController;
 use App\Http\Controllers\Parametrage\RoleController;
+use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\MouvementStockController;
 use App\Http\Controllers\Parametrage\EmployeController;
 use App\Http\Controllers\Auth\AuthentificationController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
@@ -53,6 +55,16 @@ Route::apiResource('modules', ModuleController::class);
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('fonctionnalites', FonctionnaliteController::class);
 Route::apiResource('permissions', PermissionController::class);
+Route::apiResource('articles', ArticleController::class);
+
+// Nouvelle route pour l'ajout par lot
+Route::post('articles/batch', [ArticleController::class, 'storeBatch']);
+
+Route::get('mouvement-stock/entree', [MouvementStockController::class, 'indexEntreeStock']);
+Route::post('mouvement-stock/entree', [MouvementStockController::class, 'storeEntreeStock']);
+Route::put('/mouvement-stock/entree/{id}', [MouvementStockController::class, 'updateEntreeStock']);
+Route::delete('mouvement-stock/entree/{id}', [MouvementStockController::class, 'deleteEntreeStock']);
+
 
 
 Route::post('reset-password/{user}', [AuthentificationController::class, 'resetPassword']);
