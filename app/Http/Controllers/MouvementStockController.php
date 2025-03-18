@@ -20,7 +20,7 @@ class MouvementStockController extends Controller
 
         // Si le type de mouvement existe, récupérer les mouvements correspondants
         if ($type_mouvement) {
-            $mouvements = MouvementStock::with('article')->where('id_type_mouvement', $type_mouvement->id)->latest()->paginate(1000);
+            $mouvements = MouvementStock::with(['article', 'fournisseur'])->where('id_type_mouvement', $type_mouvement->id)->latest()->paginate(1000);
 
             return new PostResource(true, 'Liste des mouvements', $mouvements);
         }
@@ -36,6 +36,7 @@ class MouvementStockController extends Controller
         //define validation rules
         $validator = Validator::make($request->all(), [
             "id_Article" => 'required|exists:articles,id',
+            "id_fournisseur" => 'required|exists:fournisseurs,id',
             "description" => 'required|string|max:255',
             "qte" => 'required|integer',
             "date_mouvement" => 'required',
@@ -51,6 +52,7 @@ class MouvementStockController extends Controller
 
         $b = MouvementStock::create([
             "id_Article" => $request->id_Article,
+            "id_fournisseur" => $request->id_fournisseur,
             "description" => $request->description,
             "id_type_mouvement" => $type_mouvement->id,
             "qte" => $request->qte,
@@ -85,6 +87,7 @@ class MouvementStockController extends Controller
         // Validation des données
         $validator = Validator::make($request->all(), [
             "id_Article" => 'required|exists:articles,id',
+            "id_fournisseur" => 'required|exists:fournisseurs,id',
             "description" => 'required|string|max:255',
             "qte" => 'required|integer',
             "date_mouvement" => 'required',
@@ -101,6 +104,7 @@ class MouvementStockController extends Controller
         // Mise à jour du mouvement
         $mouvement->update([
             "id_Article" => $request->id_Article,
+            "id_fournisseur" => $request->id_fournisseur,
             "description" => $request->description,
             "qte" => $request->qte,
             "date_mouvement" => $request->date_mouvement,
