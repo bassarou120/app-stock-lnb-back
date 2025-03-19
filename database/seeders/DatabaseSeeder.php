@@ -23,6 +23,8 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             TypeMouvementSeeder::class,
             CategorieSeeder::class,
+            FournisseurSeeder::class,
+            ArticlesSeeder::class,
         ]);
     }
 }

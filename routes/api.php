@@ -62,6 +62,7 @@ Route::post('articles/batch', [ArticleController::class, 'storeBatch']);
 
 Route::get('mouvement-stock/entree', [MouvementStockController::class, 'indexEntreeStock']);
 Route::post('mouvement-stock/entree', [MouvementStockController::class, 'storeEntreeStock']);
+Route::post('/mouvement-stock/entree-multiple', [MouvementStockController::class, 'storeMultipleEntreeStock']);
 Route::put('/mouvement-stock/entree/{id}', [MouvementStockController::class, 'updateEntreeStock']);
 Route::delete('mouvement-stock/entree/{id}', [MouvementStockController::class, 'deleteEntreeStock']);
 

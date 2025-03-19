@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\MouvementStock;
+use App\Models\PieceJointeMouvement;
 use App\Models\Stock;
 use App\Models\Parametrage\TypeMouvement;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+
 
 
 class MouvementStockController extends Controller
@@ -64,7 +67,7 @@ class MouvementStockController extends Controller
 
         if ($stock == null) {
             $stock = Stock::create([
-                'id_Article' => $request->article_id,
+                'id_Article' => $request->id_Article,
                 'Qte_actuel' => 0
             ]);
         }
@@ -155,4 +158,98 @@ class MouvementStockController extends Controller
 
         return new PostResource(true, 'Mouvement supprimé avec succès !', null);
     }
+
+
+    // Ajout multiple de mouvement de stock entree
+    public function storeMultipleEntreeStock(Request $request)
+{
+    // Validation des données communes
+    $validator = Validator::make($request->all(), [
+        "id_fournisseur" => 'required|exists:fournisseurs,id',
+        "numero_borderau" => 'required|string|max:255',
+        "date_mouvement" => 'required|date',
+        "piece_jointe_mouvement" => 'nullable|array',
+        "piece_jointe_mouvement.*" => 'file|mimes:pdf,jpg,jpeg,png|max:2048', // Ajustez selon vos besoins
+        "articles" => 'required|array|min:1',
+        "articles.*.id_Article" => 'required|exists:articles,id',
+        "articles.*.description" => 'required|string|max:255',
+        "articles.*.qte" => 'required|integer|min:1',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
+    }
+
+    // Récupération du type de mouvement "Entrée de Stock"
+    $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Entrée de Stock")->latest()->first();
+
+    // Démarrer une transaction pour assurer l'intégrité des données
+    DB::beginTransaction();
+
+    try {
+        $mouvements = [];
+
+        // Traitement de chaque article
+        foreach ($request->articles as $article) {
+            // Création du mouvement de stock
+            $mouvement = MouvementStock::create([
+                "id_Article" => $article['id_Article'],
+                "id_fournisseur" => $request->id_fournisseur,
+                "numero_borderau" => $request->numero_borderau,
+                "description" => $article['description'],
+                "id_type_mouvement" => $type_mouvement->id,
+                "qte" => $article['qte'],
+                "date_mouvement" => $request->date_mouvement,
+            ]);
+
+            // Mise à jour du stock
+            $stock = Stock::where('id_Article', $article['id_Article'])->latest()->first();
+
+            if ($stock == null) {
+                $stock = Stock::create([
+                    'id_Article' => $article['id_Article'],
+                    'Qte_actuel' => 0
+                ]);
+            }
+
+            $stock->Qte_actuel = $stock->Qte_actuel + $article['qte'];
+            $stock->save();
+
+            $mouvements[] = $mouvement;
+        }
+
+        // Traitement des pièces jointes si présentes
+        if ($request->hasFile('piece_jointe_mouvement')) {
+            foreach ($request->file('piece_jointe_mouvement') as $file) {
+                // Générer un nom unique pour le fichier
+                $fileName = time() . '_' . $file->getClientOriginalName();
+
+                // Stocker le fichier
+                $file->storeAs('piece_jointe_mouvement', $fileName, 'public');
+
+                // Créer une entrée pour chaque mouvement
+                foreach ($mouvements as $mouvement) {
+                    PieceJointeMouvement::create([
+                        'url' => 'storage/piece_jointe_mouvement/' . $fileName,
+                        'id_mouvement_stock' => $mouvement->id
+                    ]);
+                }
+            }
+        }
+
+        // Valider la transaction
+        DB::commit();
+
+        return new PostResource(true, 'Les mouvements d\'entrée de stock ont été bien enregistrés !', $mouvements);
+
+    } catch (\Exception $e) {
+        // Annuler la transaction en cas d'erreur
+        DB::rollBack();
+
+        return response()->json([
+            'message' => 'Une erreur est survenue lors de l\'enregistrement des mouvements',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
 }
