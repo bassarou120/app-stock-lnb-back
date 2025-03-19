@@ -23,4 +23,9 @@ class MouvementStock extends Model
     {
         return $this->belongsTo(Fournisseur::class, 'id_fournisseur');
     }
+
+    public function affectation()
+    {
+        return $this->hasOne(AffectationArticle::class, 'id_article', 'id_Article');
+    }
 }
