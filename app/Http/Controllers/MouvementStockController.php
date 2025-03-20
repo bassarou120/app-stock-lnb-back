@@ -34,27 +34,7 @@ class MouvementStockController extends Controller
         return new PostResource(false, 'Aucun mouvement trouvé pour "Entrée de Stock".', []);
     }
 
-    public function indexSortieStock()
-    {
-        // Récupérer l'ID du type de mouvement "Entrée de Stock"
-        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Stock')->first();
 
-        // Si le type de mouvement existe, récupérer les mouvements correspondants
-    if ($type_mouvement) {
-        $mouvements = MouvementStock::with(['article', 'affectation.employe' => function ($query) {
-            $query->select('id', 'nom', 'prenom')
-                ->selectRaw("CONCAT(nom, ' ', prenom) as full_name");
-        }])
-        ->where('id_type_mouvement', $type_mouvement->id)
-        ->latest()
-        ->paginate(1000);
-
-        return new PostResource(true, 'Liste des mouvements', $mouvements);
-    }
-
-        // Si le type de mouvement n'existe pas, retourner une réponse vide ou un message d'erreur
-        return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Stock".', []);
-    }
 
     // store entrée simple
     public function storeEntreeStock(Request $request)
@@ -294,8 +274,28 @@ class MouvementStockController extends Controller
 
 
 
+// index sortieStock
+    public function indexSortieStock()
+    {
+        // Récupérer l'ID du type de mouvement "Entrée de Stock"
+        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Stock')->first();
 
+        // Si le type de mouvement existe, récupérer les mouvements correspondants
+    if ($type_mouvement) {
+        $mouvements = MouvementStock::with(['article', 'affectation.employe' => function ($query) {
+            $query->select('id', 'nom', 'prenom')
+                ->selectRaw("CONCAT(nom, ' ', prenom) as full_name");
+        }])
+        ->where('id_type_mouvement', $type_mouvement->id)
+        ->latest()
+        ->paginate(1000);
 
+        return new PostResource(true, 'Liste des mouvements', $mouvements);
+    }
+
+        // Si le type de mouvement n'existe pas, retourner une réponse vide ou un message d'erreur
+        return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Stock".', []);
+    }
 
 
 
@@ -363,6 +363,90 @@ class MouvementStockController extends Controller
         return new PostResource(true, 'La sortie de stock a été enregistrée avec succès !', $mouvement);
     }
 
+    public function updateSortieStock(Request $request, $id)
+{
+    // Définir les règles de validation
+    $validator = Validator::make($request->all(), [
+        "id_Article" => 'required|exists:articles,id',
+        "description" => 'required|string|max:255',
+        "qte" => 'required|integer|min:1',
+        "date_mouvement" => 'required|date',
+        "id_bureau" => 'nullable|exists:bureaus,id',
+        "id_employe" => 'nullable|exists:employes,id',
+    ]);
+
+    // Vérifier si la validation échoue
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
+    }
+
+    // Trouver le mouvement existant
+    $mouvement = MouvementStock::find($id);
+    if (!$mouvement) {
+        return response()->json(['error' => 'Mouvement introuvable.'], 404);
+    }
+
+    // Vérifier le stock actuel pour cet article
+    $stock = Stock::where('id_Article', $request->id_Article)->latest()->first();
+    if (!$stock) {
+        return response()->json(['error' => "Stock introuvable pour cet article."], 400);
+    }
+
+    // Calculer la différence de quantité
+    $differenceQte = $request->qte - $mouvement->qte;
+
+    // Vérifier si la nouvelle quantité demandée est disponible en stock
+    if ($differenceQte > 0 && $stock->Qte_actuel < $differenceQte) {
+        return response()->json(['error' => "Quantité insuffisante en stock."], 400);
+    }
+
+    // Mettre à jour le stock
+    $stock->Qte_actuel -= $differenceQte;
+    $stock->save();
+
+    // Mettre à jour le mouvement de stock
+    $mouvement->update([
+        "id_Article" => $request->id_Article,
+        "description" => $request->description,
+        "qte" => $request->qte,
+        "date_mouvement" => $request->date_mouvement,
+    ]);
+
+    // Vérifier s'il existe une affectation liée à ce mouvement
+    $affectation = AffectationArticle::where('id_article', $mouvement->id_Article)
+        ->where('description', $mouvement->description)
+        ->latest()
+        ->first();
+
+    if ($affectation) {
+        if (!$request->filled(['id_bureau', 'id_employe'])) {
+            // Si l'affectation existait mais que l'utilisateur ne veut plus affecter l'article, on la supprime
+            $affectation->delete();
+        } else {
+            // Sinon, on met à jour l'affectation
+            $affectation->update([
+                'id_bureau' => $request->id_bureau,
+                'id_employe' => $request->id_employe,
+            ]);
+        }
+    } else {
+        // Si aucune affectation n'existait mais que l'utilisateur en fournit une, on la crée
+        if ($request->filled(['id_bureau', 'id_employe'])) {
+            $type_affectation = TypeAffectation::where('libelle_type_affectation', "Affectation d'Article")->latest()->first();
+            AffectationArticle::create([
+                'description' => $request->description,
+                'id_article' => $request->id_Article,
+                'id_type_affectation' => $type_affectation->id,
+                'id_bureau' => $request->id_bureau,
+                'id_employe' => $request->id_employe,
+            ]);
+        }
+    }
+
+    return new PostResource(true, 'Sortie de stock mise à jour avec succès !', $mouvement);
+}
+
+
 
     public function deleteSortieStock($id)
     {
@@ -400,4 +484,17 @@ class MouvementStockController extends Controller
 
         return new PostResource(true, 'Sortie de stock supprimée avec succès !', null);
     }
+
+
+
+
+    // get qte disponible
+    public function getQuantiteDisponible($idArticle)
+{
+    $stock = Stock::where('id_Article', $idArticle)->first();
+    $quantite = $stock ? $stock->Qte_actuel : 0;
+
+    return new PostResource(true, 'Quantité trouvée !', $quantite);
+}
+
 }
