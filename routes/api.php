@@ -23,6 +23,7 @@ use App\Http\Controllers\Parametrage\FonctionnaliteController;
 use App\Http\Controllers\Parametrage\PermissionController;
 use App\Http\Controllers\Parametrage\RoleController;
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\DashboardStockController;
 use App\Http\Controllers\MouvementStockController;
 use App\Http\Controllers\Parametrage\EmployeController;
 use App\Http\Controllers\Auth\AuthentificationController;
@@ -58,6 +59,8 @@ Route::apiResource('permissions', PermissionController::class);
 Route::apiResource('articles', ArticleController::class);
 
 // Nouvelle route pour l'ajout par lot
+Route::get('dashboard/stock', [DashboardStockController::class, 'indexArticles']);
+Route::get('dashboard/dashInfoStock', [DashboardStockController::class, 'dashInfoStock']);
 Route::post('articles/batch', [ArticleController::class, 'storeBatch']);
 
 Route::get('mouvement-stock/entree', [MouvementStockController::class, 'indexEntreeStock']);

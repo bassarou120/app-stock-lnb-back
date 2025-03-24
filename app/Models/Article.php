@@ -13,6 +13,7 @@ class Article extends Model
         'libelle',
         'description',
         'id_cat',
+        'stock_alerte',
     ];
 
     public function categorie()

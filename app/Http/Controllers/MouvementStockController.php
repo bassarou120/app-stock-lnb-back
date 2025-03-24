@@ -356,6 +356,8 @@ class MouvementStockController extends Controller
                 'id_type_affectation' => $type_affectation->id,
                 'id_bureau' => $request->id_bureau,
                 'id_employe' => $request->id_employe,
+                'id_mouvement' => $mouvement->id,
+
             ]);
         }
 
@@ -413,8 +415,7 @@ class MouvementStockController extends Controller
     ]);
 
     // Vérifier s'il existe une affectation liée à ce mouvement
-    $affectation = AffectationArticle::where('id_article', $mouvement->id_Article)
-        ->where('description', $mouvement->description)
+    $affectation = AffectationArticle::where('id_mouvement', $mouvement->id)
         ->latest()
         ->first();
 

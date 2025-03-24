@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             FournisseurSeeder::class,
             ArticlesSeeder::class,
             TypeAffectationSeeder::class,
+            EmployerSeeder::class,
         ]);
     }
 }

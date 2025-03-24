@@ -25,7 +25,7 @@ class MouvementStock extends Model
     }
 
     public function affectation()
-    {
-        return $this->hasOne(AffectationArticle::class, 'id_article', 'id_Article');
-    }
+{
+    return $this->hasOne(AffectationArticle::class, 'id_mouvement');
+}
 }

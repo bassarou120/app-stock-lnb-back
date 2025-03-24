@@ -9,6 +9,8 @@ use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use App\Models\Stock;
+use Illuminate\Support\Facades\Log;
+
 
 
 class ArticleController extends Controller
@@ -52,6 +54,7 @@ class ArticleController extends Controller
             'articles.*.id_cat' => 'required|exists:categorie_articles,id',
             'articles.*.libelle' => 'required|string|max:255',
             'articles.*.description' => 'required|string|max:255',
+            'articles.*.stock_alerte' => 'required|integer|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -68,6 +71,7 @@ class ArticleController extends Controller
                     'id_cat' => $articleData['id_cat'],
                     'libelle' => $articleData['libelle'],
                     'description' => $articleData['description'],
+                    'stock_alerte' => $articleData['stock_alerte'],
                 ]);
 
                 // Initialiser l'entrée de stock pour cet article
@@ -94,7 +98,11 @@ class ArticleController extends Controller
             'id_cat' => 'required|exists:categorie_articles,id',
             'libelle' => 'required|string|max:255',
             'description' => 'required|string|max:255',
+            'stock_alerte' => 'required|integer|min:0',
         ]);
+
+        Log::info($request->all());
+
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
@@ -104,6 +112,7 @@ class ArticleController extends Controller
             'id_cat' => $request->id_cat,
             'libelle' => $request->libelle,
             'description' => $request->description,
+            'stock_alerte' => $request->stock_alerte,
         ]);
 
         return new PostResource(true, 'Article mis à jour avec succès', $article);

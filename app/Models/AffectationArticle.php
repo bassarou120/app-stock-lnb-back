@@ -18,6 +18,7 @@ class AffectationArticle extends Model
         'id_bureau',
         'description',
         'id_employe',
+        'id_mouvement'
     ];
 
     public function employe()
