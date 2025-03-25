@@ -14,7 +14,7 @@ class GroupeTypeImmoController extends Controller
     // Afficher la liste des groupes de type immo
     public function index()
     {
-        $groupe_type_immos = GroupeTypeImmo::with('sousTypeImmo')->latest()->paginate(100);
+        $groupe_type_immos = GroupeTypeImmo::latest()->paginate(1000);
         return new PostResource(true, 'Liste des groupes de type immmo', $groupe_type_immos);
     }
 
@@ -22,7 +22,6 @@ class GroupeTypeImmoController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'id_sous_type_immo' => 'required|exists:sous_type_immos,id',
             'libelle' => 'required|string|max:255',
             'compte' => 'required|integer',
         ]);
@@ -32,7 +31,6 @@ class GroupeTypeImmoController extends Controller
         }
 
         $groupe_type_immo = GroupeTypeImmo::create([
-            'id_sous_type_immo' => $request->id_sous_type_immo,
             'libelle' => $request->libelle,
             'compte' => $request->compte,
         ]);
@@ -44,7 +42,6 @@ class GroupeTypeImmoController extends Controller
     public function update(Request $request, GroupeTypeImmo $groupe_type_immo)
     {
         $validator = Validator::make($request->all(), [
-            'id_sous_type_immo' => 'required|exists:sous_type_immos,id',
             'libelle' => 'required|string|max:255',
             'compte' => 'required|integer',
         ]);
@@ -54,7 +51,6 @@ class GroupeTypeImmoController extends Controller
         }
 
         $groupe_type_immo->update([
-            'id_sous_type_immo' => $request->id_sous_type_immo,
             'libelle' => $request->libelle,
             'compte' => $request->compte,
         ]);

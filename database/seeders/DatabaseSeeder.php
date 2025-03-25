@@ -27,6 +27,9 @@ class DatabaseSeeder extends Seeder
             ArticlesSeeder::class,
             TypeAffectationSeeder::class,
             EmployerSeeder::class,
+            BureauSeeder::class,
+            CompagniePetrolierSeeder::class,
+            MarqueSeeder::class,
         ]);
     }
 }
