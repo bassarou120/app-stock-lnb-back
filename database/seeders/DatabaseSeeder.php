@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             BureauSeeder::class,
             CompagniePetrolierSeeder::class,
             MarqueSeeder::class,
+            StatusImmoSeeder::class,
         ]);
     }
 }
