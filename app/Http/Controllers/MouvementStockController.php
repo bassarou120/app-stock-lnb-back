@@ -44,7 +44,7 @@ class MouvementStockController extends Controller
         $validator = Validator::make($request->all(), [
             "id_Article" => 'required|exists:articles,id',
             "id_fournisseur" => 'required|exists:fournisseurs,id',
-            "description" => 'required|string|max:255',
+            "description" => 'nullable|string|max:255',
             "qte" => 'required|integer',
             "date_mouvement" => 'required',
             // "id_type_mouvement" => 'required|exists:type_mouvements,id',
@@ -97,7 +97,7 @@ class MouvementStockController extends Controller
         $validator = Validator::make($request->all(), [
             "id_Article" => 'required|exists:articles,id',
             "id_fournisseur" => 'required|exists:fournisseurs,id',
-            "description" => 'required|string|max:255',
+            "description" => 'string|max:255',
             "qte" => 'required|integer',
             "date_mouvement" => 'required',
         ]);
@@ -180,7 +180,7 @@ class MouvementStockController extends Controller
             "piece_jointe_mouvement.*" => 'file|mimes:pdf,jpg,jpeg,png', // Ajustez selon vos besoins
             "articles" => 'required|array|min:1',
             "articles.*.id_Article" => 'required|exists:articles,id',
-            "articles.*.description" => 'required|string|max:255',
+            "articles.*.description" => 'nullable|string|max:255',
             "articles.*.qte" => 'required|integer|min:1',
         ]);
 
