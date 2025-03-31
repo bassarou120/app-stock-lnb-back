@@ -64,10 +64,10 @@ class ImmobilisationController extends Controller
     public function update(Request $request, Immobilisation $immobilisation)
     {
         $validator = Validator::make($request->all(), [
-            'bureau_id' => 'required|exists:bureaus,id',
-            'employe_id' => 'required|exists:employes,id',
+            'bureau_id' => 'nullable|exists:bureaus,id',
+            'employe_id' => 'nullable|exists:employes,id',
             'date_mouvement' => 'nullable|date',
-            'fournisseur_id' => 'required|exists:fournisseurs,id',
+            'fournisseur_id' => 'nullable|exists:fournisseurs,id',
             'designation' => 'nullable|string|max:255',
             'isVehicule' => 'boolean',
             'vehicule_id' => 'nullable|exists:vehicules,id',
