@@ -22,8 +22,8 @@ class CategorieArticleController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'libelle_categorie_article' => 'required|string|max:255',
-            'valeur' => 'nullable|string|max:255',
-            'taux' => 'required|integer',
+            // 'valeur' => 'nullable|string|max:255',
+            // 'taux' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
@@ -32,8 +32,8 @@ class CategorieArticleController extends Controller
 
         $categorie = CategorieArticle::create([
             'libelle_categorie_article' => $request->libelle_categorie_article,
-            'valeur' => $request->valeur,
-            'taux' => $request->taux,
+            // 'valeur' => $request->valeur,
+            // 'taux' => $request->taux,
         ]);
 
         return new PostResource(true, 'Catégorie d\'article créée avec succès', $categorie);
@@ -44,8 +44,8 @@ class CategorieArticleController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'libelle_categorie_article' => 'required|string|max:255',
-            'valeur' => 'nullable|string|max:255',
-            'taux' => 'required|integer',
+            // 'valeur' => 'nullable|string|max:255',
+            // 'taux' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
@@ -54,8 +54,8 @@ class CategorieArticleController extends Controller
 
         $categorie_article->update([
             'libelle_categorie_article' => $request->libelle_categorie_article,
-            'valeur' => $request->valeur,
-            'taux' => $request->taux,
+            // 'valeur' => $request->valeur,
+            // 'taux' => $request->taux,
         ]);
 
         return new PostResource(true, 'Catégorie d\'article mise à jour avec succès', $categorie_article);

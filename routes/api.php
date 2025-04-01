@@ -30,6 +30,7 @@ use App\Http\Controllers\Auth\AuthentificationController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\VehiculeController;
 use App\Http\Controllers\ImmobilisationController;
+use App\Http\Controllers\InterventionController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -60,6 +61,7 @@ Route::apiResource('fonctionnalites', FonctionnaliteController::class);
 Route::apiResource('permissions', PermissionController::class);
 Route::apiResource('articles', ArticleController::class);
 Route::apiResource('immobilisations', ImmobilisationController::class);
+Route::apiResource('interventions', InterventionController::class);
 Route::apiResource('vehicules', VehiculeController::class);
 Route::post('vehicules/batch', [VehiculeController::class, 'storeBatch']);
 
