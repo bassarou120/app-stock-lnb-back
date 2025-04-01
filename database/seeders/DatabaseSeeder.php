@@ -31,6 +31,9 @@ class DatabaseSeeder extends Seeder
             CompagniePetrolierSeeder::class,
             MarqueSeeder::class,
             StatusImmoSeeder::class,
+            TypeImmoSeeder::class,
+            SousTypeImmoSeeder::class,
+            GroupeTypeImmoSeeder::class,
         ]);
     }
 }
