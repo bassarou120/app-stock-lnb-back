@@ -34,6 +34,8 @@ class DatabaseSeeder extends Seeder
             TypeImmoSeeder::class,
             SousTypeImmoSeeder::class,
             GroupeTypeImmoSeeder::class,
+            ModeleSeeder::class,
+            VoitureSeeder::class,
         ]);
     }
 }
