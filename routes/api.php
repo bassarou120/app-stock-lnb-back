@@ -31,6 +31,7 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\VehiculeController;
 use App\Http\Controllers\ImmobilisationController;
 use App\Http\Controllers\InterventionController;
+use App\Http\Controllers\TransfertController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -62,6 +63,9 @@ Route::apiResource('permissions', PermissionController::class);
 Route::apiResource('articles', ArticleController::class);
 Route::apiResource('immobilisations', ImmobilisationController::class);
 Route::apiResource('interventions', InterventionController::class);
+Route::apiResource('transferts', TransfertController::class);
+Route::get('ancien-info/{id}', [TransfertController::class, 'getOldInfo']);
+
 Route::apiResource('vehicules', VehiculeController::class);
 Route::post('vehicules/batch', [VehiculeController::class, 'storeBatch']);
 
