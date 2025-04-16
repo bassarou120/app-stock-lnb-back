@@ -36,6 +36,8 @@ class DatabaseSeeder extends Seeder
             GroupeTypeImmoSeeder::class,
             ModeleSeeder::class,
             VoitureSeeder::class,
+            CommuneSeeder::class,
+            CouponTicketSeeder::class,
         ]);
     }
 }

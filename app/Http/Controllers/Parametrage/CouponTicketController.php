@@ -14,7 +14,7 @@ class CouponTicketController extends Controller
     public function index()
     {
         // Récupérer tous les coupon_tickets triés par ordre décroissant
-        $couponTickets = CouponTicket::latest()->paginate(1000);
+        $couponTickets = CouponTicket::with(['stock'])->latest()->paginate(1000);
 
         // Retourner la réponse formatée avec PostResource
         return new PostResource(true, 'Liste des coupon tickets', $couponTickets);

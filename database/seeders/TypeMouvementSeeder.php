@@ -17,6 +17,9 @@ class TypeMouvementSeeder extends Seeder
         $typesMouvement = [
             ['libelle_type_mouvement' => "Entrée de Stock"],
             ['libelle_type_mouvement' => "Sortie de Stock"],
+            
+            ['libelle_type_mouvement' => "Entrée de Ticket"],
+            ['libelle_type_mouvement' => "Sortie de Ticket"],
         ];
 
         foreach ($typesMouvement as $type) {

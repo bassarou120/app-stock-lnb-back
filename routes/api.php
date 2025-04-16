@@ -32,6 +32,7 @@ use App\Http\Controllers\VehiculeController;
 use App\Http\Controllers\ImmobilisationController;
 use App\Http\Controllers\InterventionController;
 use App\Http\Controllers\TransfertController;
+use App\Http\Controllers\MouvementTicketController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -85,6 +86,11 @@ Route::post('mouvement-stock/sortie', [MouvementStockController::class, 'storeSo
 Route::delete('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'deleteSortieStock']);
 Route::get('quantite-disponible/{id}', [MouvementStockController::class, 'getQuantiteDisponible']);
 Route::put('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'updateSortieStock']);
+
+Route::get('mouvement-ticket/entree', [MouvementTicketController::class, 'indexEntreeTicket']);
+Route::post('mouvement-ticket/entree', [MouvementTicketController::class, 'storeEntreeTicket']);
+Route::put('/mouvement-ticket/entree/{id}', [MouvementTicketController::class, 'updateEntreeTicket']);
+Route::delete('mouvement-ticket/entree/{id}', [MouvementTicketController::class, 'deleteEntreeTicket']);
 
 
 Route::post('reset-password/{user}', [AuthentificationController::class, 'resetPassword']);
