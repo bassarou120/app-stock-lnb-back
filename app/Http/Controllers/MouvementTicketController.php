@@ -273,7 +273,7 @@ class MouvementTicketController extends Controller
         //  if (!$mouvement) {
         //      return response()->json(['message' => 'Mouvement introuvable'], 404);
         //  }
- 
+
          // Validation des données
          $validator = Validator::make($request->all(), [
             // "id_type_mouvement" => 'required|exists:type_mouvements,id',
@@ -287,12 +287,12 @@ class MouvementTicketController extends Controller
             "qte" => 'required|integer',
             "date" => 'required',
          ]);
- 
+
          // Vérifier si la validation échoue
          if ($validator->fails()) {
              return response()->json($validator->errors(), 422);
          }
-         
+
          // Trouver le mouvement existant
             $mouvement = MouvementTicket::find($id);
             if (!$mouvement) {
@@ -312,12 +312,12 @@ class MouvementTicketController extends Controller
             if ($differenceQte > 0 && $stock->Qte_actuel < $differenceQte) {
                 return response()->json(['error' => "Quantité insuffisante en stock."], 400);
             }
- 
+
          // Récupérer l'ancien stock avant modification
          $ancien_qte = $mouvement->qte;
          $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Sortie de Ticket")->latest()->first();
 
- 
+
          // Mise à jour du mouvement
          $mouvement->update([
             "id_type_mouvement" => $type_mouvement->id,
@@ -331,11 +331,11 @@ class MouvementTicketController extends Controller
             "objet" => $request->objet,
             "date" => $request->date,
          ]);
- 
+
          // Mettre à jour le stock
             $stock->qte_actuel -= $differenceQte;
             $stock->save();
- 
+
          // Retourner la réponse
          return new PostResource(true, 'Le mouvement de sortie de ticket a été mis à jour avec succès !', $mouvement);
     }
@@ -379,7 +379,7 @@ class MouvementTicketController extends Controller
      {
          $stock = StockTicket::where('coupon_ticket_id', $idCoupon)->first();
          $quantite = $stock ? $stock->qte_actuel : 0;
-     
+
          return new PostResource(true, 'Quantité trouvée !', $quantite);
      }
 
