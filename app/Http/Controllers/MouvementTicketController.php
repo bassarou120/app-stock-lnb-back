@@ -319,6 +319,7 @@ class MouvementTicketController extends Controller
 
  
          // Mise à jour du mouvement
+         
          $mouvement->update([
             "id_type_mouvement" => $type_mouvement->id,
             "vehicule_id" => $request->vehicule_id,
