@@ -92,6 +92,12 @@ Route::post('mouvement-ticket/entree', [MouvementTicketController::class, 'store
 Route::put('/mouvement-ticket/entree/{id}', [MouvementTicketController::class, 'updateEntreeTicket']);
 Route::delete('mouvement-ticket/entree/{id}', [MouvementTicketController::class, 'deleteEntreeTicket']);
 
+Route::get('mouvement-ticket/sortie', [MouvementTicketController::class, 'indexSortieTicket']);
+Route::post('mouvement-ticket/sortie', [MouvementTicketController::class, 'storeSortieTicket']);
+Route::get('quantite-disponible-ticket/{id}', [MouvementTicketController::class, 'getQuantiteDisponible']);
+Route::put('/mouvement-ticket/sortie/{id}', [MouvementTicketController::class, 'updateSortieTicket']);
+Route::delete('mouvement-ticket/sortie/{id}', [MouvementTicketController::class, 'deleteSortieTicket']);
+
 
 Route::post('reset-password/{user}', [AuthentificationController::class, 'resetPassword']);
 Route::post('register', [AuthentificationController::class, 'register']);
