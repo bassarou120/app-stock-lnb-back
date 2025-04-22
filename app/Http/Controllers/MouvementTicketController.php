@@ -231,7 +231,7 @@ class MouvementTicketController extends Controller
         // Vérifier la quantité disponible en stock
         $stock = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->latest()->first();
 
-        if (!$stock || $stock->Qte_actuel > $request->qte) {
+        if (!$stock || $stock->qte_actuel < $request->qte) {
             return response()->json(['error' => "Quantité insuffisante en stock."], 400);
         }
 
@@ -299,7 +299,7 @@ class MouvementTicketController extends Controller
                 return response()->json(['error' => 'Mouvement introuvable.'], 404);
             }
 
-            // Vérifier le stock actuel pour cet article
+            // Vérifier le stock actuel pour ce ticket
             $stock = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->latest()->first();
             if (!$stock) {
                 return response()->json(['error' => "Stock introuvable pour cet article."], 400);
@@ -309,17 +309,16 @@ class MouvementTicketController extends Controller
             $differenceQte = $request->qte - $mouvement->qte;
 
             // Vérifier si la nouvelle quantité demandée est disponible en stock
-            if ($differenceQte > 0 && $stock->Qte_actuel < $differenceQte) {
+            if ($differenceQte > 0 && $stock->qte_actuel < $differenceQte) {
                 return response()->json(['error' => "Quantité insuffisante en stock."], 400);
             }
 
-         // Récupérer l'ancien stock avant modification
-         $ancien_qte = $mouvement->qte;
+
          $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Sortie de Ticket")->latest()->first();
 
 
          // Mise à jour du mouvement
-         
+
          $mouvement->update([
             "id_type_mouvement" => $type_mouvement->id,
             "vehicule_id" => $request->vehicule_id,
