@@ -9,6 +9,7 @@ use App\Models\MouvementTicket;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 
 
@@ -235,6 +236,9 @@ class MouvementTicketController extends Controller
             return response()->json(['error' => "Quantité insuffisante en stock."], 400);
         }
 
+        // Generate the reference automatically
+        $reference = strtoupper(uniqid('TCKT-'));
+
         $b = MouvementTicket::create([
             "id_type_mouvement" => $type_mouvement->id,
             "vehicule_id" => $request->vehicule_id,
@@ -246,6 +250,7 @@ class MouvementTicketController extends Controller
             "qte" => $request->qte,
             "objet" => $request->objet,
             "date" => $request->date,
+            "reference" => $reference,
         ]);
 
 
@@ -264,6 +269,7 @@ class MouvementTicketController extends Controller
         //return response
         return new PostResource(true, 'le mouvement de sortie de ticket a été bien enrégistré !', $b);
     }
+    
 
         // update sortie
         public function updateSortieTicket(Request $request, $id)
