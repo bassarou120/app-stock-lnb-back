@@ -237,7 +237,7 @@ class MouvementTicketController extends Controller
         }
 
         // Generate the reference automatically
-        $reference = strtoupper(uniqid('TCKT-'));
+        $reference = strtoupper(uniqid('MVT-'));
 
         $b = MouvementTicket::create([
             "id_type_mouvement" => $type_mouvement->id,
@@ -269,7 +269,7 @@ class MouvementTicketController extends Controller
         //return response
         return new PostResource(true, 'le mouvement de sortie de ticket a été bien enrégistré !', $b);
     }
-    
+
 
         // update sortie
         public function updateSortieTicket(Request $request, $id)
