@@ -34,6 +34,7 @@ use App\Http\Controllers\InterventionController;
 use App\Http\Controllers\TransfertController;
 use App\Http\Controllers\MouvementTicketController;
 use App\Http\Controllers\RetourTicketController;
+use App\Http\Controllers\TrajetController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -67,6 +68,7 @@ Route::apiResource('immobilisations', ImmobilisationController::class);
 Route::apiResource('interventions', InterventionController::class);
 Route::apiResource('transferts', TransfertController::class);
 Route::apiResource('retour-ticket', RetourTicketController::class);
+Route::apiResource('trajets', TrajetController::class);
 Route::get('ancien-info/{id}', [TransfertController::class, 'getOldInfo']);
 
 Route::apiResource('vehicules', VehiculeController::class);
