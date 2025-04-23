@@ -208,7 +208,7 @@ class MouvementTicketController extends Controller
         $validator = Validator::make($request->all(), [
             // "id_type_mouvement" => 'required|exists:type_mouvements,id',
             "vehicule_id" => 'required|exists:vehicules,id',
-            // "compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
+            "compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
             "coupon_ticket_id" => 'required|exists:coupon_tickets,id',
             "kilometrage" => 'required|integer',
             "employe_id" => 'required|exists:employes,id',
@@ -242,7 +242,7 @@ class MouvementTicketController extends Controller
         $b = MouvementTicket::create([
             "id_type_mouvement" => $type_mouvement->id,
             "vehicule_id" => $request->vehicule_id,
-            // "compagnie_petrolier_id" => $request->compagnie_petrolier_id,
+            "compagnie_petrolier_id" => $request->compagnie_petrolier_id,
             "coupon_ticket_id" => $request->coupon_ticket_id,
             "kilometrage" => $request->kilometrage,
             "employe_id" => $request->employe_id,
@@ -284,7 +284,7 @@ class MouvementTicketController extends Controller
          $validator = Validator::make($request->all(), [
             // "id_type_mouvement" => 'required|exists:type_mouvements,id',
             "vehicule_id" => 'required|exists:vehicules,id',
-            // "compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
+            "compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
             "coupon_ticket_id" => 'required|exists:coupon_tickets,id',
             "kilometrage" => 'required|integer',
             "employe_id" => 'required|exists:employes,id',
@@ -328,7 +328,7 @@ class MouvementTicketController extends Controller
          $mouvement->update([
             "id_type_mouvement" => $type_mouvement->id,
             "vehicule_id" => $request->vehicule_id,
-            // "compagnie_petrolier_id" => $request->compagnie_petrolier_id,
+            "compagnie_petrolier_id" => $request->compagnie_petrolier_id,
             "coupon_ticket_id" => $request->coupon_ticket_id,
             "kilometrage" => $request->kilometrage,
             "employe_id" => $request->employe_id,
