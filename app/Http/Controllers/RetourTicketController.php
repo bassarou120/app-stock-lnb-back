@@ -7,6 +7,8 @@ use App\Models\RetourTicket;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Parametrage\StockTicket;
+use App\Models\MouvementTicket;
+
 
 
 
@@ -18,7 +20,7 @@ class RetourTicketController extends Controller
             'mouvement.employe',
             'mouvement.vehicule',
             'coupon',
-            'campagnie'
+            'compagnie'
         ])->latest()->paginate(1000);
 
         return new PostResource(true, 'Liste des retours', $retours);
@@ -32,7 +34,7 @@ class RetourTicketController extends Controller
         //define validation rules
         $validator = Validator::make($request->all(), [
             "mouvementTicket_id" => 'required|exists:mouvement_tickets,id',
-            // "compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
+            "compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
             "coupon_ticket_id" => 'required|exists:coupon_tickets,id',
             "qte" => 'required|integer',
         ]);
@@ -66,5 +68,19 @@ class RetourTicketController extends Controller
         //return response
         return new PostResource(true, 'le mouvement d\'entrer de ticket a été bien enrégistré !', $b);
     }
+
+    public function getMouvementInfo($idMouvement)
+{
+    $mouvement = MouvementTicket::with(['compagniePetrolier', 'coupon_ticket'])->find($idMouvement);
+    if (!$mouvement) {
+        return response()->json(['message' => 'Immobilisation non trouvée'], 404);
+    }
+
+    return response()->json([
+        'compagnie_petrolier_id' => $mouvement->compagnie_petrolier_id,
+        'coupon_ticket_id' => $mouvement->coupon_ticket_id,
+        'quantite' => $mouvement->qte,
+    ]);
+}
 
 }

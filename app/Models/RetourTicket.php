@@ -24,7 +24,7 @@ class RetourTicket extends Model
     {
         return $this->belongsTo(CouponTicket::class, 'coupon_ticket_id');
     }
-    public function campagnie()
+    public function compagnie()
     {
         return $this->belongsTo(CompagniePetrolier::class, 'compagnie_petrolier_id');
     }
