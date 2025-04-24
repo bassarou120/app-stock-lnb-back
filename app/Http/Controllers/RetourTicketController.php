@@ -71,41 +71,75 @@ class RetourTicketController extends Controller
         return new PostResource(true, 'le mouvement d\'entrer de ticket a été bien enrégistré !', $b);
     }
 
-    public function getAllSortieTicketWhereNotInRetour()
-{
-    // Récupérer l'ID du type de mouvement "Sortie de Ticket"
-    $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Ticket')->first();
+    //delete entrée
+    public function destroy($id)
+    {
+        $retourTicket = RetourTicket::find($id);
 
-    if ($type_mouvement) {
-        // Récupérer les IDs des mouvements qui ont un retour
-        $mouvementsAvecRetour = RetourTicket::pluck('mouvementTicket_id')->toArray();
+        if (!$retourTicket) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Mouvement introuvable.'
+            ], 404);
+        }
 
-        // Récupérer les mouvements "Sortie de Ticket" qui ne sont pas dans la liste des mouvements avec retour
-        $mouvements = MouvementTicket::with(['employe', 'compagniePetrolier', 'vehicule', 'coupon_ticket'])
-            ->where('id_type_mouvement', $type_mouvement->id)
-            ->whereNotIn('id', $mouvementsAvecRetour)
-            ->latest()
-            ->paginate(1000);
+        // Vérifier si un stock existe pour ce ticket
+        $stock = StockTicket::where('coupon_ticket_id', $retourTicket->coupon_ticket_id)->latest()->first();
 
-        return new PostResource(true, 'Liste des mouvements de sortie de Ticket sans retour', $mouvements);
+        if ($stock) {
+            // Réduire la quantité du stock
+            $stock->qte_actuel -= $retourTicket->qte;
+
+            // Empêcher que la quantité devienne négative
+            if ($stock->qte_actuel < 0) {
+                $stock->qte_actuel = 0;
+            }
+
+            $stock->save();
+        }
+
+        // Supprimer le retourTicket
+
+        $retourTicket->delete();
+
+        return new PostResource(true, 'Retour Ticket supprimé avec succès !', null);
     }
 
-    return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Ticket".', []);
-}
+
+    public function getAllSortieTicketWhereNotInRetour()
+    {
+        // Récupérer l'ID du type de mouvement "Sortie de Ticket"
+        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Ticket')->first();
+
+        if ($type_mouvement) {
+            // Récupérer les IDs des mouvements qui ont un retour
+            $mouvementsAvecRetour = RetourTicket::pluck('mouvementTicket_id')->toArray();
+
+            // Récupérer les mouvements "Sortie de Ticket" qui ne sont pas dans la liste des mouvements avec retour
+            $mouvements = MouvementTicket::with(['employe', 'compagniePetrolier', 'vehicule', 'coupon_ticket'])
+                ->where('id_type_mouvement', $type_mouvement->id)
+                ->whereNotIn('id', $mouvementsAvecRetour)
+                ->latest()
+                ->paginate(1000);
+
+            return new PostResource(true, 'Liste des mouvements de sortie de Ticket sans retour', $mouvements);
+        }
+
+        return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Ticket".', []);
+    }
 
 
     public function getMouvementInfo($idMouvement)
-{
-    $mouvement = MouvementTicket::with(['compagniePetrolier', 'coupon_ticket'])->find($idMouvement);
-    if (!$mouvement) {
-        return response()->json(['message' => 'Immobilisation non trouvée'], 404);
+    {
+        $mouvement = MouvementTicket::with(['compagniePetrolier', 'coupon_ticket'])->find($idMouvement);
+        if (!$mouvement) {
+            return response()->json(['message' => 'Immobilisation non trouvée'], 404);
+        }
+
+        return response()->json([
+            'compagnie_petrolier_id' => $mouvement->compagnie_petrolier_id,
+            'coupon_ticket_id' => $mouvement->coupon_ticket_id,
+            'quantite' => $mouvement->qte,
+        ]);
     }
-
-    return response()->json([
-        'compagnie_petrolier_id' => $mouvement->compagnie_petrolier_id,
-        'coupon_ticket_id' => $mouvement->coupon_ticket_id,
-        'quantite' => $mouvement->qte,
-    ]);
-}
-
 }
