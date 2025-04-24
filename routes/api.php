@@ -70,7 +70,10 @@ Route::apiResource('transferts', TransfertController::class);
 Route::apiResource('retour-ticket', RetourTicketController::class);
 Route::apiResource('trajets', TrajetController::class);
 Route::get('ancien-info/{id}', [TransfertController::class, 'getOldInfo']);
+
 Route::get('mouvement-info/{id}', [RetourTicketController::class, 'getMouvementInfo']);
+Route::get('mouvement-ticket/getAllSortieTicketWhereNotInRetour', [RetourTicketController::class, 'getAllSortieTicketWhereNotInRetour']);
+
 
 Route::apiResource('vehicules', VehiculeController::class);
 Route::post('vehicules/batch', [VehiculeController::class, 'storeBatch']);
