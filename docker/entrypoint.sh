@@ -5,7 +5,7 @@ php artisan migrate --force
 php artisan db:seed --force
 
 # Passport
-php artisan passport:install --force
+#php artisan passport:install --force
 php artisan passport:client --personal
 #php artisan passport:keys --force
 

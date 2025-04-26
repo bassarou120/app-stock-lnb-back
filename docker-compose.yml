@@ -24,8 +24,8 @@ services:
       - pg_data:/var/lib/postgresql/data
 
 #  frontend:
-#    image: rregistry.gitlab.com/waouhmonde/app-rh-lnb-front
-#    container_name: frontend_lnb_rh
+#    image: rregistry.gitlab.com/
+#    container_name: frontend_lnb_stock
 #    restart: always
 #    ports:
 #      - "8381:80"
