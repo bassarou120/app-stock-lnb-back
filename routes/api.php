@@ -51,6 +51,7 @@ Route::apiResource('modeles', ModeleController::class);
 Route::apiResource('type-interventions', TypeInterventionController::class);
 Route::apiResource('categorie-articles', CategorieArticleController::class);
 Route::apiResource('fournisseurs', FournisseurController::class);
+Route::get('fournisseurs-imprimer', [FournisseurController::class, 'imprimer']);
 Route::apiResource('employes', EmployeController::class);
 Route::apiResource('type_affectations', TypeAffectationController::class);
 Route::apiResource('type_mouvements', TypeMouvementController::class);
