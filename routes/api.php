@@ -98,6 +98,7 @@ Route::post('mouvement-stock/sortie', [MouvementStockController::class, 'storeSo
 Route::delete('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'deleteSortieStock']);
 Route::get('quantite-disponible/{id}', [MouvementStockController::class, 'getQuantiteDisponible']);
 Route::put('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'updateSortieStock']);
+Route::patch('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'updateDemandeStock']);
 
 Route::get('mouvement-ticket/entree', [MouvementTicketController::class, 'indexEntreeTicket']);
 Route::post('mouvement-ticket/entree', [MouvementTicketController::class, 'storeEntreeTicket']);
