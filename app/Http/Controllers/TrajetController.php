@@ -15,8 +15,7 @@ class TrajetController extends Controller
     public function index()
     {
         $trajet = Trajet::with([
-            'mouvementTicket', 
-            'depart', 
+            'depart',
             'arriver'
         ])->latest()->paginate(1000);
 
@@ -27,10 +26,10 @@ class TrajetController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'MouvementTicket_id' => 'required|exists:mouvement_tickets,id',
             'commune_depart' => 'required|exists:communes,id',
             'commune_arriver' => 'required|exists:communes,id',
             'trajet_aller_retour' => 'required|boolean',
+            'valeur' => 'required|integer',
             'observation' => 'nullable|string',
         ]);
 
@@ -51,11 +50,11 @@ class TrajetController extends Controller
         $trajet = Trajet::findOrFail($id);
 
         $validated = $request->validate([
-            'MouvementTicket_id' => 'sometimes|required|exists:mouvement_tickets,id',
             'commune_depart' => 'sometimes|required|exists:communes,id',
             'commune_arriver' => 'sometimes|required|exists:communes,id',
             'trajet_aller_retour' => 'sometimes|required|boolean',
             'observation' => 'nullable|string',
+            'valeur' => 'required|integer',
         ]);
 
         $trajet->update($validated);
