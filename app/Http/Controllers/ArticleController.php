@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Parametrage\CategorieArticle;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use App\Models\Stock;
 use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 
 
@@ -125,4 +127,13 @@ class ArticleController extends Controller
         return new PostResource(true, 'Article supprimé avec succès', null);
     }
 
+
+    public function imprimer()
+    {
+        $articles = Article::with(['categorie', 'stock'])->get();
+
+        $pdf = Pdf::loadView('pdf.articles', compact('articles'));
+
+        return $pdf->download('etat_du_stock.pdf');
+    }
 }

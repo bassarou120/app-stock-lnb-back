@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\Parametrage\CompagniePetrolier;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 class CompagniePetrolierController extends Controller
 {
@@ -76,5 +78,14 @@ class CompagniePetrolierController extends Controller
 
         // Retourner la réponse formatée avec PostResource, indiquant que la suppression a réussi
         return new PostResource(true, 'Compagnie pétrolière supprimée avec succès', null);
+    }
+
+    public function imprimer()
+    {
+        $compagnies = CompagniePetrolier::all();
+
+        $pdf = Pdf::loadView('pdf.compagnies', compact('compagnies'));
+
+        return $pdf->download('liste_compagnies_petrolieres.pdf');
     }
 }
