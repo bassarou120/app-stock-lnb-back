@@ -12,17 +12,13 @@ class Trajet extends Model
     use HasFactory;
 
     protected $fillable = [
-        'MouvementTicket_id', // Assurez-vous que la clé étrangère est dans $fillable si vous utilisez la création massive
         'commune_depart',
         'commune_arriver',
         'trajet_aller_retour',
         'observation',
+        'valeur'
     ];
 
-    public function mouvementTicket()
-    {
-        return $this->belongsTo(MouvementTicket::class, 'MouvementTicket_id'); // Utilisation de 'mouvement_ticket_id' (conventionnel)
-    }
 
     public function depart()
     {
