@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Parametrage;
+
+use App\Http\Controllers\Controller;
 
 use App\Models\Parametrage\StockTicket;
 use Illuminate\Http\Request;
@@ -12,7 +14,7 @@ class StockTicketController extends Controller
     // Afficher la liste des stocks de tickets
     public function index()
     {
-        $stock_tickets = StockTicket::with('couponTicket')->latest()->paginate(100);
+        $stock_tickets = StockTicket::with('couponTicket', 'compagnie')->latest()->paginate(1000);
         return new PostResource(true, 'Liste des stocks de tickets', $stock_tickets);
     }
 

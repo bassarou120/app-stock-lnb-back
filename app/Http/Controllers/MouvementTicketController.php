@@ -45,10 +45,6 @@ class MouvementTicketController extends Controller
             "objet" => 'nullable|string|max:255',
             "qte" => 'required|integer',
             "date" => 'required',
-            // "vehicule_id" => 'required|exists:vehicules,id',
-            // "employe_id" => 'required|exists:employes,id',
-            // "kilometrage" => 'required|integer',
-            // "id_type_mouvement" => 'required|exists:type_mouvements,id',
         ]);
 
         //check if validation fails
@@ -66,23 +62,24 @@ class MouvementTicketController extends Controller
             "qte" => $request->qte,
             "objet" => $request->objet,
             "date" => $request->date,
-            // "vehicule_id" => $request->vehicule_id,
-            // "employe_id" => $request->employe_id,
-            // "kilometrage" => $request->kilometrage,
         ]);
 
 
-        $stockTicket = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->latest()->first();
+        $stockTicket = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)
+            ->where('compagnie_petrolier_id', $request->compagnie_petrolier_id)
+            ->first();
 
-        if ($stockTicket == null) {
+        if (!$stockTicket) {
             $stockTicket = StockTicket::create([
                 'coupon_ticket_id' => $request->coupon_ticket_id,
-                'qte_actuel' => 0
+                'compagnie_petrolier_id' => $request->compagnie_petrolier_id,
+                'qte_actuel' => 0,
             ]);
         }
 
-        $stockTicket->qte_actuel = $stockTicket->qte_actuel + $request->qte;
+        $stockTicket->qte_actuel += $request->qte;
         $stockTicket->save();
+
 
         //return response
         return new PostResource(true, 'le mouvement d\'entrer de ticket a été bien enrégistré !', $b);
@@ -105,9 +102,6 @@ class MouvementTicketController extends Controller
             "objet" => 'nullable|string|max:255',
             "qte" => 'required|integer',
             "date" => 'required',
-            // "vehicule_id" => 'required|exists:vehicules,id',
-            // "employe_id" => 'required|exists:employes,id',
-            // "kilometrage" => 'required|integer',
         ]);
 
         // Vérifier si la validation échoue
@@ -128,13 +122,12 @@ class MouvementTicketController extends Controller
             "objet" => $request->objet,
             "date" => $request->date,
             "id_type_mouvement" => $type_mouvement->id,
-            // "employe_id" => $request->employe_id,
-            // "vehicule_id" => $request->vehicule_id,
-            // "kilometrage" => $request->kilometrage,
         ]);
 
         // Mise à jour du stock
-        $stock = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->latest()->first();
+        $stock = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)
+            ->where('compagnie_petrolier_id', $request->compagnie_petrolier_id)
+            ->first();
 
         if ($stock) {
             $stock->qte_actuel = $stock->qte_actuel - $ancien_qte + $request->qte;
@@ -142,6 +135,7 @@ class MouvementTicketController extends Controller
         } else {
             return response()->json(['message' => 'Stock introuvable'], 404);
         }
+
 
         // Retourner la réponse
         return new PostResource(true, 'Le mouvement d\'entrée de ticket a été mis à jour avec succès !', $mouvement);
@@ -160,8 +154,10 @@ class MouvementTicketController extends Controller
             ], 404);
         }
 
-        // Vérifier si un stock existe pour ce ticket
-        $stock = StockTicket::where('coupon_ticket_id', $mouvement->coupon_ticket_id)->latest()->first();
+        // Chercher le stock correspondant à la combinaison coupon + compagnie
+        $stock = StockTicket::where('coupon_ticket_id', $mouvement->coupon_ticket_id)
+            ->where('compagnie_petrolier_id', $mouvement->compagnie_petrolier_id)
+            ->first();
 
         if ($stock) {
             // Réduire la quantité du stock
@@ -176,11 +172,11 @@ class MouvementTicketController extends Controller
         }
 
         // Supprimer le mouvement
-
         $mouvement->delete();
 
         return new PostResource(true, 'Mouvement supprimé avec succès !', null);
     }
+
 
 
     //Sortie de ticket
@@ -271,17 +267,17 @@ class MouvementTicketController extends Controller
     }
 
 
-        // update sortie
-        public function updateSortieTicket(Request $request, $id)
-        {
-         // Vérification de l'existence du mouvement
+    // update sortie
+    public function updateSortieTicket(Request $request, $id)
+    {
+        // Vérification de l'existence du mouvement
         //  $mouvement = MouvementTicket::find($id);
         //  if (!$mouvement) {
         //      return response()->json(['message' => 'Mouvement introuvable'], 404);
         //  }
 
-         // Validation des données
-         $validator = Validator::make($request->all(), [
+        // Validation des données
+        $validator = Validator::make($request->all(), [
             // "id_type_mouvement" => 'required|exists:type_mouvements,id',
             "vehicule_id" => 'required|exists:vehicules,id',
             "compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
@@ -292,40 +288,40 @@ class MouvementTicketController extends Controller
             "objet" => 'nullable|string|max:255',
             "qte" => 'required|integer',
             "date" => 'required',
-         ]);
+        ]);
 
-         // Vérifier si la validation échoue
-         if ($validator->fails()) {
-             return response()->json($validator->errors(), 422);
-         }
+        // Vérifier si la validation échoue
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
 
-         // Trouver le mouvement existant
-            $mouvement = MouvementTicket::find($id);
-            if (!$mouvement) {
-                return response()->json(['error' => 'Mouvement introuvable.'], 404);
-            }
+        // Trouver le mouvement existant
+        $mouvement = MouvementTicket::find($id);
+        if (!$mouvement) {
+            return response()->json(['error' => 'Mouvement introuvable.'], 404);
+        }
 
-            // Vérifier le stock actuel pour ce ticket
-            $stock = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->latest()->first();
-            if (!$stock) {
-                return response()->json(['error' => "Stock introuvable pour cet article."], 400);
-            }
+        // Vérifier le stock actuel pour ce ticket
+        $stock = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->latest()->first();
+        if (!$stock) {
+            return response()->json(['error' => "Stock introuvable pour cet article."], 400);
+        }
 
-            // Calculer la différence de quantité
-            $differenceQte = $request->qte - $mouvement->qte;
+        // Calculer la différence de quantité
+        $differenceQte = $request->qte - $mouvement->qte;
 
-            // Vérifier si la nouvelle quantité demandée est disponible en stock
-            if ($differenceQte > 0 && $stock->qte_actuel < $differenceQte) {
-                return response()->json(['error' => "Quantité insuffisante en stock."], 400);
-            }
-
-
-         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Sortie de Ticket")->latest()->first();
+        // Vérifier si la nouvelle quantité demandée est disponible en stock
+        if ($differenceQte > 0 && $stock->qte_actuel < $differenceQte) {
+            return response()->json(['error' => "Quantité insuffisante en stock."], 400);
+        }
 
 
-         // Mise à jour du mouvement
+        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Sortie de Ticket")->latest()->first();
 
-         $mouvement->update([
+
+        // Mise à jour du mouvement
+
+        $mouvement->update([
             "id_type_mouvement" => $type_mouvement->id,
             "vehicule_id" => $request->vehicule_id,
             "compagnie_petrolier_id" => $request->compagnie_petrolier_id,
@@ -336,14 +332,14 @@ class MouvementTicketController extends Controller
             "qte" => $request->qte,
             "objet" => $request->objet,
             "date" => $request->date,
-         ]);
+        ]);
 
-         // Mettre à jour le stock
-            $stock->qte_actuel -= $differenceQte;
-            $stock->save();
+        // Mettre à jour le stock
+        $stock->qte_actuel -= $differenceQte;
+        $stock->save();
 
-         // Retourner la réponse
-         return new PostResource(true, 'Le mouvement de sortie de ticket a été mis à jour avec succès !', $mouvement);
+        // Retourner la réponse
+        return new PostResource(true, 'Le mouvement de sortie de ticket a été mis à jour avec succès !', $mouvement);
     }
 
     //delete sortie
@@ -380,13 +376,12 @@ class MouvementTicketController extends Controller
         return new PostResource(true, 'Mouvement supprimé avec succès !', null);
     }
 
-     // get qte disponible
-     public function getQuantiteDisponible($idCoupon)
-     {
-         $stock = StockTicket::where('coupon_ticket_id', $idCoupon)->first();
-         $quantite = $stock ? $stock->qte_actuel : 0;
+    // get qte disponible
+    public function getQuantiteDisponible($idCoupon)
+    {
+        $stock = StockTicket::where('coupon_ticket_id', $idCoupon)->first();
+        $quantite = $stock ? $stock->qte_actuel : 0;
 
-         return new PostResource(true, 'Quantité trouvée !', $quantite);
-     }
-
+        return new PostResource(true, 'Quantité trouvée !', $quantite);
+    }
 }

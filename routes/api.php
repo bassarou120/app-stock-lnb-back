@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Parametrage\MarqueController;
 use App\Http\Controllers\Parametrage\CommuneController;
 use App\Http\Controllers\Parametrage\CouponTicketController;
+use App\Http\Controllers\Parametrage\StockTicketController;
 use App\Http\Controllers\Parametrage\CompagniePetrolierController;
 use App\Http\Controllers\Parametrage\MagazinController;
 use App\Http\Controllers\Parametrage\ModeleController;
@@ -41,10 +42,11 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 
-
+Route::get('/stock/coupon-compagnies', [CouponTicketController::class, 'getCouponTicketsWithCompagnies']);
 Route::apiResource('marques', MarqueController::class);
 Route::apiResource('communes', CommuneController::class);
 Route::apiResource('coupon_tickets', CouponTicketController::class);
+Route::apiResource('stock_coupon_tickets', StockTicketController::class);
 Route::apiResource('compagnie_petrolier', CompagniePetrolierController::class);
 Route::get('compagnie_petrolier-imprimer', [CompagniePetrolierController::class, 'imprimer']);
 Route::apiResource('magazins', MagazinController::class);

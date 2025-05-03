@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Artisan;
 
 class DatabaseSeeder extends Seeder
 {
@@ -39,5 +40,11 @@ class DatabaseSeeder extends Seeder
             CommuneSeeder::class,
             CouponTicketSeeder::class,
         ]);
+
+        // Appel de la commande artisan personnalisée
+        Artisan::call('app:sync-stock-tickets');
+
+        // Message dans la console pour confirmation
+        $this->command->info('✅ StockTickets synchronisés avec succès.');
     }
 }
