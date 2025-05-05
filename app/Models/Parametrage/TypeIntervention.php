@@ -12,5 +12,6 @@ class TypeIntervention extends Model
         'libelle_type_intervention',
         'applicable_seul_vehicule',
         'observation',
+        'date_expiration',
     ];
 }

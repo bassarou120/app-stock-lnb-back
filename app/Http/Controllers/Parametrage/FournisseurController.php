@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Parametrage;
 
+use Barryvdh\DomPDF\Facade\Pdf;
+
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Parametrage\Fournisseur;
@@ -67,4 +69,15 @@ class FournisseurController extends Controller
         $fournisseur->delete();
         return new PostResource(true, 'Fournisseur supprimé avec succès', null);
     }
+
+    public function imprimer()
+    {
+        $fournisseurs = Fournisseur::all();
+
+        $pdf = Pdf::loadView('pdf.fournisseurs', compact('fournisseurs'));
+
+        return $pdf->download('liste_fournisseurs.pdf');
+    }
+
+    
 }

@@ -274,24 +274,25 @@ class MouvementStockController extends Controller
 
 
 
-// index sortieStock
+    // index sortieStock
     public function indexSortieStock()
     {
         // Récupérer l'ID du type de mouvement "Entrée de Stock"
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Stock')->first();
 
         // Si le type de mouvement existe, récupérer les mouvements correspondants
-    if ($type_mouvement) {
-        $mouvements = MouvementStock::with(['article', 'affectation.employe' => function ($query) {
-            $query->select('id', 'nom', 'prenom')
-                ->selectRaw("CONCAT(nom, ' ', prenom) as full_name");
-        }])
-        ->where('id_type_mouvement', $type_mouvement->id)
-        ->latest()
-        ->paginate(1000);
+        if ($type_mouvement) {
+            $mouvements = MouvementStock::with(['bureau', 'employe', 'article','affectation.bureau', 'affectation.employe' => function ($query) {
+                $query->select('id', 'nom', 'prenom')
+                    ->selectRaw("CONCAT(nom, ' ', prenom) as full_name");
+            }])
+                ->where('id_type_mouvement', $type_mouvement->id)
+                // ->where('statut', '!=', 'Accordé')
+                ->latest()
+                ->paginate(1000);
 
-        return new PostResource(true, 'Liste des mouvements', $mouvements);
-    }
+            return new PostResource(true, 'Liste des mouvements', $mouvements);
+        }
 
         // Si le type de mouvement n'existe pas, retourner une réponse vide ou un message d'erreur
         return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Stock".', []);
@@ -308,9 +309,9 @@ class MouvementStockController extends Controller
         $validator = Validator::make($request->all(), [
             "id_Article" => 'required|exists:articles,id',
             "description" => 'required|string|max:255',
-            "qte" => 'required|integer|min:1',
-            "date_mouvement" => 'required|date',
-            // "id_type_affectation" => 'nullable|exists:type_affectations,id',
+            "qteDemande" => 'required|integer|min:1',
+            // "date_mouvement" => 'required|date',
+            "dateDemande" => 'required|date',
             "id_bureau" => 'nullable|exists:bureaus,id',
             "id_employe" => 'nullable|exists:employes,id',
         ]);
@@ -330,7 +331,7 @@ class MouvementStockController extends Controller
         // Vérifier la quantité disponible en stock
         $stock = Stock::where('id_Article', $request->id_Article)->latest()->first();
 
-        if (!$stock || $stock->Qte_actuel < $request->qte) {
+        if (!$stock || $stock->Qte_actuel < $request->qteDemande) {
             return response()->json(['error' => "Quantité insuffisante en stock."], 400);
         }
 
@@ -339,115 +340,149 @@ class MouvementStockController extends Controller
             "id_Article" => $request->id_Article,
             "description" => $request->description,
             "id_type_mouvement" => $type_mouvement->id,
-            "qte" => $request->qte,
-            "date_mouvement" => $request->date_mouvement,
+            "qte" => 0,
+            "qteDemande" => $request->qteDemande,
+            // "date_mouvement" => $request->date_mouvement,
+            "dateDemande" => $request->dateDemande,
+            "bureau_id" => $request->id_bureau,
+            "id_employe" => $request->id_employe,
+            "statut" => 'En attente',
         ]);
-
-        // Mettre à jour le stock
-        $stock->Qte_actuel -= $request->qte;
-        $stock->save();
-
-        $type_affectation = TypeAffectation::where('libelle_type_affectation', "Affectation d'Article")->latest()->first();
-        // Vérifier si les champs optionnels sont fournis pour enregistrer une affectation
-        if ($request->filled(['id_bureau', 'id_employe'])) {
-            AffectationArticle::create([
-                'description' => $request->description,
-                'id_article' => $request->id_Article,
-                'id_type_affectation' => $type_affectation->id,
-                'id_bureau' => $request->id_bureau,
-                'id_employe' => $request->id_employe,
-                'id_mouvement' => $mouvement->id,
-
-            ]);
-        }
-
-        // Retourner la réponse
         return new PostResource(true, 'La sortie de stock a été enregistrée avec succès !', $mouvement);
     }
 
     public function updateSortieStock(Request $request, $id)
-{
-    // Définir les règles de validation
-    $validator = Validator::make($request->all(), [
-        "id_Article" => 'required|exists:articles,id',
-        "description" => 'required|string|max:255',
-        "qte" => 'required|integer|min:1',
-        "date_mouvement" => 'required|date',
-        "id_bureau" => 'nullable|exists:bureaus,id',
-        "id_employe" => 'nullable|exists:employes,id',
-    ]);
+    {
+        // Définir les règles de validation
+        $validator = Validator::make($request->all(), [
+            "id_Article" => 'required|exists:articles,id',
+            "description" => 'required|string|max:255',
+            "qte" => 0,
+            "qteDemande" => 'required|integer|min:1',
+            "date_mouvement" => 'required|date',
+            "id_bureau" => 'nullable|exists:bureaus,id',
+            "id_employe" => 'nullable|exists:employes,id',
+        ]);
 
-    // Vérifier si la validation échoue
-    if ($validator->fails()) {
-        return response()->json($validator->errors(), 422);
-    }
+        // Vérifier si la validation échoue
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
 
-    // Trouver le mouvement existant
-    $mouvement = MouvementStock::find($id);
-    if (!$mouvement) {
-        return response()->json(['error' => 'Mouvement introuvable.'], 404);
-    }
+        // Trouver le mouvement existant
+        $mouvement = MouvementStock::find($id);
+        if (!$mouvement) {
+            return response()->json(['error' => 'Mouvement introuvable.'], 404);
+        }
 
-    // Vérifier le stock actuel pour cet article
-    $stock = Stock::where('id_Article', $request->id_Article)->latest()->first();
-    if (!$stock) {
-        return response()->json(['error' => "Stock introuvable pour cet article."], 400);
-    }
+        // Vérifier la quantité disponible en stock
+        $stock = Stock::where('id_Article', $request->id_Article)->latest()->first();
 
-    // Calculer la différence de quantité
-    $differenceQte = $request->qte - $mouvement->qte;
+        if (!$stock || $stock->Qte_actuel < $request->qteDemande) {
+            return response()->json(['error' => "Quantité insuffisante en stock."], 400);
+        }
 
-    // Vérifier si la nouvelle quantité demandée est disponible en stock
-    if ($differenceQte > 0 && $stock->Qte_actuel < $differenceQte) {
-        return response()->json(['error' => "Quantité insuffisante en stock."], 400);
-    }
+        $mouvement->update([
+            "id_Article" => $request->id_Article,
+            "description" => $request->description,
+            "qteDemande" => $request->qte,
+            "date_mouvement" => $request->date_mouvement,
+            "statut" => $request->statut ?? $mouvement->statut,
+        ]);
 
-    // Mettre à jour le stock
-    $stock->Qte_actuel -= $differenceQte;
-    $stock->save();
+        // Vérifier s'il existe une affectation liée à ce mouvement
+        $affectation = AffectationArticle::where('id_mouvement', $mouvement->id)
+            ->latest()
+            ->first();
 
-    // Mettre à jour le mouvement de stock
-    $mouvement->update([
-        "id_Article" => $request->id_Article,
-        "description" => $request->description,
-        "qte" => $request->qte,
-        "date_mouvement" => $request->date_mouvement,
-    ]);
-
-    // Vérifier s'il existe une affectation liée à ce mouvement
-    $affectation = AffectationArticle::where('id_mouvement', $mouvement->id)
-        ->latest()
-        ->first();
-
-    if ($affectation) {
-        if (!$request->filled(['id_bureau', 'id_employe'])) {
-            // Si l'affectation existait mais que l'utilisateur ne veut plus affecter l'article, on la supprime
-            $affectation->delete();
+        if ($affectation) {
+            if (!$request->filled(['id_bureau', 'id_employe'])) {
+                // Si l'affectation existait mais que l'utilisateur ne veut plus affecter l'article, on la supprime
+                $affectation->delete();
+            } else {
+                // Sinon, on met à jour l'affectation
+                $affectation->update([
+                    'id_bureau' => $request->id_bureau,
+                    'id_employe' => $request->id_employe,
+                ]);
+            }
         } else {
-            // Sinon, on met à jour l'affectation
-            $affectation->update([
-                'id_bureau' => $request->id_bureau,
-                'id_employe' => $request->id_employe,
-            ]);
+            // Si aucune affectation n'existait mais que l'utilisateur en fournit une, on la crée
+            if ($request->filled(['id_bureau', 'id_employe'])) {
+                $type_affectation = TypeAffectation::where('libelle_type_affectation', "Affectation d'Article")->latest()->first();
+                AffectationArticle::create([
+                    'description' => $request->description,
+                    'id_article' => $request->id_Article,
+                    'id_type_affectation' => $type_affectation->id,
+                    'id_bureau' => $request->id_bureau,
+                    'id_employe' => $request->id_employe,
+                ]);
+            }
         }
-    } else {
-        // Si aucune affectation n'existait mais que l'utilisateur en fournit une, on la crée
-        if ($request->filled(['id_bureau', 'id_employe'])) {
-            $type_affectation = TypeAffectation::where('libelle_type_affectation', "Affectation d'Article")->latest()->first();
-            AffectationArticle::create([
-                'description' => $request->description,
-                'id_article' => $request->id_Article,
-                'id_type_affectation' => $type_affectation->id,
-                'id_bureau' => $request->id_bureau,
-                'id_employe' => $request->id_employe,
-            ]);
-        }
+
+        return new PostResource(true, 'Sortie de stock mise à jour avec succès !', $mouvement);
     }
 
-    return new PostResource(true, 'Sortie de stock mise à jour avec succès !', $mouvement);
-}
+    //
+
+    public function updateDemandeStock(Request $request, $id)
+    {
+        $mouvementStock = MouvementStock::findOrFail($id);
+
+        $date_mouvement = $request->input('date_mouvement');
+        $statut = $request->input('statut');
+        $mouvementStock->statut = $statut;
+
+        // Si le statut est "Accordé"
+        if (strtolower($statut) === 'accordé') {
+
+            // Vérifier si la quantité est fournie
+            if (!$request->has('qte')) {
+                return response()->json(['error' => 'La quantité (qte) est requise lorsque le statut est "Accordé".'], 422);
+            }
+
+            $qte = $request->input('qte');
+
+            // Vérifier la quantité disponible en stock
+            $stock = Stock::where('id_Article', $mouvementStock->id_Article)->latest()->first();
+
+            if (!$stock || $stock->Qte_actuel < $qte) {
+                return response()->json(['error' => 'Quantité insuffisante en stock.'], 400);
+            }
+
+            // Mettre à jour la quantité du mouvement et du stock
+            $mouvementStock->qte = $qte;
+            $mouvementStock->date_mouvement = $date_mouvement;
+            $stock->Qte_actuel -= $qte;
+            $stock->save();
+
+            // Créer l'affectation si employé et bureau sont présents
+            if (!empty($mouvementStock->id_employe) && !empty($mouvementStock->bureau_id)) {
+                $type_affectation = TypeAffectation::where('libelle_type_affectation', "Affectation d'Article")->latest()->first();
+
+                if ($type_affectation) {
+                    AffectationArticle::create([
+                        'description' => $mouvementStock->description,
+                        'id_article' => $mouvementStock->id_Article,
+                        'id_type_affectation' => $type_affectation->id,
+                        'id_bureau' => $mouvementStock->bureau_id,
+                        'id_employe' => $mouvementStock->id_employe,
+                        'id_mouvement' => $mouvementStock->id,
+                    ]);
+                }
+            }
+        }
+
+        $mouvementStock->save();
+
+        return response()->json([
+            'message' => 'Demande mise à jour avec succès.',
+            'data' => $mouvementStock
+        ]);
+    }
 
 
+    // ... autres méthodes ...
 
     public function deleteSortieStock($id)
     {
@@ -460,27 +495,6 @@ class MouvementStockController extends Controller
                 'message' => 'Mouvement introuvable.'
             ], 404);
         }
-
-        // Vérifier si un stock existe pour cet article
-        $stock = Stock::where('id_Article', $mouvement->id_Article)->latest()->first();
-
-        if ($stock) {
-            // Augmenter la quantité en stock (car on annule une sortie)
-            $stock->Qte_actuel += $mouvement->qte;
-            $stock->save();
-        }
-
-        // Vérifier et supprimer l'affectation associée
-        $affectation = AffectationArticle::where('id_article', $mouvement->id_Article)
-            ->where('description', $mouvement->description)
-            ->latest()
-            ->first();
-
-        if ($affectation) {
-            $affectation->delete();
-        }
-
-        // Supprimer le mouvement
         $mouvement->delete();
 
         return new PostResource(true, 'Sortie de stock supprimée avec succès !', null);
@@ -491,11 +505,10 @@ class MouvementStockController extends Controller
 
     // get qte disponible
     public function getQuantiteDisponible($idArticle)
-{
-    $stock = Stock::where('id_Article', $idArticle)->first();
-    $quantite = $stock ? $stock->Qte_actuel : 0;
+    {
+        $stock = Stock::where('id_Article', $idArticle)->first();
+        $quantite = $stock ? $stock->Qte_actuel : 0;
 
-    return new PostResource(true, 'Quantité trouvée !', $quantite);
-}
-
+        return new PostResource(true, 'Quantité trouvée !', $quantite);
+    }
 }

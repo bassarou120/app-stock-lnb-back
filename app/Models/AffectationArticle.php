@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Parametrage\Employe;
+use App\Models\Parametrage\Bureau;
 
 
 class AffectationArticle extends Model
@@ -24,6 +25,11 @@ class AffectationArticle extends Model
     public function employe()
     {
         return $this->belongsTo(Employe::class, 'id_employe');
+    }
+
+    public function bureau()
+    {
+        return $this->belongsTo(Bureau::class, 'id_bureau');
     }
 
 

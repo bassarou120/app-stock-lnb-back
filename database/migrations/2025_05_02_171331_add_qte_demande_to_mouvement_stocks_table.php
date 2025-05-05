@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('mouvement_stocks', function (Blueprint $table) {
-                // Modifier la colonne description pour qu'elle accepte les valeurs nulles
-                $table->string('description')->nullable()->change();
+            $table->integer('qteDemande')->nullable();
         });
     }
 
@@ -23,8 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('mouvement_stocks', function (Blueprint $table) {
-            // Revert la colonne description à son état non nullable
-            $table->string('description')->nullable(false)->change();
+            $table->dropColumn('qteDemande');
         });
     }
 };

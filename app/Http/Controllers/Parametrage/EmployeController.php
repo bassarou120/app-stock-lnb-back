@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\Parametrage\Employe;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 class EmployeController extends Controller
 {
@@ -70,5 +72,14 @@ class EmployeController extends Controller
     {
         $employe->delete();
         return new PostResource(true, 'Employe supprimé avec succès', null);
+    }
+
+    public function imprimer()
+    {
+        $employes = Employe::all();
+
+        $pdf = Pdf::loadView('pdf.employes', compact('employes'));
+
+        return $pdf->download('liste_personnels.pdf');
     }
 }

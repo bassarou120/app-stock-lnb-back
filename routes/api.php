@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Parametrage\MarqueController;
 use App\Http\Controllers\Parametrage\CommuneController;
 use App\Http\Controllers\Parametrage\CouponTicketController;
+use App\Http\Controllers\Parametrage\StockTicketController;
 use App\Http\Controllers\Parametrage\CompagniePetrolierController;
 use App\Http\Controllers\Parametrage\MagazinController;
 use App\Http\Controllers\Parametrage\ModeleController;
@@ -31,6 +32,7 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\VehiculeController;
 use App\Http\Controllers\ImmobilisationController;
 use App\Http\Controllers\InterventionController;
+use App\Http\Controllers\InterventionVehiculeController;
 use App\Http\Controllers\TransfertController;
 use App\Http\Controllers\MouvementTicketController;
 use App\Http\Controllers\RetourTicketController;
@@ -41,17 +43,21 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 
-
+Route::get('/stock/coupon-compagnies', [CouponTicketController::class, 'getCouponTicketsWithCompagnies']);
 Route::apiResource('marques', MarqueController::class);
 Route::apiResource('communes', CommuneController::class);
 Route::apiResource('coupon_tickets', CouponTicketController::class);
+Route::apiResource('stock_coupon_tickets', StockTicketController::class);
 Route::apiResource('compagnie_petrolier', CompagniePetrolierController::class);
+Route::get('compagnie_petrolier-imprimer', [CompagniePetrolierController::class, 'imprimer']);
 Route::apiResource('magazins', MagazinController::class);
 Route::apiResource('modeles', ModeleController::class);
 Route::apiResource('type-interventions', TypeInterventionController::class);
 Route::apiResource('categorie-articles', CategorieArticleController::class);
 Route::apiResource('fournisseurs', FournisseurController::class);
+Route::get('fournisseurs-imprimer', [FournisseurController::class, 'imprimer']);
 Route::apiResource('employes', EmployeController::class);
+Route::get('employes-imprimer', [EmployeController::class, 'imprimer']);
 Route::apiResource('type_affectations', TypeAffectationController::class);
 Route::apiResource('type_mouvements', TypeMouvementController::class);
 Route::apiResource('bureaux', BureauController::class);
@@ -64,6 +70,7 @@ Route::apiResource('roles', RoleController::class);
 Route::apiResource('fonctionnalites', FonctionnaliteController::class);
 Route::apiResource('permissions', PermissionController::class);
 Route::apiResource('articles', ArticleController::class);
+Route::get('etat_stock-imprimer', [ArticleController::class, 'imprimer']);
 Route::apiResource('immobilisations', ImmobilisationController::class);
 Route::apiResource('interventions', InterventionController::class);
 Route::apiResource('transferts', TransfertController::class);
@@ -94,6 +101,7 @@ Route::post('mouvement-stock/sortie', [MouvementStockController::class, 'storeSo
 Route::delete('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'deleteSortieStock']);
 Route::get('quantite-disponible/{id}', [MouvementStockController::class, 'getQuantiteDisponible']);
 Route::put('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'updateSortieStock']);
+Route::patch('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'updateDemandeStock']);
 
 Route::get('mouvement-ticket/entree', [MouvementTicketController::class, 'indexEntreeTicket']);
 Route::post('mouvement-ticket/entree', [MouvementTicketController::class, 'storeEntreeTicket']);
@@ -115,3 +123,11 @@ Route::post('login', [AuthentificationController::class, 'login'])->name("login"
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendOTP']);
 Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOTP']);
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
+
+
+Route::apiResource('intervention-vehicules', InterventionVehiculeController::class);
+// Route::get('/intervention-vehicules', [InterventionVehiculeController::class, 'index']);
+// Route::post('/intervention-vehicules', [InterventionVehiculeController::class, 'store']);
+// // Route::get('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'show']);
+// Route::put('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'update']);
+// Route::delete('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'destroy']);
