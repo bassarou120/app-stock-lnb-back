@@ -22,8 +22,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('coupon_tickets', function (Blueprint $table) {
-            $table->dropForeign(['id_mouvement']);
-            $table->dropColumn('id_mouvement');
+            $table->dropForeign(['compagnie_petrolier_id']);
+            $table->dropColumn('compagnie_petrolier_id');
         });
     }
 };

@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('mouvement_stocks', function (Blueprint $table) {
-                // Modifier la colonne description pour qu'elle accepte les valeurs nulles
-                $table->string('description')->nullable()->change();
+            $table->foreignId('id_employe')->nullable()->constrained('employes')->onDelete('cascade');
+            $table->foreignId('bureau_id')->nullable()->constrained('bureaus')->onDelete('cascade');
         });
     }
 
@@ -23,8 +23,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('mouvement_stocks', function (Blueprint $table) {
-            // Revert la colonne description à son état non nullable
-            $table->string('description')->nullable(false)->change();
+            $table->dropForeign(['id_employe']);
+            $table->dropColumn('id_employe');
+
+            $table->dropForeign(['bureau_id']);
+            $table->dropColumn('bureau_id');
         });
     }
 };

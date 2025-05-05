@@ -6,12 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Parametrage\Fournisseur;
+use App\Models\Parametrage\Employe;
+use App\Models\Parametrage\Bureau;
 
 
 class MouvementStock extends Model
 {
     use HasFactory;
-    protected $guarded=[];
+    protected $guarded = [];
 
 
     public function article(): BelongsTo
@@ -25,7 +27,15 @@ class MouvementStock extends Model
     }
 
     public function affectation()
-{
-    return $this->hasOne(AffectationArticle::class, 'id_mouvement');
-}
+    {
+        return $this->hasOne(AffectationArticle::class, 'id_mouvement');
+    }
+    public function employe()
+    {
+        return $this->belongsTo(Employe::class, 'id_employe');
+    }
+    public function bureau()
+    {
+        return $this->belongsTo(Bureau::class, 'bureau_id');
+    }
 }
