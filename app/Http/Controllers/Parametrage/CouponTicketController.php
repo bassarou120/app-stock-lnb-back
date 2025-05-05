@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Parametrage;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Parametrage\CouponTicket;
+use App\Models\Parametrage\StockTicket;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 
@@ -14,11 +15,21 @@ class CouponTicketController extends Controller
     public function index()
     {
         // Récupérer tous les coupon_tickets triés par ordre décroissant
-        $couponTickets = CouponTicket::with(['stock'])->latest()->paginate(1000);
+        $couponTickets = CouponTicket::latest()->paginate(1000);
 
         // Retourner la réponse formatée avec PostResource
         return new PostResource(true, 'Liste des coupon tickets', $couponTickets);
     }
+
+    public function getCouponTicketsWithCompagnies()
+    {
+        $stocks = StockTicket::with(['couponTicket', 'compagnie'])
+            ->orderByDesc('created_at')
+            ->get(); // pas besoin de pagination si tu veux tout
+
+        return new PostResource(true, 'Liste des coupons avec compagnies', $stocks);
+    }
+
 
     // Créer un nouveau coupon_ticket
     public function store(Request $request)

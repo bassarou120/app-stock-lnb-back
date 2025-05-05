@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('coupon_tickets', function (Blueprint $table) {
-            $table->foreignId('compagnie_petrolier_id')->nullable()->constrained('compagnie_petroliers')->onDelete('cascade');
+        Schema::table('trajets', function (Blueprint $table) {
+            $table->integer('valeur')->nullable();
         });
     }
 
@@ -22,8 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('coupon_tickets', function (Blueprint $table) {
-            $table->dropForeign(['id_mouvement']);
-            $table->dropColumn('id_mouvement');
+            $table->dropColumn('valeur');
         });
     }
 };
