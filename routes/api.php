@@ -32,6 +32,7 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\VehiculeController;
 use App\Http\Controllers\ImmobilisationController;
 use App\Http\Controllers\InterventionController;
+use App\Http\Controllers\InterventionVehiculeController;
 use App\Http\Controllers\TransfertController;
 use App\Http\Controllers\MouvementTicketController;
 use App\Http\Controllers\RetourTicketController;
@@ -122,3 +123,11 @@ Route::post('login', [AuthentificationController::class, 'login'])->name("login"
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendOTP']);
 Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOTP']);
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
+
+
+Route::apiResource('intervention-vehicules', InterventionVehiculeController::class);
+// Route::get('/intervention-vehicules', [InterventionVehiculeController::class, 'index']);
+// Route::post('/intervention-vehicules', [InterventionVehiculeController::class, 'store']);
+// // Route::get('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'show']);
+// Route::put('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'update']);
+// Route::delete('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'destroy']);
