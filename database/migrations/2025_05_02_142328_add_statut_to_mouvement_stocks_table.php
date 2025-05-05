@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('trajets', function (Blueprint $table) {
-            $table->integer('valeur')->nullable();
+        Schema::table('mouvement_stocks', function (Blueprint $table) {
+            $table->string('statut')->nullable()->default('En attente');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('coupon_tickets', function (Blueprint $table) {
-            $table->dropColumn('valeur');
+        Schema::table('mouvement_stocks', function (Blueprint $table) {
+            $table->dropColumn('statut');
         });
     }
 };
