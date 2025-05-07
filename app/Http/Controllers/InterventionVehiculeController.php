@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\InterventionVehicule;
+use App\Models\Parametrage\TypeIntervention;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\PostResource;
@@ -13,7 +14,8 @@ class InterventionVehiculeController extends Controller
     public function index()
     {
         $interventions = InterventionVehicule::with([
-            'vehicules',
+            'vehicule',
+            'typeIntervention'
         ])->latest()->paginate(100);
  
         return new PostResource(true, 'Liste des interventions de véhicules', $interventions);
@@ -29,6 +31,7 @@ class InterventionVehiculeController extends Controller
            'montant' => 'required|integer|min:0',
            'observation' => 'nullable|string',
            'date_intervention' => 'required|date',
+           'type_intervention_id' => 'required|exists:type_interventions,id',
        ]);
 
        if ($validator->fails()) {
@@ -51,6 +54,7 @@ class InterventionVehiculeController extends Controller
             'montant' => 'required|integer|min:0',
             'observation' => 'nullable|string',
             'date_intervention' => 'required|date',
+            'type_intervention_id' => 'required|exists:type_interventions,id',
         ]);
 
         if ($validator->fails()) {
@@ -63,10 +67,10 @@ class InterventionVehiculeController extends Controller
     }
 
     
-    public function destroy(InterventionVehicule $interventionVehicule): JsonResponse
+    public function destroy($id)
     {
-        $interventionVehicule->delete();
-
-        return new PostResource(true, 'intervention supprimée avec succès', null);
+        $intervention = InterventionVehicule::findOrFail($id);
+        $intervention->delete();
+        return response()->json(['message' => 'intervention supprimé avec succès']);
     }
 }
