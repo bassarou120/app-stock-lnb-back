@@ -55,11 +55,12 @@ class RetourTicketController extends Controller
         ]);
 
 
-        $stockTicket = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->latest()->first();
+        $stockTicket = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->where('compagnie_petrolier_id', $request->compagnie_petrolier_id)->latest()->first();
 
         if ($stockTicket == null) {
             $stockTicket = StockTicket::create([
                 'coupon_ticket_id' => $request->coupon_ticket_id,
+                'compagnie_petrolier_id' => $request->compagnie_petrolier_id,
                 'qte_actuel' => 0
             ]);
         }
@@ -84,7 +85,7 @@ class RetourTicketController extends Controller
         }
 
         // Vérifier si un stock existe pour ce ticket
-        $stock = StockTicket::where('coupon_ticket_id', $retourTicket->coupon_ticket_id)->latest()->first();
+        $stock = StockTicket::where('coupon_ticket_id', $retourTicket->coupon_ticket_id)->where('compagnie_petrolier_id', $retourTicket->compagnie_petrolier_id)->latest()->first();
 
         if ($stock) {
             // Réduire la quantité du stock

@@ -6,6 +6,7 @@ use App\Models\Parametrage\Employe;
 use App\Models\Parametrage\TypeMouvement;
 use App\Models\Parametrage\CompagniePetrolier;
 use App\Models\Parametrage\CouponTicket;
+use App\Models\Parametrage\Commune;
 use App\Models\Vehicule;
 
 
@@ -32,5 +33,14 @@ class MouvementTicket extends Model
     public function coupon_ticket()
     {
         return $this->belongsTo(CouponTicket::class, 'coupon_ticket_id');
+    }
+    public function depart()
+    {
+        return $this->belongsTo(Commune::class, 'commune_depart');
+    }
+
+    public function arriver()
+    {
+        return $this->belongsTo(Commune::class, 'commune_arriver');
     }
 }
