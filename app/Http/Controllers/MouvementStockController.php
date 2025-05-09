@@ -25,7 +25,7 @@ class MouvementStockController extends Controller
 
         // Si le type de mouvement existe, récupérer les mouvements correspondants
         if ($type_mouvement) {
-            $mouvements = MouvementStock::with(['article', 'fournisseur'])->where('id_type_mouvement', $type_mouvement->id)->latest()->paginate(1000);
+            $mouvements = MouvementStock::with(['article', 'fournisseur','piecesJointes'])->where('id_type_mouvement', $type_mouvement->id)->latest()->paginate(1000);
 
             return new PostResource(true, 'Liste des mouvements', $mouvements);
         }
@@ -38,50 +38,61 @@ class MouvementStockController extends Controller
 
     // store entrée simple
     public function storeEntreeStock(Request $request)
-    {
+{
+    // Validation
+    $validator = Validator::make($request->all(), [
+        "id_Article" => 'required|exists:articles,id',
+        "id_fournisseur" => 'required|exists:fournisseurs,id',
+        "description" => 'nullable|string|max:255',
+        "qte" => 'required|integer',
+        "date_mouvement" => 'required',
+        "piece_jointe_mouvement" => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048', // <= ici
+    ]);
 
-        //define validation rules
-        $validator = Validator::make($request->all(), [
-            "id_Article" => 'required|exists:articles,id',
-            "id_fournisseur" => 'required|exists:fournisseurs,id',
-            "description" => 'nullable|string|max:255',
-            "qte" => 'required|integer',
-            "date_mouvement" => 'required',
-            // "id_type_mouvement" => 'required|exists:type_mouvements,id',
-        ]);
-
-        //check if validation fails
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Entrée de Stock")->latest()->first();
-
-        $b = MouvementStock::create([
-            "id_Article" => $request->id_Article,
-            "id_fournisseur" => $request->id_fournisseur,
-            "description" => $request->description,
-            "id_type_mouvement" => $type_mouvement->id,
-            "qte" => $request->qte,
-            "date_mouvement" => $request->date_mouvement,
-        ]);
-
-
-        $stock = Stock::where('id_Article', $request->id_Article)->latest()->first();
-
-        if ($stock == null) {
-            $stock = Stock::create([
-                'id_Article' => $request->id_Article,
-                'Qte_actuel' => 0
-            ]);
-        }
-
-        $stock->Qte_actuel = $stock->Qte_actuel + $request->qte;
-        $stock->save();
-
-        //return response
-        return new PostResource(true, 'le mouvement d\'entrer de stock a été bien enrégistré !', $b);
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
     }
+
+    $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Entrée de Stock")->latest()->first();
+
+    $mouvement = MouvementStock::create([
+        "id_Article" => $request->id_Article,
+        "id_fournisseur" => $request->id_fournisseur,
+        "description" => $request->description,
+        "id_type_mouvement" => $type_mouvement->id,
+        "qte" => $request->qte,
+        "date_mouvement" => $request->date_mouvement,
+    ]);
+
+    // Si une pièce jointe est envoyée
+    if ($request->hasFile('piece_jointe_mouvement')) {
+        $file = $request->file('piece_jointe_mouvement');
+        $fileName = time() . '_' . $file->getClientOriginalName();
+
+        $file->storeAs('piece_jointe_mouvement', $fileName, 'public');
+
+        PieceJointeMouvement::create([
+            'url' => 'storage/piece_jointe_mouvement/' . $fileName,
+            'id_mouvement_stock' => $mouvement->id
+        ]);
+    }
+
+    // Gestion du stock
+    $stock = Stock::where('id_Article', $request->id_Article)->latest()->first();
+
+    if ($stock == null) {
+        $stock = Stock::create([
+            'id_Article' => $request->id_Article,
+            'Qte_actuel' => 0
+        ]);
+    }
+
+    $stock->Qte_actuel += $request->qte;
+    $stock->save();
+
+    return new PostResource(true, 'Le mouvement d\'entrée de stock a été bien enregistré !', $mouvement);
+}
+
 
 
     // update entrée
