@@ -36,6 +36,7 @@ use App\Http\Controllers\InterventionVehiculeController;
 use App\Http\Controllers\TransfertController;
 use App\Http\Controllers\MouvementTicketController;
 use App\Http\Controllers\RetourTicketController;
+use App\Http\Controllers\AnnulationTicketController;
 use App\Http\Controllers\TrajetController;
 
 Route::get('/user', function (Request $request) {
@@ -75,6 +76,7 @@ Route::apiResource('immobilisations', ImmobilisationController::class);
 Route::apiResource('interventions', InterventionController::class);
 Route::apiResource('transferts', TransfertController::class);
 Route::apiResource('retour-ticket', RetourTicketController::class);
+Route::apiResource('annulation-ticket', AnnulationTicketController::class);
 Route::apiResource('trajets', TrajetController::class);
 Route::get('ancien-info/{id}', [TransfertController::class, 'getOldInfo']);
 
@@ -130,6 +132,6 @@ Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword'
 Route::apiResource('intervention-vehicules', InterventionVehiculeController::class);
 // Route::get('/intervention-vehicules', [InterventionVehiculeController::class, 'index']);
 // Route::post('/intervention-vehicules', [InterventionVehiculeController::class, 'store']);
-// // Route::get('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'show']);
+// Route::get('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'show']);
 // Route::put('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'update']);
 // Route::delete('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'destroy']);
