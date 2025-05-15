@@ -19,9 +19,9 @@ class AuthService extends Controller
 {
     protected GeneralService $generalService;
 
-    public function __construct()
+    public function __construct(GeneralService $generalService)
     {
-        $this->generalService = new GeneralService();
+        $this->generalService = $generalService;
     }
 
     public function login(array $data)
@@ -58,27 +58,43 @@ class AuthService extends Controller
         }
     }
 
-    public function logout()
+    public function logout($token)
     {
-        $user = Auth::user();
-        $user->tokens->each(function ($token) {
-            $token->delete();
-        });
-        // Loginfo::create(
-        //     [
-        //         'action' => 'Déconnexion de l\'utilisateur ' . Auth::user()->name . ' ' . Auth::user()->surname,
-        //         'user' => Auth::user()->id
-        //     ]
-        // );
+        try {
+            // Récupérer l'utilisateur du token
+            $user = Auth::guard('api')->user(); // Cela suppose que l'utilisateur est authentifié via ce token
 
-        return [true, 'Déconnecté avec succès!'];
+                 // Vérifie si l'utilisateur est trouvé
+                 if (!$user) {
+                    return [false, 'Utilisateur non trouvé pour ce token.'];
+                }
+
+                // Supprimer tous les tokens de l'utilisateur
+                $user->tokens->each(function ($token) {
+                    $token->delete();
+                });
+
+                // Enregistrer l'action de déconnexion dans les logs
+                // $this->logService->logAction(
+                //     'Déconnexion de l\'utilisateur ' . $user->name . ' ' . $user->surname,
+                //     $user->id
+                // );
+
+                return [true, 'Déconnecté avec succès!'];
+
+
+        } catch (\Exception $e) {
+            // En cas d'erreur, log l'exception
+            Log::error('Erreur lors de la déconnexion: ' . $e->getMessage());
+            return [false, 'Erreur lors de la déconnexion.'];
+        }
     }
 
 
-    public function register(array $data)
+    public function register(array $data):User
     {
         $password = $this->generalService->generateStrongPassword(8);
-        $pass = Hash::make($password);
+        $hashedPassword = Hash::make($password);
 
         // Récupérer l'ID du rôle 'Collaborateur RH'
         $role = Role::where('libelle_role', 'Manager')->first();
@@ -95,11 +111,13 @@ class AuthService extends Controller
             'active' => $data['active'],
             'sexe' => $data['sexe'],
             'role_id' => $role->id,
-            'password' => $pass,
+            'password' => $hashedPassword,
         ];
         $user = User::create($arr);
         // Envoi de l'e-mail avec le mot de passe en clair
         Mail::to($user->email)->send(new UserRegisteredMail($user, $password));
+
+        return $user;
     }
 
     // public function resetPassword(User $user)

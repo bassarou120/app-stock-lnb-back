@@ -119,7 +119,7 @@ Route::post('get-quantite-ticket-attribution', [MouvementTicketController::class
 
 
 
-Route::post('reset-password/{user}', [AuthentificationController::class, 'resetPassword']);
+// Route::post('reset-password/{user}', [AuthentificationController::class, 'resetPassword']);
 Route::post('register', [AuthentificationController::class, 'register']);
 Route::post('login', [AuthentificationController::class, 'login'])->name("login");
 
