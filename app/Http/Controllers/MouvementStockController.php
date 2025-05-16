@@ -324,7 +324,7 @@ class MouvementStockController extends Controller
             // "date_mouvement" => 'required|date',
             "dateDemande" => 'required|date',
             "id_bureau" => 'nullable|exists:bureaus,id',
-            "id_employe" => 'nullable|exists:employes,id',
+            "id_personnel" => 'nullable|exists:employes,id',
         ]);
 
         // Vérifier si la validation échoue
@@ -356,7 +356,7 @@ class MouvementStockController extends Controller
             // "date_mouvement" => $request->date_mouvement,
             "dateDemande" => $request->dateDemande,
             "bureau_id" => $request->id_bureau,
-            "id_employe" => $request->id_employe,
+            "id_employe" => $request->id_personnel,
             "statut" => 'En attente',
         ]);
         return new PostResource(true, 'La sortie de stock a été enregistrée avec succès !', $mouvement);

@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ResetPasswordOTP;
 use App\Models\User;
+use Illuminate\Support\Facades\Validator;
+
 
 class ForgotPasswordController extends Controller
 {
@@ -53,11 +55,16 @@ class ForgotPasswordController extends Controller
     //  3. Réinitialiser le mot de passe
     public function resetPassword(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'email' => 'required|email|exists:users,email',
             'otp_code' => 'required|numeric',
             'password' => 'required|string|min:8|confirmed'
         ]);
+
+        // Vérifier si la validation échoue
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
 
         $user = User::where('email', $request->email)
                     ->where('otp_code', $request->otp_code)
@@ -79,4 +86,5 @@ class ForgotPasswordController extends Controller
 
         return response()->json(['message' => 'Votre mot de passe a été mis à jour avec succès. Vous devez vous reconnecter.']);
     }
+
 }
