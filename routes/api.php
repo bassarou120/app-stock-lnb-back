@@ -127,9 +127,10 @@ Route::post('login', [AuthentificationController::class, 'login'])->name("login"
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendOTP']);
 Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOTP']);
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
-
+Route::post('/bonjour', [ForgotPasswordController::class, 'direBonjour']);
 
 Route::apiResource('intervention-vehicules', InterventionVehiculeController::class);
+
 // Route::get('/intervention-vehicules', [InterventionVehiculeController::class, 'index']);
 // Route::post('/intervention-vehicules', [InterventionVehiculeController::class, 'store']);
 // Route::get('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'show']);
