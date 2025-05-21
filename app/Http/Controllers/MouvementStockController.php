@@ -310,6 +310,59 @@ class MouvementStockController extends Controller
     }
 
 
+    public function storeSortieStockMultiple(Request $request)
+{
+    // Validation
+    $validator = Validator::make($request->all(), [
+        "articles" => "required|array|min:1",
+        "articles.*.id_Article" => "required|exists:articles,id",
+        "articles.*.description" => "required|string|max:255",
+        "articles.*.qteDemande" => "required|integer|min:1",
+        "dateDemande" => "required|date",
+        "id_bureau" => "nullable|exists:bureaus,id",
+        "id_personnel" => "nullable|exists:employes,id",
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
+    }
+
+    $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Sortie de Stock")->latest()->first();
+    if (!$type_mouvement) {
+        return response()->json(['error' => "Le type de mouvement 'Sortie de Stock' n'existe pas."], 404);
+    }
+
+    $mouvements = [];
+
+    foreach ($request->articles as $article) {
+        $stock = Stock::where('id_Article', $article['id_Article'])->latest()->first();
+
+        if (!$stock || $stock->Qte_actuel < $article['qteDemande']) {
+            return response()->json([
+                'error' => "Quantité insuffisante pour l'article ID " . $article['id_Article']
+            ], 400);
+        }
+
+        $mouvement = MouvementStock::create([
+            "id_Article" => $article['id_Article'],
+            "description" => $article['description'],
+            "id_type_mouvement" => $type_mouvement->id,
+            "qte" => 0,
+            "qteDemande" => $article['qteDemande'],
+            "dateDemande" => $request->dateDemande,
+            "bureau_id" => $request->id_bureau,
+            "id_employe" => $request->id_personnel,
+            "statut" => 'En attente',
+        ]);
+
+        $mouvements[] = $mouvement;
+    }
+
+    return new PostResource(true, 'Les sorties de stock ont été enregistrées avec succès !', $mouvements);
+}
+
+
+
 
 
 
