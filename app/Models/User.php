@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Parametrage\Role;
+use App\Models\Parametrage\Employe;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -31,6 +32,7 @@ class User extends Authenticatable
     public const ACTIF = 'active';
     public const ROLE = 'role_id';
     public const LAST_ACTIVITY = 'last_activity';
+    public const EMPLOYE = 'employe_id';
 
     /**
      * The attributes that are mass assignable.
@@ -47,7 +49,8 @@ class User extends Authenticatable
         self::PHOTO,
         self::SURNAME,
         self::ROLE,
-        self::LAST_ACTIVITY
+        self::LAST_ACTIVITY,
+        self::EMPLOYE,
     ];
 
     /**
@@ -70,11 +73,20 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'active' => 'boolean', // <-- Assurez-vous que c'est là
         ];
     }
 
     public function role()
     {
         return $this->belongsTo(Role::class, self::ROLE);
+    }
+
+    // Relation avec l'employé
+    public function employe()
+    {
+        // Assurez-vous que self::EMPLOYE (qui est 'employe_id') est bien la clé étrangère
+        // dans la table 'users' qui pointe vers la clé primaire 'id' de la table 'employes'.
+        return $this->belongsTo(Employe::class, self::EMPLOYE);
     }
 }

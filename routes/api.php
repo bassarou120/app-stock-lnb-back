@@ -38,6 +38,7 @@ use App\Http\Controllers\MouvementTicketController;
 use App\Http\Controllers\RetourTicketController;
 use App\Http\Controllers\AnnulationTicketController;
 use App\Http\Controllers\TrajetController;
+use App\Http\Controllers\UserController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -121,6 +122,8 @@ Route::post('get-quantite-ticket-attribution', [MouvementTicketController::class
 
 
 // Route::post('reset-password/{user}', [AuthentificationController::class, 'resetPassword']);
+// Routes pour les utilisateurs
+Route::apiResource('users', UserController::class); // Ceci crée les routes CRUD complètes pour /api/users
 Route::post('register', [AuthentificationController::class, 'register']);
 Route::post('login', [AuthentificationController::class, 'login'])->name("login");
 

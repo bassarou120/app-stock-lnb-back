@@ -24,25 +24,34 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required',
-            'email' => 'required|email|unique:users,email',
-            'phone' => 'required|unique:users,phone',
+            'employe_id' => 'required|exists:employes,id|unique:users,employe_id',
+            // 'name' => 'required',
+            // 'email' => 'required|email|unique:users,email',
+            // 'phone' => 'required|unique:users,phone',
             'sexe' => ['required', Rule::in(['Masculin', 'Féminin'])],
-            'active' => 'required|boolean'
+            'active' => 'required|boolean',
+            'role_id' => 'required|exists:roles,id'
         ];
     }
 
     public function messages()
     {
         return [
-            'name.required' => 'Le nom est obligatoire',
-            'email.required' => 'Email obligatoire',
-            'email.email' => 'Format email invalide',
-            'email.unique' => 'Email déjà utilisé',
+            'employe_id.required' => 'L\'employé est obligatoire.',
+            'employe_id.exists' => 'L\'employé sélectionné n\'existe pas.',
+            'employe_id.unique' => 'Un utilisateur existe déjà pour cet employé.',
+            // 'name.required' => 'Le nom est obligatoire',
+            // 'email.required' => 'Email obligatoire',
+            // 'email.email' => 'Format email invalide',
+            // 'email.unique' => 'Email déjà utilisé',
             'sexe.required' => 'Le sexe est obligatoire',
             'sexe.in' => 'Le sexe est entre Féminin ou Masculin',
-            'phone.unique' => 'Le téléphone est déjà utilisé',
-            'phone.required' => 'Le téléphone est obligatoire',
+            // 'phone.unique' => 'Le téléphone est déjà utilisé',
+            // 'phone.required' => 'Le téléphone est obligatoire',
+            'active.required' => 'Le statut actif est obligatoire.',
+            'active.boolean' => 'Le statut actif doit être un booléen.',
+            'role_id.required' => 'Le rôle est obligatoire.',
+            'role_id.exists' => 'Le rôle sélectionné n\'existe pas.',
         ];
     }
 
