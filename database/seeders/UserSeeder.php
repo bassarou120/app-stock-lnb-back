@@ -34,7 +34,7 @@ class UserSeeder extends Seeder
                 'name' => 'Admin',
                 'phone' => '0123456789',
                 'active' => true,
-                'sexe' => 'Masculin',
+                'sexe' => 'Masculin', 
                 'role_id' => $role->id,
                 'password' => $hashedPassword,
             ]
