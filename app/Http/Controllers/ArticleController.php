@@ -55,6 +55,7 @@ class ArticleController extends Controller
             'articles' => 'required|array',
             'articles.*.id_cat' => 'required|exists:categorie_articles,id',
             'articles.*.libelle' => 'required|string|max:255',
+            'articles.*.code_article' => 'required|string|max:255|unique:articles,code_article',
             'articles.*.description' => 'string|max:255',
             'articles.*.stock_alerte' => 'required|integer|min:0',
         ]);
@@ -72,6 +73,7 @@ class ArticleController extends Controller
                 $article = Article::create([
                     'id_cat' => $articleData['id_cat'],
                     'libelle' => $articleData['libelle'],
+                    'code_article' => $articleData['code_article'],
                     'description' => $articleData['description'],
                     'stock_alerte' => $articleData['stock_alerte'],
                 ]);
@@ -99,6 +101,7 @@ class ArticleController extends Controller
         $validator = Validator::make($request->all(), [
             'id_cat' => 'required|exists:categorie_articles,id',
             'libelle' => 'required|string|max:255',
+            'code_article' => 'required|string|max:255|unique:articles,code_article',
             'description' => 'string|max:255',
             'stock_alerte' => 'required|integer|min:0',
         ]);

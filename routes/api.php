@@ -98,6 +98,7 @@ Route::post('/mouvement-stock/entree-multiple', [MouvementStockController::class
 Route::put('/mouvement-stock/entree/{id}', [MouvementStockController::class, 'updateEntreeStock']);
 Route::delete('mouvement-stock/entree/{id}', [MouvementStockController::class, 'deleteEntreeStock']);
 
+Route::get('mouvement-stock/sortie/indexSortieStockGrouped', [MouvementStockController::class, 'indexSortieStockGrouped']);
 Route::get('mouvement-stock/sortie', [MouvementStockController::class, 'indexSortieStock']);
 Route::post('mouvement-stock/sortie', [MouvementStockController::class, 'storeSortieStock']);
 Route::post('demande-de-sortie', [MouvementStockController::class, 'storeSortieStockMultiple']);

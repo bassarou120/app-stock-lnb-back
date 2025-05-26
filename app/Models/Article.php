@@ -14,6 +14,7 @@ class Article extends Model
         'description',
         'id_cat',
         'stock_alerte',
+        'code_article'
     ];
 
     public function categorie()
