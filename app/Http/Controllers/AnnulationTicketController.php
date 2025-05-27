@@ -2,38 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\RetourTicket;
 use App\Http\Resources\PostResource;
-use Illuminate\Support\Facades\Validator;
-use App\Models\Parametrage\StockTicket;
+use App\Models\AnnulationTicket;
 use App\Models\MouvementTicket;
+use App\Models\Parametrage\StockTicket;
 use App\Models\Parametrage\TypeMouvement;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
-
-
-
-
-class RetourTicketController extends Controller
+class AnnulationTicketController extends Controller
 {
     public function index()
     {
-        $retours = RetourTicket::with([
+        $annulations = AnnulationTicket::with([
             'mouvement.employe',
             'mouvement.vehicule',
             'coupon',
-            'compagnie'
+            'compagnie',
         ])->latest()->paginate(1000);
 
-        return new PostResource(true, 'Liste des retours', $retours);
+        return new PostResource(true, 'Liste des annulations', $annulations);
     }
 
-
-    // store
     public function store(Request $request)
     {
-
-        //define validation rules
+        // Validation
         $validator = Validator::make($request->all(), [
             "mouvementTicket_id" => 'required|exists:mouvement_tickets,id',
             "compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
@@ -41,19 +34,16 @@ class RetourTicketController extends Controller
             "qte" => 'required|integer',
         ]);
 
-        //check if validation fails
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-
-        $b = RetourTicket::create([
+        $annulation = AnnulationTicket::create([
             "mouvementTicket_id" => $request->mouvementTicket_id,
             "compagnie_petrolier_id" => $request->compagnie_petrolier_id,
             "coupon_ticket_id" => $request->coupon_ticket_id,
             "qte" => $request->qte,
         ]);
-
 
         $stockTicket = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->where('compagnie_petrolier_id', $request->compagnie_petrolier_id)->latest()->first();
 
@@ -67,74 +57,61 @@ class RetourTicketController extends Controller
 
         $stockTicket->qte_actuel = $stockTicket->qte_actuel + $request->qte;
         $stockTicket->save();
-
-        //return response
-        return new PostResource(true, 'le mouvement d\'entrer de ticket a été bien enrégistré !', $b);
+        
+        return new PostResource(true, 'L\'annulation de ticket a été enregistrée avec succès !', $annulation);
     }
 
-    //delete entrée
     public function destroy($id)
     {
-        $retourTicket = RetourTicket::find($id);
+        $annulationTicket = AnnulationTicket::find($id);
 
-        if (!$retourTicket) {
+        if (!$annulationTicket) {
             return response()->json([
                 'success' => false,
-                'message' => 'Mouvement introuvable.'
+                'message' => 'Annulation introuvable.',
             ], 404);
         }
 
-        // Vérifier si un stock existe pour ce ticket
-        $stock = StockTicket::where('coupon_ticket_id', $retourTicket->coupon_ticket_id)->where('compagnie_petrolier_id', $retourTicket->compagnie_petrolier_id)->latest()->first();
+        $quantite = $annulationTicket->qte;
+        $couponTicketId = $annulationTicket->coupon_ticket_id;
+
+        $annulationTicket->delete();
+
+        $stock = StockTicket::where('coupon_ticket_id', $couponTicketId)->latest()->first();
 
         if ($stock) {
-            // Réduire la quantité du stock
-            $stock->qte_actuel -= $retourTicket->qte;
-
-            // Empêcher que la quantité devienne négative
-            if ($stock->qte_actuel < 0) {
-                $stock->qte_actuel = 0;
-            }
-
+            $stock->qte_actuel += $quantite;
             $stock->save();
         }
 
-        // Supprimer le retourTicket
-
-        $retourTicket->delete();
-
-        return new PostResource(true, 'Retour Ticket supprimé avec succès !', null);
+        return new PostResource(true, 'Annulation de Ticket supprimée avec succès !', null);
     }
 
-
-    public function getAllSortieTicketWhereNotInRetour()
+    public function getAllSortieTicketWhereNotInAnnulation()
     {
-        // Récupérer l'ID du type de mouvement "Sortie de Ticket"
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Ticket')->first();
 
         if ($type_mouvement) {
-            // Récupérer les IDs des mouvements qui ont un retour
-            $mouvementsAvecRetour = RetourTicket::pluck('mouvementTicket_id')->toArray();
+            $mouvementsAvecAnnulation = AnnulationTicket::pluck('mouvementTicket_id')->toArray();
 
-            // Récupérer les mouvements "Sortie de Ticket" qui ne sont pas dans la liste des mouvements avec retour
             $mouvements = MouvementTicket::with(['employe', 'compagniePetrolier', 'vehicule', 'coupon_ticket'])
                 ->where('id_type_mouvement', $type_mouvement->id)
-                ->whereNotIn('id', $mouvementsAvecRetour)
+                ->whereNotIn('id', $mouvementsAvecAnnulation)
                 ->latest()
                 ->paginate(1000);
 
-            return new PostResource(true, 'Liste des mouvements de sortie de Ticket sans retour', $mouvements);
+            return new PostResource(true, 'Liste des mouvements de sortie de Ticket non annulés', $mouvements);
         }
 
         return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Ticket".', []);
     }
 
-
     public function getMouvementInfo($idMouvement)
     {
         $mouvement = MouvementTicket::with(['compagniePetrolier', 'coupon_ticket'])->find($idMouvement);
+
         if (!$mouvement) {
-            return response()->json(['message' => 'Immobilisation non trouvée'], 404);
+            return response()->json(['message' => 'Mouvement non trouvé'], 404);
         }
 
         return response()->json([

@@ -38,4 +38,8 @@ class MouvementStock extends Model
     {
         return $this->belongsTo(Bureau::class, 'bureau_id');
     }
+    public function piecesJointes()
+    {
+        return $this->hasMany(PieceJointeMouvement::class, 'id_mouvement_stock');
+    }
 }

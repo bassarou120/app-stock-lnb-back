@@ -36,7 +36,9 @@ use App\Http\Controllers\InterventionVehiculeController;
 use App\Http\Controllers\TransfertController;
 use App\Http\Controllers\MouvementTicketController;
 use App\Http\Controllers\RetourTicketController;
+use App\Http\Controllers\AnnulationTicketController;
 use App\Http\Controllers\TrajetController;
+use App\Http\Controllers\UserController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -75,6 +77,7 @@ Route::apiResource('immobilisations', ImmobilisationController::class);
 Route::apiResource('interventions', InterventionController::class);
 Route::apiResource('transferts', TransfertController::class);
 Route::apiResource('retour-ticket', RetourTicketController::class);
+Route::apiResource('annulation-ticket', AnnulationTicketController::class);
 Route::apiResource('trajets', TrajetController::class);
 Route::get('ancien-info/{id}', [TransfertController::class, 'getOldInfo']);
 
@@ -96,10 +99,13 @@ Route::post('/mouvement-stock/entree-multiple', [MouvementStockController::class
 Route::put('/mouvement-stock/entree/{id}', [MouvementStockController::class, 'updateEntreeStock']);
 Route::delete('mouvement-stock/entree/{id}', [MouvementStockController::class, 'deleteEntreeStock']);
 
+Route::get('mouvement-stock/sortie/indexSortieStockGrouped', [MouvementStockController::class, 'indexSortieStockGrouped']);
 Route::get('mouvement-stock/sortie', [MouvementStockController::class, 'indexSortieStock']);
 Route::post('mouvement-stock/sortie', [MouvementStockController::class, 'storeSortieStock']);
+Route::post('demande-de-sortie', [MouvementStockController::class, 'storeSortieStockMultiple']);
 Route::delete('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'deleteSortieStock']);
 Route::get('quantite-disponible/{id}', [MouvementStockController::class, 'getQuantiteDisponible']);
+Route::post('mouvement-stock/demande-sortie/tout-valider', [MouvementStockController::class, 'validerDemandeGroupee']);
 Route::put('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'updateSortieStock']);
 Route::patch('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'updateDemandeStock']);
 
@@ -110,12 +116,16 @@ Route::delete('mouvement-ticket/entree/{id}', [MouvementTicketController::class,
 
 Route::get('mouvement-ticket/sortie', [MouvementTicketController::class, 'indexSortieTicket']);
 Route::post('mouvement-ticket/sortie', [MouvementTicketController::class, 'storeSortieTicket']);
-Route::get('quantite-disponible-ticket/{id}', [MouvementTicketController::class, 'getQuantiteDisponible']);
+Route::get('quantite-disponible-ticket/{idCoupon}/{idCompagnie}', [MouvementTicketController::class, 'getQuantiteDisponible']);
 Route::put('/mouvement-ticket/sortie/{id}', [MouvementTicketController::class, 'updateSortieTicket']);
 Route::delete('mouvement-ticket/sortie/{id}', [MouvementTicketController::class, 'deleteSortieTicket']);
+Route::post('get-quantite-ticket-attribution', [MouvementTicketController::class, 'getQuantiteTicketAttribution']);
 
 
-Route::post('reset-password/{user}', [AuthentificationController::class, 'resetPassword']);
+
+// Route::post('reset-password/{user}', [AuthentificationController::class, 'resetPassword']);
+// Routes pour les utilisateurs
+Route::apiResource('users', UserController::class); // Ceci crée les routes CRUD complètes pour /api/users
 Route::post('register', [AuthentificationController::class, 'register']);
 Route::post('login', [AuthentificationController::class, 'login'])->name("login");
 
@@ -123,11 +133,12 @@ Route::post('login', [AuthentificationController::class, 'login'])->name("login"
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendOTP']);
 Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOTP']);
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
-
+Route::post('/bonjour', [ForgotPasswordController::class, 'direBonjour']);
 
 Route::apiResource('intervention-vehicules', InterventionVehiculeController::class);
+
 // Route::get('/intervention-vehicules', [InterventionVehiculeController::class, 'index']);
 // Route::post('/intervention-vehicules', [InterventionVehiculeController::class, 'store']);
-// // Route::get('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'show']);
+// Route::get('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'show']);
 // Route::put('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'update']);
 // Route::delete('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'destroy']);

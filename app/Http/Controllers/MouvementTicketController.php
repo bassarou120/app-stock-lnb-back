@@ -6,7 +6,9 @@ use Illuminate\Http\Request;
 use App\Models\Parametrage\TypeMouvement;
 use App\Models\Parametrage\StockTicket;
 use App\Models\MouvementTicket;
+use App\Models\Trajet;
 use App\Http\Resources\PostResource;
+use App\Models\Parametrage\CouponTicket;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -188,7 +190,7 @@ class MouvementTicketController extends Controller
 
         // Si le type de mouvement existe, récupérer les mouvements correspondants
         if ($type_mouvement) {
-            $mouvements = MouvementTicket::with(['employe', 'compagniePetrolier', 'vehicule', 'coupon_ticket'])->where('id_type_mouvement', $type_mouvement->id)->latest()->paginate(1000);
+            $mouvements = MouvementTicket::with(['employe', 'compagniePetrolier', 'vehicule', 'coupon_ticket', 'depart', 'arriver'])->where('id_type_mouvement', $type_mouvement->id)->latest()->paginate(1000);
 
             return new PostResource(true, 'Liste des mouvements de sortie de Ticket', $mouvements);
         }
@@ -212,6 +214,9 @@ class MouvementTicketController extends Controller
             "objet" => 'nullable|string|max:255',
             "qte" => 'required|integer',
             "date" => 'required',
+            'commune_depart' => 'required|exists:communes,id',
+            'commune_arriver' => 'required|exists:communes,id',
+            'trajet_aller_retour' => 'required|boolean',
         ]);
 
         //check if validation fails
@@ -226,7 +231,7 @@ class MouvementTicketController extends Controller
         }
 
         // Vérifier la quantité disponible en stock
-        $stock = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->latest()->first();
+        $stock = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->where('compagnie_petrolier_id', $request->compagnie_petrolier_id)->latest()->first();
 
         if (!$stock || $stock->qte_actuel < $request->qte) {
             return response()->json(['error' => "Quantité insuffisante en stock."], 400);
@@ -246,15 +251,19 @@ class MouvementTicketController extends Controller
             "qte" => $request->qte,
             "objet" => $request->objet,
             "date" => $request->date,
+            "commune_depart" => $request->commune_depart,
+            "commune_arriver" => $request->commune_arriver,
+            "trajet_aller_retour" => $request->trajet_aller_retour,
             "reference" => $reference,
         ]);
 
 
-        $stockTicket = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->latest()->first();
+        $stockTicket = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->where('compagnie_petrolier_id', $request->compagnie_petrolier_id)->latest()->first();
 
         if ($stockTicket == null) {
             $stockTicket = StockTicket::create([
                 'coupon_ticket_id' => $request->coupon_ticket_id,
+                'compagnie_petrolier_id' => $request->compagnie_petrolier_id,
                 'qte_actuel' => 0
             ]);
         }
@@ -302,7 +311,7 @@ class MouvementTicketController extends Controller
         }
 
         // Vérifier le stock actuel pour ce ticket
-        $stock = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->latest()->first();
+        $stock = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->where('compagnie_petrolier_id', $request->compagnie_petrolier_id)->latest()->first();
         if (!$stock) {
             return response()->json(['error' => "Stock introuvable pour cet article."], 400);
         }
@@ -355,7 +364,7 @@ class MouvementTicketController extends Controller
         }
 
         // Vérifier si un stock existe pour ce ticket
-        $stock = StockTicket::where('coupon_ticket_id', $mouvement->coupon_ticket_id)->latest()->first();
+        $stock = StockTicket::where('coupon_ticket_id', $mouvement->coupon_ticket_id)->where('compagnie_petrolier_id', $mouvement->compagnie_petrolier_id)->latest()->first();
 
         if ($stock) {
             // Réduire la quantité du stock
@@ -377,11 +386,43 @@ class MouvementTicketController extends Controller
     }
 
     // get qte disponible
-    public function getQuantiteDisponible($idCoupon)
+    public function getQuantiteDisponible($idCoupon, $idCompagnie)
     {
-        $stock = StockTicket::where('coupon_ticket_id', $idCoupon)->first();
+        $stock = StockTicket::where('coupon_ticket_id', $idCoupon)->where('compagnie_petrolier_id', $idCompagnie)->first();
         $quantite = $stock ? $stock->qte_actuel : 0;
 
         return new PostResource(true, 'Quantité trouvée !', $quantite);
     }
+
+    public function getQuantiteTicketAttribution(Request $request)
+{
+    $validated = $request->validate([
+        'commune_depart' => 'required|exists:communes,id',
+        'commune_arriver' => 'required|exists:communes,id',
+        'trajet_aller_retour' => 'required|boolean',
+        'coupon_ticket_id' => 'required|exists:coupon_tickets,id', // correction ici
+    ]);
+
+    $trajet = Trajet::where('commune_depart', $validated['commune_depart'])
+        ->where('commune_arriver', $validated['commune_arriver'])
+        ->where('trajet_aller_retour', $validated['trajet_aller_retour'])
+        ->first();
+
+    $coupon = CouponTicket::find($validated['coupon_ticket_id']);
+
+    if (!$trajet || !$coupon || $coupon->valeur == 0) {
+        return response()->json([
+            'qteTicket' => 0,
+            'message' => 'Trajet ou coupon invalide'
+        ], 200);
+    }
+
+    $valeurTrajet = $trajet->valeur;
+    $valeurCoupon = $coupon->valeur;
+
+    $qteTicket = (int) ceil($valeurTrajet / $valeurCoupon);
+
+    return response()->json(['qteTicket' => $qteTicket], 200);
+}
+
 }
