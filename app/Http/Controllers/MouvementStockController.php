@@ -27,7 +27,7 @@ class MouvementStockController extends Controller
 
         // Si le type de mouvement existe, récupérer les mouvements correspondants
         if ($type_mouvement) {
-            $mouvements = MouvementStock::with(['article', 'fournisseur','piecesJointes'])->where('id_type_mouvement', $type_mouvement->id)->latest()->paginate(1000);
+            $mouvements = MouvementStock::with(['article', 'fournisseur', 'piecesJointes'])->where('id_type_mouvement', $type_mouvement->id)->latest()->paginate(1000);
 
             return new PostResource(true, 'Liste des mouvements', $mouvements);
         }
@@ -40,60 +40,60 @@ class MouvementStockController extends Controller
 
     // store entrée simple
     public function storeEntreeStock(Request $request)
-{
-    // Validation
-    $validator = Validator::make($request->all(), [
-        "id_Article" => 'required|exists:articles,id',
-        "id_fournisseur" => 'required|exists:fournisseurs,id',
-        "description" => 'nullable|string|max:255',
-        "qte" => 'required|integer',
-        "date_mouvement" => 'required',
-        "piece_jointe_mouvement" => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048', // <= ici
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json($validator->errors(), 422);
-    }
-
-    $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Entrée de Stock")->latest()->first();
-
-    $mouvement = MouvementStock::create([
-        "id_Article" => $request->id_Article,
-        "id_fournisseur" => $request->id_fournisseur,
-        "description" => $request->description,
-        "id_type_mouvement" => $type_mouvement->id,
-        "qte" => $request->qte,
-        "date_mouvement" => $request->date_mouvement,
-    ]);
-
-    // Si une pièce jointe est envoyée
-    if ($request->hasFile('piece_jointe_mouvement')) {
-        $file = $request->file('piece_jointe_mouvement');
-        $fileName = time() . '_' . $file->getClientOriginalName();
-
-        $file->storeAs('piece_jointe_mouvement', $fileName, 'public');
-
-        PieceJointeMouvement::create([
-            'url' => 'storage/piece_jointe_mouvement/' . $fileName,
-            'id_mouvement_stock' => $mouvement->id
+    {
+        // Validation
+        $validator = Validator::make($request->all(), [
+            "id_Article" => 'required|exists:articles,id',
+            "id_fournisseur" => 'required|exists:fournisseurs,id',
+            "description" => 'nullable|string|max:255',
+            "qte" => 'required|integer',
+            "date_mouvement" => 'required',
+            "piece_jointe_mouvement" => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048', // <= ici
         ]);
-    }
 
-    // Gestion du stock
-    $stock = Stock::where('id_Article', $request->id_Article)->latest()->first();
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
 
-    if ($stock == null) {
-        $stock = Stock::create([
-            'id_Article' => $request->id_Article,
-            'Qte_actuel' => 0
+        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Entrée de Stock")->latest()->first();
+
+        $mouvement = MouvementStock::create([
+            "id_Article" => $request->id_Article,
+            "id_fournisseur" => $request->id_fournisseur,
+            "description" => $request->description,
+            "id_type_mouvement" => $type_mouvement->id,
+            "qte" => $request->qte,
+            "date_mouvement" => $request->date_mouvement,
         ]);
+
+        // Si une pièce jointe est envoyée
+        if ($request->hasFile('piece_jointe_mouvement')) {
+            $file = $request->file('piece_jointe_mouvement');
+            $fileName = time() . '_' . $file->getClientOriginalName();
+
+            $file->storeAs('piece_jointe_mouvement', $fileName, 'public');
+
+            PieceJointeMouvement::create([
+                'url' => 'storage/piece_jointe_mouvement/' . $fileName,
+                'id_mouvement_stock' => $mouvement->id
+            ]);
+        }
+
+        // Gestion du stock
+        $stock = Stock::where('id_Article', $request->id_Article)->latest()->first();
+
+        if ($stock == null) {
+            $stock = Stock::create([
+                'id_Article' => $request->id_Article,
+                'Qte_actuel' => 0
+            ]);
+        }
+
+        $stock->Qte_actuel += $request->qte;
+        $stock->save();
+
+        return new PostResource(true, 'Le mouvement d\'entrée de stock a été bien enregistré !', $mouvement);
     }
-
-    $stock->Qte_actuel += $request->qte;
-    $stock->save();
-
-    return new PostResource(true, 'Le mouvement d\'entrée de stock a été bien enregistré !', $mouvement);
-}
 
 
 
@@ -278,56 +278,56 @@ class MouvementStockController extends Controller
 
 
     // index sortieStock regroupé par code_mouvement
-public function indexSortieStockGrouped()
-{
-    // Récupérer l'ID du type de mouvement "Sortie de Stock"
-    $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Stock')->first();
+    public function indexSortieStockGrouped()
+    {
+        // Récupérer l'ID du type de mouvement "Sortie de Stock"
+        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Stock')->first();
 
-    // Si le type de mouvement existe, récupérer les mouvements correspondants
-    if ($type_mouvement) {
-        // Récupérer tous les codes_mouvement distincts
-        $codesMouvements = MouvementStock::where('id_type_mouvement', $type_mouvement->id)
-            ->select('code_mouvement')
-            ->distinct()
-            ->get()
-            ->pluck('code_mouvement');
+        // Si le type de mouvement existe, récupérer les mouvements correspondants
+        if ($type_mouvement) {
+            // Récupérer tous les codes_mouvement distincts
+            $codesMouvements = MouvementStock::where('id_type_mouvement', $type_mouvement->id)
+                ->select('code_mouvement')
+                ->distinct()
+                ->get()
+                ->pluck('code_mouvement');
 
-        $result = [];
+            $result = [];
 
-        foreach ($codesMouvements as $code) {
-            // Récupérer le premier mouvement pour les informations générales
-            $firstMouvement = MouvementStock::with(['bureau', 'employe'])
-                ->where('code_mouvement', $code)
-                ->first();
+            foreach ($codesMouvements as $code) {
+                // Récupérer le premier mouvement pour les informations générales
+                $firstMouvement = MouvementStock::with(['bureau', 'employe'])
+                    ->where('code_mouvement', $code)
+                    ->first();
 
-            // Récupérer tous les articles associés à ce code_mouvement avec leurs relations
-            $details = MouvementStock::with(['article', 'bureau', 'employe'])
-                ->where('code_mouvement', $code)
-                ->get();
+                // Récupérer tous les articles associés à ce code_mouvement avec leurs relations
+                $details = MouvementStock::with(['article', 'bureau', 'employe'])
+                    ->where('code_mouvement', $code)
+                    ->get();
 
-            $totalArticles = $details->count();
-            $dateCreation = $firstMouvement->created_at;
-            $dateDemande = $firstMouvement->dateDemande;
-            $statut = $firstMouvement->statut;
+                $totalArticles = $details->count();
+                $dateCreation = $firstMouvement->created_at;
+                $dateDemande = $firstMouvement->dateDemande;
+                $statut = $firstMouvement->statut;
 
-            $result[] = [
-                'code_mouvement' => $code,
-                'personnel' => $firstMouvement->employe ? $firstMouvement->employe->nom . ' ' . $firstMouvement->employe->prenom : 'Non défini',
-                'bureau' => $firstMouvement->bureau ? $firstMouvement->bureau->libelle_bureau : 'Non défini',
-                'dateDemande' => $dateDemande,
-                'dateCreation' => $dateCreation,
-                'statut' => $statut,
-                'totalArticles' => $totalArticles,
-                'details' => $details
-            ];
+                $result[] = [
+                    'code_mouvement' => $code,
+                    'personnel' => $firstMouvement->employe ? $firstMouvement->employe->nom . ' ' . $firstMouvement->employe->prenom : 'Non défini',
+                    'bureau' => $firstMouvement->bureau ? $firstMouvement->bureau->libelle_bureau : 'Non défini',
+                    'dateDemande' => $dateDemande,
+                    'dateCreation' => $dateCreation,
+                    'statut' => $statut,
+                    'totalArticles' => $totalArticles,
+                    'details' => $details
+                ];
+            }
+
+            return new PostResource(true, 'Liste des mouvements groupés', $result);
         }
 
-        return new PostResource(true, 'Liste des mouvements groupés', $result);
+        // Si le type de mouvement n'existe pas, retourner une réponse vide ou un message d'erreur
+        return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Stock".', []);
     }
-
-    // Si le type de mouvement n'existe pas, retourner une réponse vide ou un message d'erreur
-    return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Stock".', []);
-}
 
 
 
@@ -346,7 +346,7 @@ public function indexSortieStockGrouped()
 
         // Si le type de mouvement existe, récupérer les mouvements correspondants
         if ($type_mouvement) {
-            $mouvements = MouvementStock::with(['bureau', 'employe', 'article','affectation.bureau', 'affectation.employe' => function ($query) {
+            $mouvements = MouvementStock::with(['bureau', 'employe', 'article', 'affectation.bureau', 'affectation.employe' => function ($query) {
                 $query->select('id', 'nom', 'prenom')
                     ->selectRaw("CONCAT(nom, ' ', prenom) as full_name");
             }])
@@ -364,68 +364,68 @@ public function indexSortieStockGrouped()
 
 
     public function storeSortieStockMultiple(Request $request)
-{
-    // Validation
-    $validator = Validator::make($request->all(), [
-        "articles" => "required|array|min:1",
-        // "articles.*.id_Article" => "required|exists:articles,id",
-        "articles.*.code_article" => "required|string|exists:articles,code_article",
-        "articles.*.description" => "required|string|max:255",
-        "articles.*.qteDemande" => "required|integer|min:1",
-        "dateDemande" => "required|date",
-        "id_bureau" => "nullable|exists:bureaus,id",
-        "id_personnel" => "nullable|exists:employes,id",
-    ]);
+    {
+        // Validation
+        $validator = Validator::make($request->all(), [
+            "articles" => "required|array|min:1",
+            // "articles.*.id_Article" => "required|exists:articles,id",
+            "articles.*.code_article" => "required|string|exists:articles,code_article",
+            "articles.*.description" => "required|string|max:255",
+            "articles.*.qteDemande" => "required|integer|min:1",
+            "dateDemande" => "required|date",
+            "id_bureau" => "nullable|exists:bureaus,id",
+            "id_personnel" => "nullable|exists:employes,id",
+        ]);
 
-    if ($validator->fails()) {
-        return response()->json($validator->errors(), 422);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Sortie de Stock")->latest()->first();
+        if (!$type_mouvement) {
+            return response()->json(['error' => "Le type de mouvement 'Sortie de Stock' n'existe pas."], 404);
+        }
+
+        // Générer le code_mouvement commun (ex: SORT-20240521-XXXX)
+        $code_mouvement = 'SORT-' . now()->format('Ymd-His') . '-' . strtoupper(Str::random(4));
+
+        $mouvements = [];
+
+        foreach ($request->articles as $article) {
+            $articleModel = Article::where('code_article', $article['code_article'])->first();
+
+            if (!$articleModel) {
+                return response()->json([
+                    'error' => "L'article avec le code " . $article['code_article'] . " est introuvable."
+                ], 404);
+            }
+
+            $stock = Stock::where('id_Article', $articleModel->id)->latest()->first();
+
+            if (!$stock || $stock->Qte_actuel < $article['qteDemande']) {
+                return response()->json([
+                    'error' => "Quantité insuffisante pour l'article " . $article['code_article']
+                ], 400);
+            }
+
+            $mouvement = MouvementStock::create([
+                "id_Article" => $articleModel->id,
+                "description" => $article['description'],
+                "id_type_mouvement" => $type_mouvement->id,
+                "qte" => 0,
+                "qteDemande" => $article['qteDemande'],
+                "dateDemande" => $request->dateDemande,
+                "bureau_id" => $request->id_bureau,
+                "id_employe" => $request->id_personnel,
+                "statut" => 'En attente',
+                "code_mouvement" => $code_mouvement,
+            ]);
+
+            $mouvements[] = $mouvement;
+        }
+
+        return new PostResource(true, 'Les sorties de stock ont été enregistrées avec succès !', $mouvements);
     }
-
-    $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Sortie de Stock")->latest()->first();
-    if (!$type_mouvement) {
-        return response()->json(['error' => "Le type de mouvement 'Sortie de Stock' n'existe pas."], 404);
-    }
-
-    // Générer le code_mouvement commun (ex: SORT-20240521-XXXX)
-    $code_mouvement = 'SORT-' . now()->format('Ymd-His') . '-' . strtoupper(Str::random(4));
-
-    $mouvements = [];
-
-    foreach ($request->articles as $article) {
-    $articleModel = Article::where('code_article', $article['code_article'])->first();
-
-    if (!$articleModel) {
-        return response()->json([
-            'error' => "L'article avec le code " . $article['code_article'] . " est introuvable."
-        ], 404);
-    }
-
-    $stock = Stock::where('id_Article', $articleModel->id)->latest()->first();
-
-    if (!$stock || $stock->Qte_actuel < $article['qteDemande']) {
-        return response()->json([
-            'error' => "Quantité insuffisante pour l'article " . $article['code_article']
-        ], 400);
-    }
-
-    $mouvement = MouvementStock::create([
-        "id_Article" => $articleModel->id,
-        "description" => $article['description'],
-        "id_type_mouvement" => $type_mouvement->id,
-        "qte" => 0,
-        "qteDemande" => $article['qteDemande'],
-        "dateDemande" => $request->dateDemande,
-        "bureau_id" => $request->id_bureau,
-        "id_employe" => $request->id_personnel,
-        "statut" => 'En attente',
-        "code_mouvement" => $code_mouvement,
-    ]);
-
-    $mouvements[] = $mouvement;
-}
-
-    return new PostResource(true, 'Les sorties de stock ont été enregistrées avec succès !', $mouvements);
-}
 
 
 
@@ -610,6 +610,67 @@ public function indexSortieStockGrouped()
             'data' => $mouvementStock
         ]);
     }
+
+    public function validerDemandeGroupee(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'code_mouvement' => 'required|string|exists:mouvement_stocks,code_mouvement',
+            'date_mouvement' => 'required|date',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $code = $request->input('code_mouvement');
+        $dateMouvement = $request->input('date_mouvement');
+
+        $mouvements = MouvementStock::where('code_mouvement', $code)->get();
+
+        foreach ($mouvements as $mouvement) {
+            // Récupérer le stock le plus récent
+            $stock = Stock::where('id_Article', $mouvement->id_Article)->latest()->first();
+
+            if (!$stock || $stock->Qte_actuel < $mouvement->qteDemande) {
+                return response()->json([
+                    'error' => "Quantité insuffisante pour l'article ID {$mouvement->id_Article}."
+                ], 400);
+            }
+
+            // Mise à jour du mouvement
+            $mouvement->statut = 'Accordé';
+            $mouvement->qte = $mouvement->qteDemande;
+            $mouvement->date_mouvement = $dateMouvement;
+            $mouvement->save();
+
+            // Mise à jour du stock
+            $stock->Qte_actuel -= $mouvement->qteDemande;
+            $stock->save();
+
+            // Création de l'affectation
+            if (!empty($mouvement->id_employe) && !empty($mouvement->bureau_id)) {
+                $type_affectation = TypeAffectation::where('libelle_type_affectation', "Affectation d'Article")->latest()->first();
+
+                if ($type_affectation) {
+                    AffectationArticle::create([
+                        'description' => $mouvement->description,
+                        'id_article' => $mouvement->id_Article,
+                        'id_type_affectation' => $type_affectation->id,
+                        'id_bureau' => $mouvement->bureau_id,
+                        'id_employe' => $mouvement->id_employe,
+                        'id_mouvement' => $mouvement->id,
+                    ]);
+                }
+            }
+        }
+
+        return response()->json([
+            'message' => "Toutes les demandes pour le code {$code} ont été validées avec succès.",
+            'code_mouvement' => $code,
+            'nombre_demandes' => $mouvements->count()
+        ]);
+    }
+
 
 
     // ... autres méthodes ...

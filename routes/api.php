@@ -105,6 +105,7 @@ Route::post('mouvement-stock/sortie', [MouvementStockController::class, 'storeSo
 Route::post('demande-de-sortie', [MouvementStockController::class, 'storeSortieStockMultiple']);
 Route::delete('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'deleteSortieStock']);
 Route::get('quantite-disponible/{id}', [MouvementStockController::class, 'getQuantiteDisponible']);
+Route::post('mouvement-stock/demande-sortie/tout-valider', [MouvementStockController::class, 'validerDemandeGroupee']);
 Route::put('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'updateSortieStock']);
 Route::patch('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'updateDemandeStock']);
 
