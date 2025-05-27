@@ -16,6 +16,19 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 
+/**
+ * @OA\Info(
+ *     title="APP-STOCK-LNB API",
+ *     version="1.0.0",
+ *     description="Description de votre API"
+ * )
+ *
+ * @OA\Tag(
+ *     name="Les Mouvement de stock",
+ *     description="Gestion des Mouvement de stock"
+ * )
+ */
+
 
 class MouvementStockController extends Controller
 {
@@ -182,6 +195,45 @@ class MouvementStockController extends Controller
 
 
     // Ajout multiple de mouvement de stock entree
+
+    /**
+     * @OA\Post(
+     *     path="/api/demande-de-sortie",
+     *     summary="Créer une demande de sortie",
+     *     description="Crée une nouvelle demande de sortie avec les articles demandés",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"dateDemande", "id_bureau", "id_personnel", "articles"},
+     *             @OA\Property(property="dateDemande", type="string", format="date", example="2025-05-27"),
+     *             @OA\Property(property="id_bureau", type="integer", example=3),
+     *             @OA\Property(property="id_personnel", type="integer", example=5),
+     *             @OA\Property(
+     *                 property="articles",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     required={"code_article", "description", "qteDemande"},
+     *                     @OA\Property(property="code_article", type="string", example="AAA67"),
+     *                     @OA\Property(property="description", type="string", example="Demande 1"),
+     *                     @OA\Property(property="qteDemande", type="integer", example=10)
+     *                 ),
+     *
+
+     *             ),
+     *
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Demande de sortie créée avec succès"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Requête invalide"
+     *     )
+     * )
+     */
     public function storeMultipleEntreeStock(Request $request)
     {
         // Validation des données communes
