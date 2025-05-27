@@ -28,7 +28,7 @@ class RegisterRequest extends FormRequest
             // 'name' => 'required',
             // 'email' => 'required|email|unique:users,email',
             // 'phone' => 'required|unique:users,phone',
-            'sexe' => ['required', Rule::in(['Masculin', 'Féminin'])],
+            'sexe' => ['nullable', Rule::in(['Masculin', 'Féminin'])],
             'active' => 'required|boolean',
             'role_id' => 'required|exists:roles,id'
         ];
@@ -44,7 +44,7 @@ class RegisterRequest extends FormRequest
             // 'email.required' => 'Email obligatoire',
             // 'email.email' => 'Format email invalide',
             // 'email.unique' => 'Email déjà utilisé',
-            'sexe.required' => 'Le sexe est obligatoire',
+            // 'sexe.nullable' => 'Le sexe est obligatoire',
             'sexe.in' => 'Le sexe est entre Féminin ou Masculin',
             // 'phone.unique' => 'Le téléphone est déjà utilisé',
             // 'phone.required' => 'Le téléphone est obligatoire',
