@@ -117,6 +117,7 @@ class ArticleController extends Controller
             'id_cat' => $request->id_cat,
             'libelle' => $request->libelle,
             'description' => $request->description,
+            'code_article' => $request->code_article,
             'stock_alerte' => $request->stock_alerte,
         ]);
 
