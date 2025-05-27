@@ -20,9 +20,10 @@ class UserController extends Controller
     public function index()
     {
         
-        $users = User::with('role')->paginate(10); // Page par 10 utilisateurs et inclut le rôle
-        // Retourner les utilisateurs en tant que réponse JSON
-        return response()->json($users); // Laravel va automatiquement formater la réponse en JSON
+        $users = User::with('role')
+            ->orderBy('created_at', 'desc')
+            ->paginate(10); 
+        return response()->json($users);
     }
 
     /**
@@ -46,7 +47,7 @@ class UserController extends Controller
             'surname' => $employe->prenom ?? null, // Utilisez 'prenom' si votre modèle Employe l'a, sinon null
             'email' => $employe->email,
             'phone' => $employe->telephone,
-            'sexe' => $validatedData['sexe'], // Cette valeur vient de la validation de RegisterRequest
+            // 'sexe' => $validatedData['sexe'], // Cette valeur vient de la validation de RegisterRequest
             'password' => Hash::make($generatedPassword), // Hashage du mot de passe généré
             'role_id' => $validatedData['role_id'], // Cette valeur vient de la validation de RegisterRequest
             'active' => $validatedData['active'] ?? true, // Utilise la valeur validée, ou true par défaut
