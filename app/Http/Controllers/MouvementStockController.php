@@ -287,7 +287,8 @@ class MouvementStockController extends Controller
         if ($type_mouvement) {
             // Récupérer tous les codes_mouvement distincts
             $codesMouvements = MouvementStock::where('id_type_mouvement', $type_mouvement->id)
-                ->select('code_mouvement')
+                ->orderBy('created_at', 'desc')
+                ->select('code_mouvement', 'created_at')
                 ->distinct()
                 ->get()
                 ->pluck('code_mouvement');
@@ -616,6 +617,7 @@ class MouvementStockController extends Controller
         $validator = Validator::make($request->all(), [
             'code_mouvement' => 'required|string|exists:mouvement_stocks,code_mouvement',
             'date_mouvement' => 'required|date',
+            'statut' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -624,48 +626,56 @@ class MouvementStockController extends Controller
 
         $code = $request->input('code_mouvement');
         $dateMouvement = $request->input('date_mouvement');
+        $statut = $request->input('statut');
 
         $mouvements = MouvementStock::where('code_mouvement', $code)->get();
 
         foreach ($mouvements as $mouvement) {
-            // Récupérer le stock le plus récent
-            $stock = Stock::where('id_Article', $mouvement->id_Article)->latest()->first();
-
-            if (!$stock || $stock->Qte_actuel < $mouvement->qteDemande) {
-                return response()->json([
-                    'error' => "Quantité insuffisante pour l'article ID {$mouvement->id_Article}."
-                ], 400);
-            }
-
-            // Mise à jour du mouvement
-            $mouvement->statut = 'Accordé';
-            $mouvement->qte = $mouvement->qteDemande;
+            $mouvement->statut = $statut;
             $mouvement->date_mouvement = $dateMouvement;
-            $mouvement->save();
 
-            // Mise à jour du stock
-            $stock->Qte_actuel -= $mouvement->qteDemande;
-            $stock->save();
+            if (strtolower($statut) === 'accordé') {
+                $qte = $mouvement->qteDemande;
+                $article = $mouvement->article;
+                $articleCode = $article ? $article->code_article : "inconnu";
 
-            // Création de l'affectation
-            if (!empty($mouvement->id_employe) && !empty($mouvement->bureau_id)) {
-                $type_affectation = TypeAffectation::where('libelle_type_affectation', "Affectation d'Article")->latest()->first();
+                // Vérifier la quantité disponible en stock
+                $stock = Stock::where('id_Article', $mouvement->id_Article)->latest()->first();
 
-                if ($type_affectation) {
-                    AffectationArticle::create([
-                        'description' => $mouvement->description,
-                        'id_article' => $mouvement->id_Article,
-                        'id_type_affectation' => $type_affectation->id,
-                        'id_bureau' => $mouvement->bureau_id,
-                        'id_employe' => $mouvement->id_employe,
-                        'id_mouvement' => $mouvement->id,
-                    ]);
+                if (!$stock || $stock->Qte_actuel < $qte) {
+                    return response()->json([
+                        'error' => "Quantité insuffisante pour l'article {$articleCode}."
+                    ], 400);
+                }
+
+                // Mise à jour des quantités
+                $mouvement->qte = $qte;
+                $stock->Qte_actuel -= $qte;
+                $stock->save();
+
+                // Création de l'affectation
+                if (!empty($mouvement->id_employe) && !empty($mouvement->bureau_id)) {
+                    $type_affectation = TypeAffectation::where('libelle_type_affectation', "Affectation d'Article")->latest()->first();
+
+                    if ($type_affectation) {
+                        AffectationArticle::create([
+                            'description' => $mouvement->description,
+                            'id_article' => $mouvement->id_Article,
+                            'id_type_affectation' => $type_affectation->id,
+                            'id_bureau' => $mouvement->bureau_id,
+                            'id_employe' => $mouvement->id_employe,
+                            'id_mouvement' => $mouvement->id,
+                        ]);
+                    }
                 }
             }
+
+            // Sauvegarde du mouvement (dans tous les cas)
+            $mouvement->save();
         }
 
         return response()->json([
-            'message' => "Toutes les demandes pour le code {$code} ont été validées avec succès.",
+            'message' => "Toutes les demandes pour le code {$code} ont été traitées avec succès.",
             'code_mouvement' => $code,
             'nombre_demandes' => $mouvements->count()
         ]);
