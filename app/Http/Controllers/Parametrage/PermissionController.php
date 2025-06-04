@@ -10,24 +10,23 @@ use App\Models\Parametrage\Permission;
 
 class PermissionController extends Controller
 {
-    // Afficher une liste paginée des permissions
-    // public function index()
-    // {
-    //     $permissions = Permission::with(['role', 'module', 'fonctionnalite'])->latest()->paginate(200);
-    //     return new PostResource(true, 'Liste des permissions', $permissions);
-    // }
     public function index()
-{
-    $permissions = Permission::with([
-        'role:id,libelle_role',
-        'module:id,libelle_module',
-        'fonctionnalite:id,libelle_fonctionnalite'
-    ])->select('id', 'role_id', 'module_id', 'fonctionnalite_id', 'is_active', 'created_at', 'updated_at')
-      ->latest()
-      ->paginate(200);
+    {
+        $permissions = Permission::with(['role', 'module', 'fonctionnalite'])->latest()->paginate(200);
+        return new PostResource(true, 'Liste des permissions', $permissions);
+    }
+//     public function index()
+// {
+//     $permissions = Permission::with([
+//         'role:id,libelle_role',
+//         'module:id,libelle_module',
+//         'fonctionnalite:id,libelle_fonctionnalite'
+//     ])->select('id', 'role_id', 'module_id', 'fonctionnalite_id', 'is_active', 'created_at', 'updated_at')
+//       ->latest()
+//       ->paginate(200);
 
-    return new PostResource(true, 'Liste des permissions', $permissions);
-}
+//     return new PostResource(true, 'Liste des permissions', $permissions);
+// }
 
     // Créer une nouvelle permission
     public function store(Request $request)

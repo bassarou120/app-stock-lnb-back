@@ -428,7 +428,6 @@ class MouvementStockController extends Controller
     }
 
 
-
     // public function storeSortieStockMultiple(Request $request)
     // {
     //     $validator = Validator::make($request->all(), [
