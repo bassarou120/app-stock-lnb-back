@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Etat du Stock</title>
+    <title>Transfert d'immobilisation</title>
     <style>
         @page {
             size: landscape;
@@ -43,32 +43,32 @@
     </style>
 </head>
 <body>
-    <h2>LNB-Stock & Parc | Etat du Stock</h2>
+    <h2>LNB-Stock & Parc | Transfert d'immobilisation</h2>
     <table>
         <thead>
             <tr>
-                <th>Code</th>
-                <th>Article</th>
-                <th>Description</th>
-                <th>Catégorie</th>
-                <th>Quantité Actuelle</th>
-                <th>Stock d'alerte</th>
+                <th>Code Immo</th>
+                <th>Desigmation</th>
+                <th>Ancien Bureau</th>
+                <th>Nouveau Bureau</th>
+                <th>Ancien Personnel</th>
+                <th>Nouveau Personnel</th>
                 <th>Date de création</th>
             </tr>
         </thead>
         <tbody>
-            @foreach ($articles as $article)
+            @foreach ($transferts as $transfert)
                 <tr>
-                    <td>{{ $article->code_article  ?? '-' }}</td>
-                    <td>{{ $article->libelle  ?? '-' }}</td>
-                    <td>{{ $article->description ?? '-' }}</td>
-                    <td>{{ $article->categorie ? $article->categorie->libelle_categorie_article : '-' }}</td>
-                    <td>{{ $article->stock ? $article->stock->Qte_actuel : 0 }}</td>
-                    <td>{{ $article->stock_alerte ?? '-' }}</td>
-                    <td>{{ $article->created_at ?? '-' }}</td>
+                    <td>{{ $transfert->immo_id  ?? '-' }}</td>
+                    <td>{{ $transfert->libelle  ?? '-' }}</td>
+                    <td>{{ $transfert->old_bureau_id ? $immo->bureau_id '-' }}</td>
+                    <td>{{ $transfert->bureau_id ?? '-' }}</td>
+                    <td>{{ $transfert->old_employe_id ? $immo->employe_id }}</td>
+                    <td>{{ $transfert->employe_id ?? '-' }}</td>
+                    <td>{{ $transfert->created_at ?? '-' }}</td>
                 </tr>
             @endforeach
         </tbody>
     </table>
 </body>
-</html>
+</html> -->

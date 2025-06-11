@@ -103,19 +103,27 @@ class TransfertController extends Controller
 
 
     public function getOldInfo($idImmo)
-{
-    $immo = Immobilisation::with(['bureau', 'employe'])->find($idImmo);
-    if (!$immo) {
-        return response()->json(['message' => 'Immobilisation non trouvée'], 404);
+    {
+        $immo = Immobilisation::with(['bureau', 'employe'])->find($idImmo);
+        if (!$immo) {
+            return response()->json(['message' => 'Immobilisation non trouvée'], 404);
+        }
+
+        return response()->json([
+            'bureau_id' => $immo->bureau_id,
+            'employe_id' => $immo->employe_id,
+            'bureau' => $immo->bureau ? $immo->bureau->libelle_bureau : null,
+            'employe' => $immo->employe ? $immo->employe->nom . ' ' . $immo->employe->prenom : null
+        ]);
     }
 
-    return response()->json([
-        'bureau_id' => $immo->bureau_id,
-        'employe_id' => $immo->employe_id,
-        'bureau' => $immo->bureau ? $immo->bureau->libelle_bureau : null,
-        'employe' => $immo->employe ? $immo->employe->nom . ' ' . $immo->employe->prenom : null
-    ]);
-}
+    // public function imprimer()
+    // {
+    //     $transferts = Transfert::with(['immobilisation','old_bureau','bureau','old_employe','employe'])->get();
 
+    //     $pdf = Pdf::loadView('pdf.transferts', compact('transferts'));
+
+    //     return $pdf->download('transfert.pdf');
+    // }
 
 }

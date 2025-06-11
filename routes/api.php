@@ -80,6 +80,7 @@ Route::apiResource('retour-ticket', RetourTicketController::class);
 Route::apiResource('annulation-ticket', AnnulationTicketController::class);
 Route::apiResource('trajets', TrajetController::class);
 Route::get('ancien-info/{id}', [TransfertController::class, 'getOldInfo']);
+// Route::get('transfert-imprimer', [TransfertController::class, 'imprimer']);
 
 Route::get('mouvement-info/{id}', [RetourTicketController::class, 'getMouvementInfo']);
 Route::get('mouvement-ticket/getAllSortieTicketWhereNotInRetour', [RetourTicketController::class, 'getAllSortieTicketWhereNotInRetour']);
