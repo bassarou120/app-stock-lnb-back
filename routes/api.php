@@ -74,6 +74,7 @@ Route::apiResource('permissions', PermissionController::class);
 Route::post('permissions/toggle', [PermissionController::class, 'togglePermission']);
 Route::apiResource('articles', ArticleController::class);
 Route::get('etat_stock-imprimer', [ArticleController::class, 'imprimer']);
+Route::get('etat_stock-imprimer-excel', [ArticleController::class, 'exportArticlesExcel']);
 Route::apiResource('immobilisations', ImmobilisationController::class);
 Route::apiResource('interventions', InterventionController::class);
 Route::apiResource('transferts', TransfertController::class);
