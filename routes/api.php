@@ -71,6 +71,7 @@ Route::apiResource('modules', ModuleController::class);
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('fonctionnalites', FonctionnaliteController::class);
 Route::apiResource('permissions', PermissionController::class);
+Route::post('permissions/toggle', [PermissionController::class, 'togglePermission']);
 Route::apiResource('articles', ArticleController::class);
 Route::get('etat_stock-imprimer', [ArticleController::class, 'imprimer']);
 Route::apiResource('immobilisations', ImmobilisationController::class);
