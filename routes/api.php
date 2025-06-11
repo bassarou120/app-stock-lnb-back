@@ -74,6 +74,7 @@ Route::apiResource('permissions', PermissionController::class);
 Route::post('permissions/toggle', [PermissionController::class, 'togglePermission']);
 Route::apiResource('articles', ArticleController::class);
 Route::get('etat_stock-imprimer', [ArticleController::class, 'imprimer']);
+<<<<<<< HEAD
 Route::apiResource('immobilisations', ImmobilisationController::class)->except(['show']);
 Route::get('/immobilisations/imprimer', [ImmobilisationController::class, 'imprimerImmos']);
 Route::apiResource('interventions', InterventionController::class)->except(['show']);
@@ -82,6 +83,12 @@ Route::get('/interventions/imprimer', [InterventionController::class, 'imprimerI
 Route::apiResource('transferts', TransfertController::class)->except(['show']);
 Route::get('ancien-info/{id}', [TransfertController::class, 'getOldInfo']);
 Route::get('/transferts/imprimer', [TransfertController::class, 'imprimerTransferts']);
+=======
+Route::get('etat_stock-imprimer-excel', [ArticleController::class, 'exportArticlesExcel']);
+Route::apiResource('immobilisations', ImmobilisationController::class);
+Route::apiResource('interventions', InterventionController::class);
+Route::apiResource('transferts', TransfertController::class);
+>>>>>>> philemon_dev
 Route::apiResource('retour-ticket', RetourTicketController::class);
 Route::apiResource('annulation-ticket', AnnulationTicketController::class);
 Route::apiResource('trajets', TrajetController::class);
