@@ -12,7 +12,10 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Stock;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
-
+use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Illuminate\Support\Facades\Response;
 
 
 class ArticleController extends Controller
@@ -140,4 +143,28 @@ class ArticleController extends Controller
 
         return $pdf->download('etat_du_stock.pdf');
     }
+
+
+
+    public function exportArticlesExcel()
+{
+    $articles = Article::with(['categorie', 'stock'])->get()->map(function ($article) {
+        return [
+            'Article'           => $article->libelle ?? '-',
+            'Description'       => $article->description ?? '-',
+            'Catégorie'         => $article->categorie->libelle_categorie_article ?? '-',
+            'Quantité Actuelle' => $article->stock->Qte_actuel ?? 0,
+            'Stock d\'alerte'   => $article->stock_alerte ?? '-',
+            'Date de création'  => $article->created_at ? $article->created_at->format('Y-m-d') : '-',
+        ];
+    })->toArray();
+
+    \Excel::create('etat_du_stock', function($excel) use ($articles) {
+        $excel->sheet('Stock', function($sheet) use ($articles) {
+            // Ajoute les données avec les en-têtes automatiquement
+            $sheet->fromArray($articles);
+        });
+    })->download('xlsx');
+}
+
 }

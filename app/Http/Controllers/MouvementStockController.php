@@ -382,6 +382,17 @@ class MouvementStockController extends Controller
         }
 
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Sortie de Stock")->latest()->first();
+
+                // Vérifier les doublons de code_article dans la requête
+        $codes = array_column($request->articles, 'code_article');
+        $duplicates = array_diff_assoc($codes, array_unique($codes));
+
+        if (count($duplicates)) {
+            return response()->json([
+                'error' => "Le code article '" . implode(", ", array_unique($duplicates)) . "' est présent plusieurs fois dans la demande."
+            ], 422);
+        }
+
         if (!$type_mouvement) {
             return response()->json(['error' => "Le type de mouvement 'Sortie de Stock' n'existe pas."], 404);
         }
