@@ -74,14 +74,19 @@ Route::apiResource('permissions', PermissionController::class);
 Route::post('permissions/toggle', [PermissionController::class, 'togglePermission']);
 Route::apiResource('articles', ArticleController::class);
 Route::get('etat_stock-imprimer', [ArticleController::class, 'imprimer']);
-Route::apiResource('immobilisations', ImmobilisationController::class);
-Route::apiResource('interventions', InterventionController::class);
-Route::apiResource('transferts', TransfertController::class);
+Route::apiResource('immobilisations', ImmobilisationController::class)->except(['show']);
+Route::get('/immobilisations/imprimer', [ImmobilisationController::class, 'imprimerImmos']);
+Route::apiResource('interventions', InterventionController::class)->except(['show']);
+Route::get('/interventions/imprimer', [InterventionController::class, 'imprimerInterventions']);
+// Route::apiResource('transferts', TransfertController::class);
+Route::apiResource('transferts', TransfertController::class)->except(['show']);
+Route::get('ancien-info/{id}', [TransfertController::class, 'getOldInfo']);
+Route::get('/transferts/imprimer', [TransfertController::class, 'imprimerTransferts']);
 Route::apiResource('retour-ticket', RetourTicketController::class);
 Route::apiResource('annulation-ticket', AnnulationTicketController::class);
 Route::apiResource('trajets', TrajetController::class);
-Route::get('ancien-info/{id}', [TransfertController::class, 'getOldInfo']);
-// Route::get('transfert-imprimer', [TransfertController::class, 'imprimer']);
+
+
 
 Route::get('mouvement-info/{id}', [RetourTicketController::class, 'getMouvementInfo']);
 Route::get('mouvement-ticket/getAllSortieTicketWhereNotInRetour', [RetourTicketController::class, 'getAllSortieTicketWhereNotInRetour']);
@@ -100,6 +105,7 @@ Route::post('mouvement-stock/entree', [MouvementStockController::class, 'storeEn
 Route::post('/mouvement-stock/entree-multiple', [MouvementStockController::class, 'storeMultipleEntreeStock']);
 Route::put('/mouvement-stock/entree/{id}', [MouvementStockController::class, 'updateEntreeStock']);
 Route::delete('mouvement-stock/entree/{id}', [MouvementStockController::class, 'deleteEntreeStock']);
+Route::get('/imprimerEntrees', [MouvementStockController::class, 'imprimerEntrees']);
 
 Route::get('mouvement-stock/sortie/indexSortieStockGrouped', [MouvementStockController::class, 'indexSortieStockGrouped']);
 Route::get('mouvement-stock/sortie', [MouvementStockController::class, 'indexSortieStock']);

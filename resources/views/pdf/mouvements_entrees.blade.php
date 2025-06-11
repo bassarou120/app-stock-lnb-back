@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Transfert d'immobilisation</title>
+    <title>Entrée de Stock</title>
     <style>
         @page {
             size: landscape;
@@ -43,31 +43,29 @@
     </style>
 </head>
 <body>
-    <h2>LNB-Stock & Parc | Transfert d'immobilisation</h2>
+    <h2>LNB-Stock & Parc | Entrée de Stock</h2>
     <table>
         <thead>
             <tr>
                 <th>N°</th>
-                <th>Immobilisation</th>
-                <th>Ancien Bureau</th>
-                <th>Nouveau Bureau</th>
-                <th>Ancien Responsable</th>
-                <th>Nouveau Responsable</th>
+                <th>Code Article</th>
+                <th>Article</th>
+                <th>Description</th>
+                <th>Qte</th>
                 <th>Date Mouvement</th>
-                <th>Observation</th>
+                <th>Fournisseur</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($transferts as $index => $transfert)
+            @foreach($mouvements as $index => $mouvement)
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ $transfert->immobilisation->libelle_immo ?? 'N/A' }}</td>
-                    <td>{{ $transfert->old_bureau->libelle_bureau ?? 'N/A' }}</td>
-                    <td>{{ $transfert->bureau->libelle_bureau ?? 'N/A' }}</td>
-                    <td>{{ $transfert->old_employe->nom ?? '' }} {{ $transfert->old_employe->prenom ?? 'N/A' }}</td>
-                    <td>{{ $transfert->employe->nom ?? '' }} {{ $transfert->employe->prenom ?? 'N/A' }}</td>
-                    <td>{{ \Carbon\Carbon::parse($transfert->date_mouvement)->format('d/m/Y') }}</td>
-                    <td>{{ $transfert->observation ?? 'N/A' }}</td>
+                    <td>{{ $mouvement->article->code_article ?? 'N/A' }}</td>
+                    <td>{{ $mouvement->article->libelle ?? 'N/A' }}</td>
+                    <td>{{ $mouvement->description }}</td>
+                    <td>{{ $mouvement->qte }}</td>
+                    <td>{{ \Carbon\Carbon::parse($mouvement->date_mouvement)->format('d/m/Y') }}</td>
+                    <td>{{ $mouvement->fournisseur->nom ?? 'N/A' }}</td>
                 </tr>
             @endforeach
         </tbody>

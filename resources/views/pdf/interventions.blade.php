@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Transfert d'immobilisation</title>
+    <title>Liste des Interventions</title>
     <style>
         @page {
             size: landscape;
@@ -43,31 +43,29 @@
     </style>
 </head>
 <body>
-    <h2>LNB-Stock & Parc | Transfert d'immobilisation</h2>
+    <h2>LNB-Stock & Parc | Liste des Interventions</h2>
     <table>
         <thead>
             <tr>
                 <th>N°</th>
                 <th>Immobilisation</th>
-                <th>Ancien Bureau</th>
-                <th>Nouveau Bureau</th>
-                <th>Ancien Responsable</th>
-                <th>Nouveau Responsable</th>
-                <th>Date Mouvement</th>
+                <th>Type Intervention</th>
+                <th>Titre</th>
+                <th>Date Intervention</th>
+                <th>Coût</th>
                 <th>Observation</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($transferts as $index => $transfert)
+            @foreach($interventions as $index => $intervention)
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ $transfert->immobilisation->libelle_immo ?? 'N/A' }}</td>
-                    <td>{{ $transfert->old_bureau->libelle_bureau ?? 'N/A' }}</td>
-                    <td>{{ $transfert->bureau->libelle_bureau ?? 'N/A' }}</td>
-                    <td>{{ $transfert->old_employe->nom ?? '' }} {{ $transfert->old_employe->prenom ?? 'N/A' }}</td>
-                    <td>{{ $transfert->employe->nom ?? '' }} {{ $transfert->employe->prenom ?? 'N/A' }}</td>
-                    <td>{{ \Carbon\Carbon::parse($transfert->date_mouvement)->format('d/m/Y') }}</td>
-                    <td>{{ $transfert->observation ?? 'N/A' }}</td>
+                    <td>{{ $intervention->immobilisation->libelle_immo ?? 'N/A' }}</td>
+                    <td>{{ $intervention->typeIntervention->libelle_type_intervention ?? 'N/A' }}</td>
+                    <td>{{ $intervention->titre }}</td>
+                    <td>{{ \Carbon\Carbon::parse($intervention->date_intervention)->format('d/m/Y') }}</td>
+                    <td>{{ number_format($intervention->cout, 2, ',', ' ') }}</td>
+                    <td>{{ $intervention->observation ?? 'N/A' }}</td>
                 </tr>
             @endforeach
         </tbody>

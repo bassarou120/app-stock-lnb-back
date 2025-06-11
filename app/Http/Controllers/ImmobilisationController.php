@@ -101,4 +101,25 @@ class ImmobilisationController extends Controller
 
         return new PostResource(true, 'Immobilisation supprimée avec succès', null);
     }
+
+    public function imprimerImmos()
+    {
+        // Récupère toutes les immobilisations avec leurs relations nécessaires
+        $immobilisations = Immobilisation::with([
+            'vehicule',
+            'groupeTypeImmo',
+            'sousTypeImmo',
+            'statusImmo',
+            'employe',
+            'bureau',
+            'fournisseur'
+        ])->latest()->get(); // Pas de pagination pour le PDF complet
+
+        // Charge la vue Blade qui servira de template pour le PDF
+        // Utilise l'alias global pour la façade Pdf (\Pdf)
+        $pdf = \Pdf::loadView('pdf.immobilisations', compact('immobilisations'));
+
+        // Retourne le PDF en téléchargement
+        return $pdf->download('liste_immobilisations.pdf'); // Nom du fichier PDF à télécharger
+    }
 }

@@ -117,13 +117,23 @@ class TransfertController extends Controller
         ]);
     }
 
-    // public function imprimer()
-    // {
-    //     $transferts = Transfert::with(['immobilisation','old_bureau','bureau','old_employe','employe'])->get();
+    public function imprimerTransferts()
+    {
+        // Récupère tous les transferts avec leurs relations nécessaires
+        $transferts = Transfert::with([
+            'immobilisation',
+            'old_bureau',
+            'bureau',
+            'old_employe',
+            'employe'
+        ])->latest()->get();
 
-    //     $pdf = Pdf::loadView('pdf.transferts', compact('transferts'));
+        // Charge la vue Blade qui servira de template pour le PDF
+        // Utilise l'alias global pour la façade Pdf (\Pdf)
+        $pdf = \Pdf::loadView('pdf.transferts', compact('transferts'));
 
-    //     return $pdf->download('transfert.pdf');
-    // }
+        // Retourne le PDF en téléchargement
+        return $pdf->download('liste_transferts.pdf'); // Nom du fichier PDF à télécharger
+    }
 
 }
