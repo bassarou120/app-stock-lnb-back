@@ -12,6 +12,8 @@ php artisan passport:client --personal
 
 php artisan passport:keys
 
+php artisan l5-swagger:generate
+
 
 chmod 755 /var/www/html/storage/oauth-*
 
