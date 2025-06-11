@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Parametrage\Role;
 use App\Http\Resources\PostResource;
-use Illuminate\Support\Facades\Validator; 
+use Illuminate\Support\Facades\Validator;
 
 class RoleController extends Controller
 {
@@ -33,6 +33,19 @@ class RoleController extends Controller
         $role = Role::create([
             'libelle_role' => $request->libelle_role,
         ]);
+
+        // Récupérer toutes les fonctionnalités existantes
+    $fonctionnalites = \App\Models\Parametrage\Fonctionnalite::all();
+
+    // Créer une permission désactivée (is_active = false) pour chaque fonctionnalité
+    foreach ($fonctionnalites as $fonctionnalite) {
+        \App\Models\Parametrage\Permission::create([
+            'role_id' => $role->id,
+            'module_id' => $fonctionnalite->module_id,
+            'fonctionnalite_id' => $fonctionnalite->id,
+            'is_active' => false,
+        ]);
+    }
 
         return new PostResource(true, 'Rôle créé avec succès', $role);
     }
