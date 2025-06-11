@@ -40,6 +40,8 @@ class DatabaseSeeder extends Seeder
             CommuneSeeder::class,
             CouponTicketSeeder::class,
             UserSeeder::class,
+            ModuleSeeder::class,
+            FonctionnaliteSeeder::class,
         ]);
 
         // Appel de la commande artisan personnalisée
