@@ -63,6 +63,28 @@ class PermissionSeeder extends Seeder
                     'Suppression Parametrage',
                 ],
             ],
+            'Manager' => [
+                'Gestion de Stock' => [
+                    'Ajout du Stock',
+                    'Modification du Stock',
+                    'Suppression du Stock',
+                ],
+                'Gestion de immobilisation' => [
+                    'Ajout immobilisation',
+                    'Modification immobilisation',
+                    'Suppression immobilisation',
+                ],
+                'Gestion de parc' => [
+                    'Ajout parc',
+                    'Modification parc',
+                    'Suppression parc',
+                ],
+                'Parametrage' => [
+                    'Ajout Parametrage',
+                    'Modification Parametrage',
+                    'Suppression Parametrage',
+                ],
+            ],
         ];
 
         // Parcourir les rôles et les permissions à ajouter
