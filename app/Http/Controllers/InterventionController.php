@@ -74,17 +74,13 @@ class InterventionController extends Controller
 
    public function imprimerInterventions()
     {
-        // Récupère toutes les interventions avec leurs relations nécessaires
         $interventions = Intervention::with([
             'typeIntervention',
             'immobilisation',
-        ])->latest()->get(); // Pas de pagination pour le PDF complet
+        ])->latest()->get(); 
 
-        // Charge la vue Blade qui servira de template pour le PDF
-        // Utilise l'alias global pour la façade Pdf (\Pdf)
         $pdf = \Pdf::loadView('pdf.interventions', compact('interventions'));
 
-        // Retourne le PDF en téléchargement
-        return $pdf->download('liste_interventions.pdf'); // Nom du fichier PDF à télécharger
+        return $pdf->download('liste_interventions.pdf'); 
     }
 }
