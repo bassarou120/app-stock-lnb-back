@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Etat du Stock</title>
+    <title>Transfert d'immobilisation</title>
     <style>
         @page {
             size: landscape;
@@ -43,29 +43,31 @@
     </style>
 </head>
 <body>
-    <h2>LNB-Stock & Parc | Etat du Stock</h2>
+    <h2>LNB-Stock & Parc | Transfert d'immobilisation</h2>
     <table>
         <thead>
             <tr>
-                <th>Code</th>
-                <th>Article</th>
-                <th>Description</th>
-                <th>Catégorie</th>
-                <th>Quantité Actuelle</th>
-                <th>Stock d'alerte</th>
-                <th>Date de création</th>
+                <th>N°</th>
+                <th>Immobilisation</th>
+                <th>Ancien Bureau</th>
+                <th>Nouveau Bureau</th>
+                <th>Ancien Responsable</th>
+                <th>Nouveau Responsable</th>
+                <th>Date Mouvement</th>
+                <th>Observation</th>
             </tr>
         </thead>
         <tbody>
-            @foreach ($articles as $article)
+            @foreach($transferts as $index => $transfert)
                 <tr>
-                    <td>{{ $article->code_article  ?? '-' }}</td>
-                    <td>{{ $article->libelle  ?? '-' }}</td>
-                    <td>{{ $article->description ?? '-' }}</td>
-                    <td>{{ $article->categorie ? $article->categorie->libelle_categorie_article : '-' }}</td>
-                    <td>{{ $article->stock ? $article->stock->Qte_actuel : 0 }}</td>
-                    <td>{{ $article->stock_alerte ?? '-' }}</td>
-                    <td>{{ $article->created_at ?? '-' }}</td>
+                    <td>{{ $index + 1 }}</td>
+                    <td>{{ $transfert->immobilisation->libelle_immo ?? 'N/A' }}</td>
+                    <td>{{ $transfert->old_bureau->libelle_bureau ?? 'N/A' }}</td>
+                    <td>{{ $transfert->bureau->libelle_bureau ?? 'N/A' }}</td>
+                    <td>{{ $transfert->old_employe->nom ?? '' }} {{ $transfert->old_employe->prenom ?? 'N/A' }}</td>
+                    <td>{{ $transfert->employe->nom ?? '' }} {{ $transfert->employe->prenom ?? 'N/A' }}</td>
+                    <td>{{ \Carbon\Carbon::parse($transfert->date_mouvement)->format('d/m/Y') }}</td>
+                    <td>{{ $transfert->observation ?? 'N/A' }}</td>
                 </tr>
             @endforeach
         </tbody>

@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Etat du Stock</title>
+    <title>Entrée de Stock</title>
     <style>
         @page {
             size: landscape;
@@ -43,29 +43,29 @@
     </style>
 </head>
 <body>
-    <h2>LNB-Stock & Parc | Etat du Stock</h2>
+    <h2>LNB-Stock & Parc | Entrée de Stock</h2>
     <table>
         <thead>
             <tr>
-                <th>Code</th>
+                <th>N°</th>
+                <th>Code Article</th>
                 <th>Article</th>
                 <th>Description</th>
-                <th>Catégorie</th>
-                <th>Quantité Actuelle</th>
-                <th>Stock d'alerte</th>
-                <th>Date de création</th>
+                <th>Qte</th>
+                <th>Date Mouvement</th>
+                <th>Fournisseur</th>
             </tr>
         </thead>
         <tbody>
-            @foreach ($articles as $article)
+            @foreach($mouvements as $index => $mouvement)
                 <tr>
-                    <td>{{ $article->code_article  ?? '-' }}</td>
-                    <td>{{ $article->libelle  ?? '-' }}</td>
-                    <td>{{ $article->description ?? '-' }}</td>
-                    <td>{{ $article->categorie ? $article->categorie->libelle_categorie_article : '-' }}</td>
-                    <td>{{ $article->stock ? $article->stock->Qte_actuel : 0 }}</td>
-                    <td>{{ $article->stock_alerte ?? '-' }}</td>
-                    <td>{{ $article->created_at ?? '-' }}</td>
+                    <td>{{ $index + 1 }}</td>
+                    <td>{{ $mouvement->article->code_article ?? 'N/A' }}</td>
+                    <td>{{ $mouvement->article->libelle ?? 'N/A' }}</td>
+                    <td>{{ $mouvement->description }}</td>
+                    <td>{{ $mouvement->qte }}</td>
+                    <td>{{ \Carbon\Carbon::parse($mouvement->date_mouvement)->format('d/m/Y') }}</td>
+                    <td>{{ $mouvement->fournisseur->nom ?? 'N/A' }}</td>
                 </tr>
             @endforeach
         </tbody>

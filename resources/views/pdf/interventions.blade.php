@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Etat du Stock</title>
+    <title>Liste des Interventions</title>
     <style>
         @page {
             size: landscape;
@@ -43,29 +43,29 @@
     </style>
 </head>
 <body>
-    <h2>LNB-Stock & Parc | Etat du Stock</h2>
+    <h2>LNB-Stock & Parc | Liste des Interventions</h2>
     <table>
         <thead>
             <tr>
-                <th>Code</th>
-                <th>Article</th>
-                <th>Description</th>
-                <th>Catégorie</th>
-                <th>Quantité Actuelle</th>
-                <th>Stock d'alerte</th>
-                <th>Date de création</th>
+                <th>N°</th>
+                <th>Immobilisation</th>
+                <th>Type Intervention</th>
+                <th>Titre</th>
+                <th>Date Intervention</th>
+                <th>Coût</th>
+                <th>Observation</th>
             </tr>
         </thead>
         <tbody>
-            @foreach ($articles as $article)
+            @foreach($interventions as $index => $intervention)
                 <tr>
-                    <td>{{ $article->code_article  ?? '-' }}</td>
-                    <td>{{ $article->libelle  ?? '-' }}</td>
-                    <td>{{ $article->description ?? '-' }}</td>
-                    <td>{{ $article->categorie ? $article->categorie->libelle_categorie_article : '-' }}</td>
-                    <td>{{ $article->stock ? $article->stock->Qte_actuel : 0 }}</td>
-                    <td>{{ $article->stock_alerte ?? '-' }}</td>
-                    <td>{{ $article->created_at ?? '-' }}</td>
+                    <td>{{ $index + 1 }}</td>
+                    <td>{{ $intervention->immobilisation->libelle_immo ?? 'N/A' }}</td>
+                    <td>{{ $intervention->typeIntervention->libelle_type_intervention ?? 'N/A' }}</td>
+                    <td>{{ $intervention->titre }}</td>
+                    <td>{{ \Carbon\Carbon::parse($intervention->date_intervention)->format('d/m/Y') }}</td>
+                    <td>{{ number_format($intervention->cout, 2, ',', ' ') }}</td>
+                    <td>{{ $intervention->observation ?? 'N/A' }}</td>
                 </tr>
             @endforeach
         </tbody>
