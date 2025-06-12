@@ -272,17 +272,16 @@ class MouvementStockController extends Controller
             ], 500);
         }
     }
-    
+
     // Méthode pour l'impression des mouvements d'entrée
     public function imprimerEntrees()
     {
-        // CORRECTION ICI : Utilise 'piecesJointes' (camelCase)
         $mouvements = MouvementStock::with(['article', 'fournisseur', 'piecesJointes'])
                                     ->where('id_type_mouvement', 1)
                                     ->latest()
                                     ->get();
 
-        // Correction pour utiliser l'alias global de la façade Pdf
+
         $pdf = \Pdf::loadView('pdf.mouvements_entrees', compact('mouvements'));
 
         return $pdf->download('liste_mouvements_entrees.pdf');
