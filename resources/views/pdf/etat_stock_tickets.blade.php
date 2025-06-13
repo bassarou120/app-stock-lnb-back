@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Liste des Interventions</title>
+    <title>État de Stock des Tickets</title>
     <style>
         @page {
             size: landscape;
@@ -43,33 +43,23 @@
     </style>
 </head>
 <body>
-    <h2>LNB-Stock & Parc | Liste des Interventions</h2>
+    <h2>LNB-Stock & Parc | État de Stock des Tickets</h2>
     <table>
         <thead>
             <tr>
                 <th>N°</th>
-                <th>Titre</th>
-                <th>Coût</th>
-                <th>Observation</th>
-                <th>Code Immobilisation</th>
-                <th>Designation Immobilisation</th>
-                <th>Type Intervention</th>
-                <th>Date Intervention</th>
-                
-                
+                <th>Coupon Tickets</th>
+                <th>Compagnie petrolière</th>
+                <th>Quantité Actuelle</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($interventions as $index => $intervention)
+            @foreach($stock_tickets as $index => $stock_ticket)
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ $intervention->titre }}</td>
-                    <td>{{ number_format($intervention->cout, 2, ',', ' ') }}</td>
-                    <td>{{ $intervention->observation ?? 'N/A' }}</td>
-                    <td>{{ $intervention->immobilisation->code ?? 'N/A' }}</td>
-                    <td>{{ $intervention->immobilisation->designation ?? 'N/A' }}</td>
-                    <td>{{ $intervention->typeIntervention->libelle_type_intervention ?? 'N/A' }}</td>
-                    <td>{{ \Carbon\Carbon::parse($intervention->date_intervention)->format('d/m/Y') }}</td>
+                    <td>{{ $stock_ticket->couponTicket->libelle ?? 'N/A' }}</td>
+                    <td>{{ $stock_ticket->compagnie->libelle ?? 'N/A' }}</td>
+                    <td>{{ number_format($stock_ticket->qte_actuel, 0, ',', ' ') }}</td>
                 </tr>
             @endforeach
         </tbody>

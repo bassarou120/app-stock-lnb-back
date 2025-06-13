@@ -64,4 +64,13 @@ class StockTicketController extends Controller
         $stock_ticket->delete();
         return new PostResource(true, 'Stock de ticket supprimé avec succès', null);
     }
+
+    public function imprimerEtatStockTickets()
+    {
+        $stock_tickets = StockTicket::with('couponTicket', 'compagnie')->latest()->get();
+        
+        $pdf = \Pdf::loadView('pdf.etat_stock_tickets', compact('stock_tickets'));
+
+        return $pdf->download('etat_stock_tickets.pdf'); 
+    }
 }

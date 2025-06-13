@@ -73,4 +73,16 @@ class InterventionVehiculeController extends Controller
         $intervention->delete();
         return response()->json(['message' => 'intervention supprimé avec succès']);
     }
+
+    public function imprimerInterventionsVehicule()
+    {
+        $interventions = InterventionVehicule::with([
+            'vehicule',
+            'typeIntervention'
+        ])->latest()->get();
+
+        $pdf = \Pdf::loadView('pdf.interventions_vehicule', compact('interventions'));
+
+        return $pdf->download('liste_interventions_vehicule.pdf');
+    }
 }

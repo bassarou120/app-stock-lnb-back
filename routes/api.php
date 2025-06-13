@@ -49,7 +49,8 @@ Route::get('/stock/coupon-compagnies', [CouponTicketController::class, 'getCoupo
 Route::apiResource('marques', MarqueController::class);
 Route::apiResource('communes', CommuneController::class);
 Route::apiResource('coupon_tickets', CouponTicketController::class);
-Route::apiResource('stock_coupon_tickets', StockTicketController::class);
+Route::apiResource('stock_coupon_tickets', StockTicketController::class)->except(['show']);
+Route::get('/stock-tickets/imprimer', [StockTicketController::class, 'imprimerEtatStockTickets']);
 Route::apiResource('compagnie_petrolier', CompagniePetrolierController::class);
 Route::get('compagnie_petrolier-imprimer', [CompagniePetrolierController::class, 'imprimer']);
 Route::apiResource('magazins', MagazinController::class);
@@ -147,8 +148,8 @@ Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOTP']);
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 Route::post('/bonjour', [ForgotPasswordController::class, 'direBonjour']);
 
-Route::apiResource('intervention-vehicules', InterventionVehiculeController::class);
-
+Route::apiResource('intervention-vehicules', InterventionVehiculeController::class)->except(['show']);
+Route::get('/interventions-vehicule/imprimer', [InterventionVehiculeController::class, 'imprimerInterventionsVehicule']);
 // Route::get('/intervention-vehicules', [InterventionVehiculeController::class, 'index']);
 // Route::post('/intervention-vehicules', [InterventionVehiculeController::class, 'store']);
 // Route::get('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'show']);
