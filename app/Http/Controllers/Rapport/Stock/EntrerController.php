@@ -4,6 +4,11 @@ namespace App\Http\Controllers\Rapport\Stock;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Article;
+use App\Models\MouvementStock;
+use App\Models\Parametrage\TypeMouvement;
+use App\Http\Resources\PostResource;
+
 
 class EntrerController extends Controller
 {
@@ -13,7 +18,8 @@ class EntrerController extends Controller
 
     public function rapport_EntreeStock(Request $request)
     {
-        // ✅ Vérifier que les deux dates sont bien fournies
+
+        // ✅ Vérifie que les deux dates sont fournies
         if (!$request->filled('date_debut') || !$request->filled('date_fin')) {
             return response()->json([
                 'success' => false,
@@ -21,37 +27,31 @@ class EntrerController extends Controller
             ], 422);
         }
 
-        $type_mouvement = requets('id_type_mouvement');
-
-        // ✅ Récupérer le type de mouvement "Entrée de Stock"
-        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', $type_mouvement)->first();
-
-        if (!$type_mouvement) {
-            return new PostResource(false, "Type de mouvement" . $type_mouvement ." introuvable.", []);
-        }
-
-        // ✅ Construire la requête de base
-        $query = MouvementStock::with(['article', 'fournisseur', 'piecesJointes'])
-            ->where('id_type_mouvement', $type_mouvement->id)
+        // ✅ Requête de base avec relations
+        $query = MouvementStock::with(['article', 'fournisseur', 'piecesJointes', 'article.categorie', 'article.stock'])
             ->whereBetween('date_mouvement', [$request->date_debut, $request->date_fin]);
 
-        // 🔍 Si libellé article fourni
-        if ($request->filled('libelle')) {
-            $query->whereHas('article', function ($q) use ($request) {
-                $q->where('libelle', 'like', '%' . $request->libelle . '%');
-            });
+        // 🔍 Filtrer par type de mouvement (optionnel)
+        if ($request->filled('id_type_mouvement')) {
+            $query->where('id_type_mouvement', $request->id_type_mouvement);
         }
 
-        // 🔍 Si fournisseur fourni
+        // 🔍 Filtrer par article (optionnel)
+        if ($request->filled('id_Article')) {
+            $query->where('id_Article', $request->id_Article);
+        }
+
+        // 🔍 Filtrer par fournisseur (optionnel)
         if ($request->filled('id_fournisseur')) {
             $query->where('id_fournisseur', $request->id_fournisseur);
         }
 
-        // ✅ Exécuter la requête
+        // ✅ Exécute la requête
         $resultats = $query->latest()->paginate(1000);
 
         return new PostResource(true, 'Mouvements filtrés avec succès.', $resultats);
     }
+
 
 
     public function index()

@@ -39,6 +39,8 @@ use App\Http\Controllers\RetourTicketController;
 use App\Http\Controllers\AnnulationTicketController;
 use App\Http\Controllers\TrajetController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\Rapport\Stock\EntrerController;
+
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -159,4 +161,4 @@ Route::apiResource('intervention-vehicules', InterventionVehiculeController::cla
 Route::get('vehicules-imprimer', [VehiculeController::class, 'imprimerVehicules']);
 
 //Rapport
-Route::post('rapport-entrestock', [MouvementStockController::class, 'rapport_EntreeStock']);
+Route::post('rapport-entrestock', [EntrerController::class, 'rapport_EntreeStock']);
