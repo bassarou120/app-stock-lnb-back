@@ -154,3 +154,9 @@ Route::apiResource('intervention-vehicules', InterventionVehiculeController::cla
 // Route::get('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'show']);
 // Route::put('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'update']);
 // Route::delete('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'destroy']);
+
+
+Route::get('vehicules-imprimer', [VehiculeController::class, 'imprimerVehicules']);
+
+//Rapport
+Route::post('rapport-entrestock', [MouvementStockController::class, 'rapport_EntreeStock']);
