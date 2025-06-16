@@ -166,4 +166,13 @@ Route::get('vehicules-imprimer', [VehiculeController::class, 'imprimerVehicules'
 Route::post('rapport-entrestock', [EntrerController::class, 'rapport_EntreeStock']);
 // Routes pour les rapports d'immobilisations
 Route::get('/rapports/immobilisations', [ImmobilisationRapportController::class, 'getImmobilisationsForReport']);
+// Route pour récupérer les données du rapport (pour le tableau)
+Route::get('/rapports/immobilisations', [ImmobilisationRapportController::class, 'getRapportData']);
+// Route pour les rapports de transferts (données pour le tableau)
+Route::get('/rapports/transferts', [ImmobilisationRapportController::class, 'getRapportData']);
+
 Route::get('/rapports/immobilisations/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportImmos']);
+// Routes pour l'impression PDF des rapports
+Route::get('/rapports/immobilisations/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
+// Route pour l'impression PDF des rapports de transferts
+Route::get('/rapports/transferts/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
