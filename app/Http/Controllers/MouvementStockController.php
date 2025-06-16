@@ -196,44 +196,97 @@ class MouvementStockController extends Controller
 
     // Ajout multiple de mouvement de stock entree
 
+
+
     /**
      * @OA\Post(
      *     path="/api/demande-de-sortie",
      *     summary="Créer une demande de sortie",
-     *     description="Crée une nouvelle demande de sortie avec les articles demandés",
+     *     description="Permet de créer une nouvelle demande de sortie avec la liste des articles demandés.",
+     *     tags={"Demande de Sortie"},
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *         description="Les données nécessaires pour créer une demande de sortie",
      *         @OA\JsonContent(
      *             required={"dateDemande", "id_bureau", "id_personnel", "articles"},
-     *             @OA\Property(property="dateDemande", type="string", format="date", example="2025-05-27"),
-     *             @OA\Property(property="id_bureau", type="integer", example=3),
-     *             @OA\Property(property="id_personnel", type="integer", example=5),
+     *
+     *             @OA\Property(
+     *                 property="dateDemande",
+     *                 type="string",
+     *                 format="date",
+     *                 example="2025-05-27",
+     *                 description="Date à laquelle la demande de sortie est effectuée"
+     *             ),
+     *
+     *             @OA\Property(
+     *                 property="id_bureau",
+     *                 type="integer",
+     *                 example=3,
+     *                 description="Identifiant du bureau effectuant la demande (référence à la table bureaux)"
+     *             ),
+     *
+     *             @OA\Property(
+     *                 property="id_personnel",
+     *                 type="integer",
+     *                 example=5,
+     *                 description="Identifiant du personnel responsable de la demande (référence à la table personnels)"
+     *             ),
+     *
      *             @OA\Property(
      *                 property="articles",
      *                 type="array",
+     *                 minItems=1,
      *                 @OA\Items(
      *                     type="object",
-     *                     required={"code_article", "description", "qteDemande"},
-     *                     @OA\Property(property="code_article", type="string", example="AAA67"),
-     *                     @OA\Property(property="description", type="string", example="Demande 1"),
-     *                     @OA\Property(property="qteDemande", type="integer", example=10)
-     *                 ),
+     *                     required={"code_article", "qteDemande"},
      *
-
-     *             ),
+     *                     @OA\Property(
+     *                         property="code_article",
+     *                         type="string",
+     *                         example="AAA67",
+     *                         description="Code unique de l'article concerné (référence à la table articles)"
+     *                     ),
      *
+     *                     @OA\Property(
+     *                         property="description",
+     *                         type="string",
+     *                         example="Consommable de bureau",
+     *                         description="Description complémentaire de l'article demandé"
+     *                     ),
+     *
+     *                     @OA\Property(
+     *                         property="qteDemande",
+     *                         type="integer",
+     *                         example=10,
+     *                         description="Quantité d'article demandée pour la sortie (minimum 1)"
+     *                     )
+     *                 )
+     *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=201,
-     *         description="Demande de sortie créée avec succès"
+     *         description="Demande de sortie créée avec succès",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Demande de sortie créée avec succès"),
+     *             @OA\Property(property="demande", type="object")
+     *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=400,
-     *         description="Requête invalide"
+     *         description="Requête invalide - Erreur de validation"
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Erreur interne du serveur"
      *     )
      * )
      */
+
     public function storeMultipleEntreeStock(Request $request)
     {
         // Validation des données communes
