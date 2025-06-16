@@ -97,4 +97,18 @@ class VehiculeController extends Controller
         $vehicule->delete();
         return new PostResource(true, 'vehicule supprimé avec succès', null);
     }
+
+    // Méthode pour l'impression des mouvements d'entrée
+    public function imprimerVehicules()
+    {
+        $vehicules = Vehicule::with(['modele', 'marque'])
+                                    ->latest()
+                                    ->get();
+
+
+        $pdf = \Pdf::loadView('pdf.vehicule', compact('vehicules'));
+
+        return $pdf->download('liste_vehicules.pdf');
+    }
+
 }

@@ -325,6 +325,20 @@ class MouvementStockController extends Controller
         }
     }
 
+    // Méthode pour l'impression des mouvements d'entrée
+    public function imprimerEntrees()
+    {
+        $mouvements = MouvementStock::with(['article', 'fournisseur', 'piecesJointes'])
+                                    ->where('id_type_mouvement', 1)
+                                    ->latest()
+                                    ->get();
+
+
+        $pdf = \Pdf::loadView('pdf.mouvements_entrees', compact('mouvements'));
+
+        return $pdf->download('liste_mouvements_entrees.pdf');
+    }
+
 
 
 
@@ -949,4 +963,10 @@ public function storeSortieStockMultiple(Request $request)
 
         return new PostResource(true, 'Quantité trouvée !', $quantite);
     }
+
+
+
+
+
+
 }
