@@ -911,4 +911,10 @@ public function storeSortieStockMultiple(Request $request)
 
         return new PostResource(true, 'Quantité trouvée !', $quantite);
     }
+
+
+
+
+
+
 }
