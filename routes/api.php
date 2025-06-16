@@ -40,6 +40,7 @@ use App\Http\Controllers\AnnulationTicketController;
 use App\Http\Controllers\TrajetController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Rapport\Stock\EntrerController;
+use App\Http\Controllers\Rapport\ImmobilisationRapportController;
 
 
 Route::get('/user', function (Request $request) {
@@ -163,3 +164,6 @@ Route::get('vehicules-imprimer', [VehiculeController::class, 'imprimerVehicules'
 
 //Rapport
 Route::post('rapport-entrestock', [EntrerController::class, 'rapport_EntreeStock']);
+// Routes pour les rapports d'immobilisations
+Route::get('/rapports/immobilisations', [ImmobilisationRapportController::class, 'getImmobilisationsForReport']);
+Route::get('/rapports/immobilisations/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportImmos']);
