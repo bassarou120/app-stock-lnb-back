@@ -1,20 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\Rapport; // Assurez-vous que le namespace est correct
+namespace App\Http\Controllers\Rapport;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Immobilisation;
-use App\Models\Transfert; // NOUVEAU: Importer le modèle Transfert
-// Les autres modèles de Parametrage ne sont pas directement utilisés dans ce contrôleur de rapport pour les requêtes de base,
-// mais sont utilisés dans les relations des modèles Immobilisation et Transfert.
-// use App\Models\Parametrage\Bureau;
-// use App\Models\Parametrage\Employe;
-// use App\Models\Parametrage\Fournisseur;
-// use App\Models\Parametrage\GroupeTypeImmo;
-// use App\Models\Parametrage\SousTypeImmo;
-// use App\Models\Parametrage\StatusImmo;
-// use App\Models\Parametrage\Vehicule;
+use App\Models\Transfert;
+use App\Models\Intervention; // NOUVEAU: Importer le modèle Intervention
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -22,7 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class ImmobilisationRapportController extends Controller
 {
     /**
-     * Récupère les données pour les rapports (enregistrement ou transfert) en fonction des filtres.
+     * Récupère les données pour les rapports (enregistrement, transfert ou intervention) en fonction des filtres.
      */
     public function getRapportData(Request $request)
     {
@@ -46,8 +38,6 @@ class ImmobilisationRapportController extends Controller
                 $validator = Validator::make($request->all(), [
                     'code_immo' => 'nullable|string',
                     'date_debut_acquisition' => 'nullable|date',
-                    // 'date_fin_acquisition' est actuellement géré par 'date_debut_acquisition' dans la requête
-                    // Si tu l'as ajouté comme filtre distinct, ajoute-le ici.
                 ]);
 
                 if ($validator->fails()) {
@@ -66,10 +56,6 @@ class ImmobilisationRapportController extends Controller
                 if ($request->filled('date_debut_acquisition')) {
                     $query->whereDate('date_acquisition', '>=', $request->input('date_debut_acquisition'));
                 }
-                // Si tu as un filtre date_fin_acquisition séparé, tu peux l'ajouter ici
-                // if ($request->filled('date_fin_acquisition')) {
-                //     $query->whereDate('date_acquisition', '<=', $request->input('date_fin_acquisition'));
-                // }
 
                 $data = $query->latest()->paginate(100);
                 $message = 'Rapport d\'enregistrement des immobilisations généré avec succès.';
@@ -117,6 +103,38 @@ class ImmobilisationRapportController extends Controller
                 $message = 'Rapport de transferts d\'immobilisations généré avec succès.';
                 break;
 
+            case 'intervention': // NOUVEAU: Logique pour les rapports d'intervention
+                // Validation spécifique pour le rapport d'intervention (dates obligatoires)
+                $validator = Validator::make($request->all(), [
+                    'date_debut' => 'required|date',
+                    'date_fin' => 'required|date|after_or_equal:date_debut',
+                    'type_intervention_id' => 'nullable|exists:type_interventions,id',
+                    'immo_id' => 'nullable|exists:immobilisations,id',
+                ]);
+
+                if ($validator->fails()) {
+                    return new PostResource(false, 'Validation échouée pour les dates d\'intervention.', [
+                        'errors' => $validator->errors()
+                    ]);
+                }
+
+                $query = Intervention::with([
+                    'typeIntervention',
+                    'immobilisation',
+                ])->whereBetween('date_intervention', [$request->date_debut, $request->date_fin]);
+
+                if ($request->filled('type_intervention_id')) {
+                    $query->where('type_intervention_id', $request->type_intervention_id);
+                }
+
+                if ($request->filled('immo_id')) {
+                    $query->where('immo_id', $request->immo_id);
+                }
+
+                $data = $query->latest()->paginate(100);
+                $message = 'Rapport des interventions sur immobilisations généré avec succès.';
+                break;
+
             default:
                 $success = false;
                 $message = 'Type de rapport non valide.';
@@ -128,7 +146,7 @@ class ImmobilisationRapportController extends Controller
     }
 
     /**
-     * Génère le PDF pour les rapports (enregistrement ou transfert) en fonction des filtres.
+     * Génère le PDF pour les rapports (enregistrement, transfert ou intervention) en fonction des filtres.
      */
     public function imprimerRapportData(Request $request)
     {
@@ -152,7 +170,6 @@ class ImmobilisationRapportController extends Controller
                 $validator = Validator::make($request->all(), [
                     'code_immo' => 'nullable|string',
                     'date_debut_acquisition' => 'nullable|date',
-                    // 'date_fin_acquisition' est géré implicitement par le frontend s'il est vide
                 ]);
 
                 if ($validator->fails()) {
@@ -171,10 +188,6 @@ class ImmobilisationRapportController extends Controller
                 if ($request->filled('date_debut_acquisition')) {
                     $query->whereDate('date_acquisition', '>=', $request->input('date_debut_acquisition'));
                 }
-                // Si tu as un filtre date_fin_acquisition séparé, tu peux l'ajouter ici
-                // if ($request->filled('date_fin_acquisition')) {
-                //     $query->whereDate('date_acquisition', '<=', $request->input('date_fin_acquisition'));
-                // }
 
                 $data = $query->latest()->get(); // Pas de pagination pour le PDF
                 $viewName = 'pdf.rapport.rapport_immobilisations'; // Chemin de la vue pour l'enregistrement
@@ -226,12 +239,55 @@ class ImmobilisationRapportController extends Controller
                 $filename = 'rapport_transferts_immobilisations.pdf';
                 break;
 
+            case 'intervention': // NOUVEAU: Logique pour les rapports d'intervention
+                // Validation spécifique pour l'impression du rapport d'intervention (dates obligatoires)
+                $validator = Validator::make($request->all(), [
+                    'date_debut' => 'required|date',
+                    'date_fin' => 'required|date|after_or_equal:date_debut',
+                    'type_intervention_id' => 'nullable|exists:type_interventions,id',
+                    'immo_id' => 'nullable|exists:immobilisations,id',
+                ]);
+
+                if ($validator->fails()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Les dates de début et de fin sont obligatoires et valides pour le rapport d\'intervention.',
+                        'errors' => $validator->errors()
+                    ], 422);
+                }
+
+                $query = Intervention::with([
+                    'typeIntervention',
+                    'immobilisation',
+                ])->whereBetween('date_intervention', [$request->date_debut, $request->date_fin]);
+
+                if ($request->filled('type_intervention_id')) {
+                    $query->where('type_intervention_id', $request->type_intervention_id);
+                }
+
+                if ($request->filled('immo_id')) {
+                    $query->where('immo_id', $request->immo_id);
+                }
+
+                $data = $query->latest()->get(); // Pas de pagination pour le PDF
+                $viewName = 'pdf.rapport.rapport_interventions'; // Chemin de la vue pour les interventions
+                $filename = 'rapport_interventions_immobilisations.pdf';
+                break;
+
             default:
                 return response()->json(['success' => false, 'message' => 'Type de rapport non valide pour l\'impression.'], 400);
         }
 
         // Le nom de la variable dans la vue dépendra du type de rapport
-        $compactData = ($typeRapport === 'enregistrement') ? ['immobilisations' => $data] : ['transferts' => $data];
+        $compactData = [];
+        if ($typeRapport === 'enregistrement') {
+            $compactData = ['immobilisations' => $data];
+        } elseif ($typeRapport === 'transfert') {
+            $compactData = ['transferts' => $data];
+        } elseif ($typeRapport === 'intervention') {
+            $compactData = ['interventions' => $data];
+        }
+        
         $pdf = \Pdf::loadView($viewName, $compactData);
 
         return $pdf->download($filename);
