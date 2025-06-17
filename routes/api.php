@@ -39,7 +39,7 @@ use App\Http\Controllers\RetourTicketController;
 use App\Http\Controllers\AnnulationTicketController;
 use App\Http\Controllers\TrajetController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\Rapport\Stock\EntrerController;
+use App\Http\Controllers\Rapport\Stock\StockRapportController;
 use App\Http\Controllers\Rapport\ImmobilisationRapportController;
 
 
@@ -179,3 +179,6 @@ Route::get('/rapports/immobilisations/imprimer', [ImmobilisationRapportControlle
 Route::get('/rapports/transferts/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
 // Route pour l'impression PDF des rapports d'interventions
 Route::get('/rapports/interventions/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
+// Routes API pour les Rapports de Stock (Entrée et Sortie)
+Route::get('/rapports/stock', [StockRapportController::class, 'getRapportData']);
+Route::get('/rapports/stock/imprimer', [StockRapportController::class, 'imprimerRapportStock']);
