@@ -42,7 +42,7 @@ class StockRapportController extends Controller
             'piecesJointes',
             'article.categorie',
             'article.stock',
-            'bureau',   
+            'bureau',
             'typeMouvement'
         ]);
 
@@ -53,7 +53,8 @@ class StockRapportController extends Controller
         }
 
         if ($request->id_type_rapport === 'entree') {
-            $query->with('fournisseur');
+            $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Entrée de Stock")->latest()->first();
+            $query->with('fournisseur')->where('id_type_mouvement', $type_mouvement->id);
             if ($request->filled('id_fournisseur')) {
                 $query->where('id_fournisseur', $request->id_fournisseur);
             }
@@ -69,9 +70,9 @@ class StockRapportController extends Controller
             if ($request->filled('id_Article')) {
                 $query->where('id_Article', $request->id_Article);
             }
-            
+
         }
-        
+
         $resultats = $query->latest()->paginate(1000);
 
         return new PostResource(true, 'Rapport de stock généré avec succès.', $resultats);
@@ -114,7 +115,8 @@ class StockRapportController extends Controller
         }
 
         if ($request->id_type_rapport === 'entree') {
-            $query->with('fournisseur');
+            $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Entrée de Stock")->latest()->first();
+            $query->with('fournisseur')->where('id_type_mouvement', $type_mouvement->id);
             if ($request->filled('id_fournisseur')) {
                 $query->where('id_fournisseur', $request->id_fournisseur);
             }
