@@ -24,7 +24,7 @@ class TypeInterventionController extends Controller
             'libelle_type_intervention' => 'required|string|max:255',
             'applicable_seul_vehicule' => 'required|boolean',
             'observation' => 'nullable|string|max:255',
-            'date_expiration' => 'required|date',
+            'date_expiration' => 'nullable|date',
         ]);
 
         if ($validator->fails()) {
@@ -48,7 +48,7 @@ class TypeInterventionController extends Controller
             'libelle_type_intervention' => 'required|string|max:255',
             'applicable_seul_vehicule' => 'required|boolean',
             'observation' => 'nullable|string|max:255',
-            'date_expiration' => 'required|date',
+            'date_expiration' => 'nullable|date',
         ]);
 
         if ($validator->fails()) {

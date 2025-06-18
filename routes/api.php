@@ -39,7 +39,9 @@ use App\Http\Controllers\RetourTicketController;
 use App\Http\Controllers\AnnulationTicketController;
 use App\Http\Controllers\TrajetController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\Rapport\Stock\EntrerController;
+use App\Http\Controllers\Rapport\Stock\StockRapportController;
+use App\Http\Controllers\Rapport\ImmobilisationRapportController;
+use App\Http\Controllers\Rapport\Parc\RapportParcController;
 
 
 Route::get('/user', function (Request $request) {
@@ -51,7 +53,8 @@ Route::get('/stock/coupon-compagnies', [CouponTicketController::class, 'getCoupo
 Route::apiResource('marques', MarqueController::class);
 Route::apiResource('communes', CommuneController::class);
 Route::apiResource('coupon_tickets', CouponTicketController::class);
-Route::apiResource('stock_coupon_tickets', StockTicketController::class);
+Route::apiResource('stock_coupon_tickets', StockTicketController::class)->except(['show']);
+Route::get('/stock-tickets/imprimer', [StockTicketController::class, 'imprimerEtatStockTickets']);
 Route::apiResource('compagnie_petrolier', CompagniePetrolierController::class);
 Route::get('compagnie_petrolier-imprimer', [CompagniePetrolierController::class, 'imprimer']);
 Route::apiResource('magazins', MagazinController::class);
@@ -149,8 +152,8 @@ Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOTP']);
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 Route::post('/bonjour', [ForgotPasswordController::class, 'direBonjour']);
 
-Route::apiResource('intervention-vehicules', InterventionVehiculeController::class);
-
+Route::apiResource('intervention-vehicules', InterventionVehiculeController::class)->except(['show']);
+Route::get('/interventions-vehicule/imprimer', [InterventionVehiculeController::class, 'imprimerInterventionsVehicule']);
 // Route::get('/intervention-vehicules', [InterventionVehiculeController::class, 'index']);
 // Route::post('/intervention-vehicules', [InterventionVehiculeController::class, 'store']);
 // Route::get('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'show']);
@@ -162,3 +165,24 @@ Route::get('vehicules-imprimer', [VehiculeController::class, 'imprimerVehicules'
 
 //Rapport
 Route::post('rapport-entrestock', [EntrerController::class, 'rapport_EntreeStock']);
+
+
+Route::get('/rapports/immobilisations', [ImmobilisationRapportController::class, 'getRapportData']);
+
+Route::get('/rapports/transferts', [ImmobilisationRapportController::class, 'getRapportData']);
+
+Route::get('/rapports/interventions', [ImmobilisationRapportController::class, 'getRapportData']);
+
+Route::get('/rapports/immobilisations/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportImmos']);
+// Routes pour l'impression PDF des rapports
+Route::get('/rapports/immobilisations/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
+// Route pour l'impression PDF des rapports de transferts
+Route::get('/rapports/transferts/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
+// Route pour l'impression PDF des rapports d'interventions
+Route::get('/rapports/interventions/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
+// Routes API pour les Rapports de Stock (Entrée et Sortie)
+Route::get('/rapports/stock', [StockRapportController::class, 'getRapportData']);
+Route::get('/rapports/stock/imprimer', [StockRapportController::class, 'imprimerRapportStock']);
+
+Route::get('/rapports/parc', [RapportParcController::class, 'getRapportData']);
+Route::get('/rapports/parc/imprimer', [RapportParcController::class, 'imprimerRapportParc']);

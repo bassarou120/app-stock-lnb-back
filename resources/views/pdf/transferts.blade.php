@@ -48,11 +48,12 @@
         <thead>
             <tr>
                 <th>N°</th>
-                <th>Immobilisation</th>
+                <th>Code Immobilisation</th>
+                <th>Désignation</th>
                 <th>Ancien Bureau</th>
                 <th>Nouveau Bureau</th>
-                <th>Ancien Responsable</th>
-                <th>Nouveau Responsable</th>
+                <th>Ancien Personnel</th>
+                <th>Nouveau Personnel</th>
                 <th>Date Mouvement</th>
                 <th>Observation</th>
             </tr>
@@ -61,7 +62,8 @@
             @foreach($transferts as $index => $transfert)
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ $transfert->immobilisation->libelle_immo ?? 'N/A' }}</td>
+                    <td>{{ $transfert->immobilisation->code ?? 'N/A' }}</td>
+                    <td>{{ $transfert->immobilisation->designation ?? 'N/A' }}</td>
                     <td>{{ $transfert->old_bureau->libelle_bureau ?? 'N/A' }}</td>
                     <td>{{ $transfert->bureau->libelle_bureau ?? 'N/A' }}</td>
                     <td>{{ $transfert->old_employe->nom ?? '' }} {{ $transfert->old_employe->prenom ?? 'N/A' }}</td>

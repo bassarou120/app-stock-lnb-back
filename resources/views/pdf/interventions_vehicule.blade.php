@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Liste des Interventions</title>
+    <title>Liste des Interventions de Véhicule</title>
     <style>
         @page {
             size: landscape;
@@ -43,33 +43,29 @@
     </style>
 </head>
 <body>
-    <h2>LNB-Stock & Parc | Liste des Interventions</h2>
+    <h2>LNB-Stock & Parc | Liste des Interventions de Véhicule</h2>
     <table>
         <thead>
             <tr>
                 <th>N°</th>
-                <th>Titre</th>
-                <th>Coût</th>
-                <th>Observation</th>
-                <th>Code Immobilisation</th>
-                <th>Designation Immobilisation</th>
+                <th>Véhicule</th>
                 <th>Type Intervention</th>
+                <th>Titre</th>
                 <th>Date Intervention</th>
-                
-                
+                <th>Montant</th>
+                <th>Observation</th>
             </tr>
         </thead>
         <tbody>
             @foreach($interventions as $index => $intervention)
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ $intervention->titre }}</td>
-                    <td>{{ number_format($intervention->cout, 2, ',', ' ') }}</td>
-                    <td>{{ $intervention->observation ?? 'N/A' }}</td>
-                    <td>{{ $intervention->immobilisation->code ?? 'N/A' }}</td>
-                    <td>{{ $intervention->immobilisation->designation ?? 'N/A' }}</td>
+                    <td>{{ $intervention->vehicule->immatriculation ?? 'N/A' }}</td>
                     <td>{{ $intervention->typeIntervention->libelle_type_intervention ?? 'N/A' }}</td>
+                    <td>{{ $intervention->titre }}</td>
                     <td>{{ \Carbon\Carbon::parse($intervention->date_intervention)->format('d/m/Y') }}</td>
+                    <td>{{ number_format($intervention->montant, 2, ',', ' ') }}</td>
+                    <td>{{ $intervention->observation ?? 'N/A' }}</td>
                 </tr>
             @endforeach
         </tbody>

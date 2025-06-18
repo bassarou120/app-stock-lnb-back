@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Parametrage\Fournisseur;
 use App\Models\Parametrage\Employe;
 use App\Models\Parametrage\Bureau;
+use App\Models\Parametrage\TypeMouvement;
 
 
 class MouvementStock extends Model
@@ -24,6 +25,11 @@ class MouvementStock extends Model
     public function fournisseur()
     {
         return $this->belongsTo(Fournisseur::class, 'id_fournisseur');
+    }
+
+    public function typeMouvement()
+    {
+        return $this->belongsTo(TypeMouvement::class, 'id_type_mouvement');
     }
 
     public function affectation()
