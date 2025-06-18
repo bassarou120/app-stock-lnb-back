@@ -47,7 +47,6 @@ class MouvementTicketController extends Controller
             "objet" => 'nullable|string|max:255',
             "qte" => 'required|integer',
             "date" => 'required',
-            
         ]);
 
         //check if validation fails
