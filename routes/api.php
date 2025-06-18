@@ -41,6 +41,7 @@ use App\Http\Controllers\TrajetController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Rapport\Stock\StockRapportController;
 use App\Http\Controllers\Rapport\ImmobilisationRapportController;
+use App\Http\Controllers\Rapport\Parc\RapportParcController;
 
 
 Route::get('/user', function (Request $request) {
@@ -182,3 +183,6 @@ Route::get('/rapports/interventions/imprimer', [ImmobilisationRapportController:
 // Routes API pour les Rapports de Stock (Entrée et Sortie)
 Route::get('/rapports/stock', [StockRapportController::class, 'getRapportData']);
 Route::get('/rapports/stock/imprimer', [StockRapportController::class, 'imprimerRapportStock']);
+
+Route::get('/rapports/parc', [RapportParcController::class, 'getRapportData']);
+Route::get('/rapports/parc/imprimer', [RapportParcController::class, 'imprimerRapportParc']);
