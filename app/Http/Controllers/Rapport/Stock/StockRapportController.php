@@ -43,7 +43,8 @@ class StockRapportController extends Controller
             'article.categorie',
             'article.stock',
             'bureau',
-            'typeMouvement'
+            'typeMouvement',
+            'unite_de_mesure'
         ]);
 
         $query->whereBetween('date_mouvement', [$request->date_debut, $request->date_fin]);
@@ -105,7 +106,8 @@ class StockRapportController extends Controller
             'article.categorie',
             'article.stock',
             'typeMouvement',
-            'fournisseur'
+            'fournisseur',
+            'unite_de_mesure'
         ]);
 
         $query->whereBetween('date_mouvement', [$request->date_debut, $request->date_fin]);

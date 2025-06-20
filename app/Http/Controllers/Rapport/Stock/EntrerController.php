@@ -28,7 +28,7 @@ class EntrerController extends Controller
         }
 
         // ✅ Requête de base avec relations
-        $query = MouvementStock::with(['article', 'fournisseur', 'piecesJointes', 'article.categorie', 'article.stock'])
+        $query = MouvementStock::with(['article', 'fournisseur', 'piecesJointes', 'article.categorie', 'article.stock', 'unite_de_mesure'])
             ->whereBetween('date_mouvement', [$request->date_debut, $request->date_fin]);
 
         // 🔍 Filtrer par type de mouvement (optionnel)
