@@ -15,6 +15,7 @@ use App\Http\Controllers\Parametrage\FournisseurController;
 use App\Http\Controllers\Parametrage\TypeAffectationController;
 use App\Http\Controllers\Parametrage\TypeMouvementController;
 use App\Http\Controllers\Parametrage\BureauController;
+use App\Http\Controllers\Parametrage\UniteDeMesureController;
 use App\Http\Controllers\Parametrage\StatusImmoController;
 use App\Http\Controllers\Parametrage\TypeImmoController;
 use App\Http\Controllers\Parametrage\SousTypeImmoController;
@@ -69,6 +70,7 @@ Route::get('employes-imprimer', [EmployeController::class, 'imprimer']);
 Route::apiResource('type_affectations', TypeAffectationController::class);
 Route::apiResource('type_mouvements', TypeMouvementController::class);
 Route::apiResource('bureaux', BureauController::class);
+Route::apiResource('unite-de-mesure', UniteDeMesureController::class);
 Route::apiResource('status_immos', StatusImmoController::class);
 Route::apiResource('type_immos', TypeImmoController::class);
 Route::apiResource('sous_type_immos', SousTypeImmoController::class);
@@ -165,7 +167,7 @@ Route::get('/interventions-vehicule/imprimer', [InterventionVehiculeController::
 Route::get('vehicules-imprimer', [VehiculeController::class, 'imprimerVehicules']);
 
 //Rapport
-Route::post('rapport-entrestock', [EntrerController::class, 'rapport_EntreeStock']);
+// Route::post('rapport-entrestock', [EntrerController::class, 'rapport_EntreeStock']);
 
 
 Route::get('/rapports/immobilisations', [ImmobilisationRapportController::class, 'getRapportData']);

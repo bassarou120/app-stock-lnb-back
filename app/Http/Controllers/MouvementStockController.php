@@ -27,7 +27,7 @@ class MouvementStockController extends Controller
 
         // Si le type de mouvement existe, récupérer les mouvements correspondants
         if ($type_mouvement) {
-            $mouvements = MouvementStock::with(['article', 'fournisseur', 'piecesJointes'])->where('id_type_mouvement', $type_mouvement->id)->latest()->paginate(1000);
+            $mouvements = MouvementStock::with(['article', 'fournisseur', 'piecesJointes', 'unite_de_mesure'])->where('id_type_mouvement', $type_mouvement->id)->latest()->paginate(1000);
 
             return new PostResource(true, 'Liste des mouvements', $mouvements);
         }
@@ -45,6 +45,7 @@ class MouvementStockController extends Controller
         $validator = Validator::make($request->all(), [
             "id_Article" => 'required|exists:articles,id',
             "id_fournisseur" => 'required|exists:fournisseurs,id',
+            "id_unite_de_mesure" => 'required|exists:unite_de_mesures,id',
             "description" => 'nullable|string|max:255',
             "qte" => 'required|integer',
             "date_mouvement" => 'required',
@@ -60,6 +61,7 @@ class MouvementStockController extends Controller
         $mouvement = MouvementStock::create([
             "id_Article" => $request->id_Article,
             "id_fournisseur" => $request->id_fournisseur,
+            "id_unite_de_mesure" => $request->id_unite_de_mesure,
             "description" => $request->description,
             "id_type_mouvement" => $type_mouvement->id,
             "qte" => $request->qte,
@@ -110,6 +112,7 @@ class MouvementStockController extends Controller
         $validator = Validator::make($request->all(), [
             "id_Article" => 'required|exists:articles,id',
             "id_fournisseur" => 'required|exists:fournisseurs,id',
+            "id_unite_de_mesure" => 'required|exists:unite_de_mesures,id',
             "description" => 'string|max:255',
             "qte" => 'required|integer',
             "date_mouvement" => 'required',
@@ -127,6 +130,7 @@ class MouvementStockController extends Controller
         $mouvement->update([
             "id_Article" => $request->id_Article,
             "id_fournisseur" => $request->id_fournisseur,
+            "id_unite_de_mesure" => $request->id_unite_de_mesure,
             "description" => $request->description,
             "qte" => $request->qte,
             "date_mouvement" => $request->date_mouvement,
@@ -193,6 +197,7 @@ class MouvementStockController extends Controller
             "piece_jointe_mouvement.*" => 'file|mimes:pdf,jpg,jpeg,png', // Ajustez selon vos besoins
             "articles" => 'required|array|min:1',
             "articles.*.id_Article" => 'required|exists:articles,id',
+            "articles.*.id_unite_de_mesure" => 'required|exists:unite_de_mesures,id',
             "articles.*.description" => 'nullable|string|max:255',
             "articles.*.qte" => 'required|integer|min:1',
         ]);
@@ -215,6 +220,7 @@ class MouvementStockController extends Controller
                 // Création du mouvement de stock
                 $mouvement = MouvementStock::create([
                     "id_Article" => $article['id_Article'],
+                    "id_unite_de_mesure" => $article['id_unite_de_mesure'],
                     "id_fournisseur" => $request->id_fournisseur,
                     "numero_borderau" => $request->numero_borderau,
                     "description" => $article['description'],
@@ -276,7 +282,7 @@ class MouvementStockController extends Controller
     // Méthode pour l'impression des mouvements d'entrée
     public function imprimerEntrees()
     {
-        $mouvements = MouvementStock::with(['article', 'fournisseur', 'piecesJointes'])
+        $mouvements = MouvementStock::with(['article', 'fournisseur', 'piecesJointes', 'unite_de_mesure'])
                                     ->where('id_type_mouvement', 1)
                                     ->latest()
                                     ->get();
