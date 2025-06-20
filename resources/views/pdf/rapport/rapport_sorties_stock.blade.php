@@ -1,186 +1,376 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="utf-8">
-    <title>Rapport des Sorties de Stock</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ordre de Sortie</title>
     <style>
         @page {
-            size: landscape; /* Orientation paysage pour plus de colonnes */
-            margin: 20mm;
+            size: A4 landscape; /* Format paysage pour A4 */
+            margin: 5mm; /* Marges réduites */
         }
+
         body {
-            font-family: 'DejaVu Sans', sans-serif;
-            font-size: 10px;
+            font-family: Arial, sans-serif;
+            font-size: 9pt; /* Taille de police globale légèrement réduite */
             margin: 0;
             padding: 0;
         }
-        h1 {
-            text-align: center;
-            margin-bottom: 5px;
-            font-size: 20px;
-            color: #333;
-        }
-        h2 {
-            text-align: center;
-            margin-top: 0;
-            margin-bottom: 25px;
-            font-size: 14px;
-            color: #555;
-        }
-        .header-info {
-            text-align: right;
-            font-size: 9px;
-            margin-bottom: 10px;
-            color: #777;
-        }
-        .filters-info {
-            font-size: 11px;
-            margin-bottom: 20px;
-            border: 1px solid #e0e0e0;
-            padding: 12px;
-            background-color: #f8f8f8;
-            border-radius: 4px;
-        }
-        .filters-info h3 {
-            font-size: 13px;
-            margin-top: 0;
-            margin-bottom: 10px;
-            color: #333;
-        }
-        .filters-info ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .filters-info li {
-            margin-bottom: 5px;
-        }
-        .filters-info strong {
-            display: inline-block;
-            min-width: 160px;
-            color: #00993E;
-        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
         }
-        th {
-            background-color: #00993E;
-            color: white;
-            padding: 8px 6px;
-            text-align: left;
-            font-weight: normal;
-            font-size: 11px;
-            border: 1px solid #00772E;
+
+        .header-section,
+        .budget-section,
+        .table-section,
+        .footer-section {
+            margin-bottom: 8px; /* Espacement réduit entre les sections */
+            margin-top: 8px;
         }
-        td {
-            padding: 6px;
-            border-bottom: 1px solid #e0e0e0;
-            border-left: 1px solid #f0f0f0;
-            border-right: 1px solid #f0f0f0;
+
+        .header-section h2 {
+            margin: 5px 0;
+            font-size: 14pt; /* Taille de titre ajustée */
+        }
+
+        .header-section td,
+        .budget-section td {
+            padding: 1px 3px; /* Padding réduit pour les cellules d'en-tête et budget */
+            vertical-align: top;
+            font-size: 9pt; /* Taille de police pour ces sections */
+        }
+
+        /* Styles spécifiques au tableau de données */
+        .table-section th,
+        .table-section td {
+            border: 1px solid black;
+            padding: 2px; /* Padding réduit pour les cellules de tableau */
+            text-align: center;
+            word-break: break-word;
+            font-size: 8.5pt; /* Taille de police pour le tableau */
+        }
+
+        .table-section th {
+            background-color: #f2f2f2;
+            vertical-align: middle; /* Centrer verticalement les en-têtes */
+        }
+
+        /* Largeurs des colonnes pour le tableau de données */
+        .table-section .col-numeros { width: 18%; } /* Regroupe les 3 sous-colonnes de numéros */
+        .table-section .col-folio { width: 6%; }
+        .table-section .col-ordre { width: 6%; }
+        .table-section .col-nomenclature { width: 6%; }
+        .table-section .col-designation { width: 20%; }
+        .table-section .col-specification { width: 15%; }
+        .table-section .col-unites { width: 7%; }
+        .table-section .col-quantite { width: 7%; }
+        .table-section .col-prix { width: 7%; }
+        .table-section .col-montant { width: 8%; }
+        .table-section .col-observations { width: 12%; }
+
+        .table-section .total-row td {
+            text-align: right;
+            font-weight: bold;
+            padding-right: 5px;
+        }
+
+        /* Styles des boîtes du pied de page */
+        .footer-section {
+            page-break-inside: avoid;
+            margin-top: 10px; /* Espace au-dessus du footer */
+        }
+
+        .footer-section table {
+            table-layout: fixed; /* Force les colonnes à avoir une largeur fixe */
+        }
+
+        .footer-section table td {
+            width: 33.33%; /* Chaque colonne prend un tiers de la largeur */
+            padding: 0 3px; /* Petit padding horizontal entre les colonnes */
             vertical-align: top;
         }
-        tr:nth-child(even) {
-            background-color: #f5f5f5;
+
+        .certification-box,
+        .augmentation-box,
+        .recepisse-box {
+            border: 1px solid black;
+            padding: 5px 7px; /* Padding interne des boîtes */
+            font-size: 8.5pt; /* Taille de police pour le contenu des boîtes */
+            line-height: 1.2; /* Hauteur de ligne pour compacter le texte */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Distribue l'espace verticalement */
+            box-sizing: border-box;
+            height: 120px; /* Hauteur fixe pour toutes les boîtes, ajustée pour le contenu */
+            /* width: 100%; sera géré par le table-layout: fixed et le width: 33.33% du td */
         }
-        tr:nth-child(odd) {
-            background-color: #ffffff;
+
+        .certification-box p,
+        .augmentation-box p,
+        .recepisse-box p {
+            margin: 2px 0; /* Marges réduites pour les paragraphes */
+            padding: 0;
         }
-        .no-data {
-            text-align: center;
-            color: #999;
-            padding: 20px;
-            font-size: 14px;
-            border: 1px dashed #ccc;
-            margin-top: 20px;
-            background-color: #fffafa;
+
+        .certification-box strong,
+        .augmentation-box strong,
+        .recepisse-box strong {
+            display: block;
+            text-align: center; /* Centrer les titres des sections */
+            margin-bottom: 4px; /* Espace après le titre */
         }
-        .footer-info {
-            text-align: center;
-            font-size: 9px;
-            margin-top: 30px;
-            color: #777;
+
+        /* Aligner la dernière ligne du texte des responsables à droite */
+        .certification-box p:last-child,
+        .augmentation-box p:last-child,
+        .recepisse-box p:last-child {
+            margin-top: auto; /* Pousse la dernière ligne vers le bas */
+            text-align: right;
+            line-height: 1; /* Compacter la ligne de signature */
+        }
+
+        small {
+            font-size: 7pt;
         }
     </style>
 </head>
 <body>
-    <div class="header-info">
-        Rapport généré le: {{ date('d/m/Y H:i:s') }}
-    </div>
-    <h1>Rapport des Sorties de Stock</h1>
-    <h2>LNB-Stock & Parc</h2>
 
-    <!-- Bloc d'informations sur les filtres appliqués -->
-    <div class="filters-info">
-        <h3>Filtres appliqués :</h3>
-        <ul>
-            <li>
-                <strong>Période de Mouvement :</strong>
-                Du {{ \Carbon\Carbon::parse($filters['date_debut'])->format('d/m/Y') }} au {{ \Carbon\Carbon::parse($filters['date_fin'])->format('d/m/Y') }}
-            </li>
-            <li>
-                <strong>Article :</strong>
-                @if(isset($filters['id_Article']) && !empty($filters['id_Article']))
-                    @php
-                        $article = \App\Models\Article::find($filters['id_Article']);
-                    @endphp
-                    {{ $article->code_article ?? '' }} - {{ $article->libelle ?? 'N/A' }}
-                @else
-                    Tous
-                @endif
-            </li>
-            <li>
-                <strong>Demandeur / Employé :</strong>
-                @if(isset($filters['id_employe']) && !empty($filters['id_employe']))
-                    @php
-                        $employe = \App\Models\Employe::find($filters['id_employe']);
-                    @endphp
-                    {{ $employe->nom ?? '' }} {{ $employe->prenom ?? 'N/A' }}
-                @else
-                    Tous
-                @endif
-            </li>
-        </ul>
+    <div class="header-section">
+        <table>
+            <tr>
+                <td style="width: 50%;">
+                    République du Bénin<br>
+                    Ministère/Institution/Collectivité locale<br>
+                    Direction/service
+                </td>
+                <td style="width: 50%; text-align: right;">
+                    Modèle n°2<br>
+                    Ordre de Sortie N° ...............<br>
+                    <small>Rapport généré le: {{ date('d/m/Y H:i:s') }}</small>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="text-align: center; padding-top: 5px;">
+                    <h2>ORDRE DE SORTIE</h2>
+                    (à établir en 03 exemplaires)
+                </td>
+            </tr>
+        </table>
     </div>
 
-    @if($mouvements->isEmpty())
-        <p class="no-data">Aucune sortie de stock trouvée pour les critères de recherche spécifiés.</p>
-    @else
+    <div class="budget-section">
+        <table>
+            <tr>
+                <td style="width: 50%;">
+                    (1) National ; Etat, Fond propre ; Annexe, Spécial ; Compte fonds... etc...<br>
+                    (2) Objet.<br>
+                    (3) Approvisionnement en magasin ou matériel en service.<br>
+                    (4) D'acquis, de donation.<br>
+                    (5) Provenance (Bon de commande, Fournisseur Donateur).
+                </td>
+                <td style="width: 50%;">
+                    BUDGET (1)......................................... Chapitre ........................................<br>
+                    (2)..........................................................................................................<br>
+                    (3)..........................................................................................................<br>
+                    (4)..........................................................................................................<br>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="table-section">
         <table>
             <thead>
                 <tr>
-                    <th>N°</th>
-                    <th>Date Mouvement</th>
-                    <th>Article</th>
-                    <th>Code Article</th>
-                    <th>Quantité</th>
-                    <th>Demandeur</th>
-                    <th>Type Mouvement</th>
-                    <th>Description</th>
-                    <th>N° Bordereau</th>
+                    <th colspan="3" class="col-numeros">Numéros</th>
+                    <th rowspan="2" class="col-designation">Désignation des matières et objets</th>
+                    <th rowspan="2" class="col-specification">Spécification des matières</th>
+                    <th rowspan="2" class="col-unites">Espèce des unités</th>
+                    <th rowspan="2" class="col-quantite">Quantité</th>
+                    <th rowspan="2" class="col-prix">Prix Unitaire</th>
+                    <th rowspan="2" class="col-montant">Montant</th>
+                    <th rowspan="2" class="col-observations">OBSERVATIONS<br><small>Inscrire dans cette colonne toutes les renseignements susceptibles d'éclaircir les services du contrôle.</small></th>
+                </tr>
+                <tr>
+                    <th class="col-folio">Du folio du grand livre</th>
+                    <th class="col-ordre">D'ordre ou du journal</th>
+                    <th class="col-nomenclature">De la nomenclature sommaire</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($mouvements as $index => $mouvement)
                 <tr>
-                    <td>{{ $index + 1 }}</td>
-                    <td>{{ \Carbon\Carbon::parse($mouvement->date_mouvement)->format('d/m/Y') }}</td>
-                    <td>{{ $mouvement->article->libelle ?? 'N/A' }}</td>
-                    <td>{{ $mouvement->article->code_article ?? 'N/A' }}</td>
-                    <td>{{ number_format($mouvement->qte, 0, ',', ' ') }}</td>
-                    <td>{{ $mouvement->employe->nom ?? '' }} {{ $mouvement->employe->prenom ?? 'N/A' }}</td>
-                    <td>{{ $mouvement->type_mouvement->libelle_type_mouvement ?? 'N/A' }}</td>
-                    <td>{{ $mouvement->description ?? 'N/A' }}</td>
-                    <td>{{ $mouvement->numero_borderau ?? 'N/A' }}</td>
+                    <td style="height: 16px;"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
                 </tr>
-                @endforeach
+                <tr>
+                    <td style="height: 16px;"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                 <tr>
+                    <td style="height: 16px;"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                 <tr>
+                    <td style="height: 16px;"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                 <tr>
+                    <td style="height: 16px;"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                 <tr>
+                    <td style="height: 16px;"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                 <tr>
+                    <td style="height: 16px;"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                 <tr>
+                    <td style="height: 16px;"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                 <tr>
+                    <td style="height: 16px;"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                 <tr>
+                    <td style="height: 16px;"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="6" style="text-align: right;">Total</td>
+                    <td colspan="4"></td>
+                </tr>
             </tbody>
         </table>
-    @endif
-
-    <div class="footer-info">
-        Rapport des Sorties de Stock - Système de Gestion de Stock et Immobilisations
     </div>
+
+    <div class="footer-section">
+        <table>
+            <tr>
+                <td>
+                    <div class="certification-box">
+                        <strong>CERTIFICATION</strong>
+                        <p>
+                            Arrêté le présent ordre à ............ unités représentant une valeur de ......................................................... francs.
+                        </p>
+                        <p>
+                            À ........................., le .............................
+                        </p>
+                        <p><b>L'ordonnateur des matières</b></p>
+                    </div>
+                </td>
+                <td>
+                    <div class="augmentation-box">
+                        <strong>DIMINUTION DES PRISES EN CHARGE</strong>
+                        <p>
+                            Le comptable des matières soussigné, déclare ce jour diminuées ses prises en charge de ............ unités représentant une valeur de .................................................... francs.
+                        </p>
+                        <p>
+                            À ........................., le .............................
+                        </p>
+                        <p><b>Le Comptable des matières</b></p>
+                    </div>
+                </td>
+                <td>
+                    <div class="recepisse-box">
+                        <strong>RECEPPISSE</strong>
+                        <p>
+                            Je soussigné ........................................, reconnais avoir reçu les matières portées dans le présent ordre.
+                        </p>
+                        <p>
+                            À .................................., le .....................
+                        </p>
+                        <p><b>Le Réceptionnaire</b></p>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
 </body>
 </html>
