@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Bon d'entrée</title>
+  <title>RAPPORT {{ $reportTypeLabel }}</title>
   <style>
     @page {
       size: A4 landscape;
@@ -148,10 +148,6 @@
             line-height: 1; /* Compacter la ligne de signature */
         }
 
-
-
-
-
   </style>
 </head>
 <body>
@@ -164,17 +160,32 @@
           Ministère/Institution/Collectivité locale<br/>
           Direction/service
         </td>
-        <td style="width: 50%; text-align: right;">
-          Modèle n°1<br/>
-          Ordre d'Entrée N° ...........<br/>
-          <small>Rapport généré le: {{ date('d/m/Y H:i:s') }}</small>
-        </td>
+        @if($reportTypeLabel === 'd\'Entrée de Stock')
+            <td style="width: 50%; text-align: right;">
+                Modèle n°1<br/>
+                Ordre d'Entrée N° ...........<br/>
+                <small>Rapport généré le: {{ date('d/m/Y H:i:s') }}</small>
+            </td>
+        @elseif($reportTypeLabel === 'de Sortie de Stock')
+            <td style="width: 50%; text-align: right;">
+                Modèle n°1<br/>
+                Ordre de Sortie N° ...........<br/>
+                <small>Rapport généré le: {{ date('d/m/Y H:i:s') }}</small>
+            </td>
+        @endif
       </tr>
       <tr>
+        @if($reportTypeLabel === 'd\'Entrée de Stock')
         <td colspan="2" style="text-align: center;">
           <h2>ORDRE D'ENTRÉE</h2>
           (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
         </td>
+        @elseif($reportTypeLabel === 'de Sortie de Stock')
+                <td colspan="2" style="text-align: center;">
+          <h2>ORDRE DE SORTIE</h2>
+          (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
+        </td>
+        @endif
       </tr>
     </table>
   </div>
