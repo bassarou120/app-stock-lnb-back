@@ -225,6 +225,7 @@
             <th>Date Mouvement</th>
             <th>Article</th>
             <th>Quantité</th>
+            <th>Prix Unitaire</th>
             <th>Unité de mesure</th>
             @if($reportTypeLabel === 'd\'Entrée de Stock')
               <th>Code Article</th>
@@ -244,6 +245,7 @@
             <td>{{ \Carbon\Carbon::parse($mouvement->date_mouvement)->format('d/m/Y') }}</td>
             <td>{{ $mouvement->article->libelle ?? 'N/A' }}</td>
             <td>{{ $mouvement->qte }}</td>
+            <td>{{ $mouvement->prixUnitaire }}</td>
             <td>{{ $mouvement->unite_de_mesure->libelle ?? 'N/A' }}</td>
             @if($reportTypeLabel === 'd\'Entrée de Stock')
               <td>{{ $mouvement->article->code_article ?? 'N/A' }}</td>

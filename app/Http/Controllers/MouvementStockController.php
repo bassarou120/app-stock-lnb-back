@@ -48,6 +48,7 @@ class MouvementStockController extends Controller
             "id_unite_de_mesure" => 'required|exists:unite_de_mesures,id',
             "description" => 'nullable|string|max:255',
             "qte" => 'required|integer',
+            "prixUnitaire" => 'required|integer',
             "date_mouvement" => 'required',
             "piece_jointe_mouvement" => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048', // <= ici
         ]);
@@ -65,6 +66,7 @@ class MouvementStockController extends Controller
             "description" => $request->description,
             "id_type_mouvement" => $type_mouvement->id,
             "qte" => $request->qte,
+            "prixUnitaire" => $request->prixUnitaire,
             "date_mouvement" => $request->date_mouvement,
         ]);
 
@@ -113,8 +115,9 @@ class MouvementStockController extends Controller
             "id_Article" => 'required|exists:articles,id',
             "id_fournisseur" => 'required|exists:fournisseurs,id',
             "id_unite_de_mesure" => 'required|exists:unite_de_mesures,id',
-            "description" => 'string|max:255',
+            "description" => 'nullable|string|max:255',
             "qte" => 'required|integer',
+            "prixUnitaire" => 'required|integer',
             "date_mouvement" => 'required',
         ]);
 
@@ -133,6 +136,7 @@ class MouvementStockController extends Controller
             "id_unite_de_mesure" => $request->id_unite_de_mesure,
             "description" => $request->description,
             "qte" => $request->qte,
+            "prixUnitaire" => $request->prixUnitaire,
             "date_mouvement" => $request->date_mouvement,
         ]);
 
@@ -200,6 +204,7 @@ class MouvementStockController extends Controller
             "articles.*.id_unite_de_mesure" => 'required|exists:unite_de_mesures,id',
             "articles.*.description" => 'nullable|string|max:255',
             "articles.*.qte" => 'required|integer|min:1',
+            "articles.*.prixUnitaire" => 'required|integer',
         ]);
 
         if ($validator->fails()) {
@@ -226,6 +231,7 @@ class MouvementStockController extends Controller
                     "description" => $article['description'],
                     "id_type_mouvement" => $type_mouvement->id,
                     "qte" => $article['qte'],
+                    "prixUnitaire" => $article['prixUnitaire'],
                     "date_mouvement" => $request->date_mouvement,
                 ]);
 
