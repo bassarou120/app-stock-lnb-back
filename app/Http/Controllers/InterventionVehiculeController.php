@@ -25,22 +25,24 @@ class InterventionVehiculeController extends Controller
     // Créer une nouvelle intervention
    public function store(Request $request)
    {
-       $validator = Validator::make($request->all(), [
-           'vehicule_id' => 'required|exists:vehicules,id',
-           'titre' => 'required|string|max:255',
-           'montant' => 'required|integer|min:0',
-           'observation' => 'nullable|string',
-           'date_intervention' => 'required|date',
-           'type_intervention_id' => 'required|exists:type_interventions,id',
-       ]);
+        $validator = Validator::make($request->all(), [
+            'vehicule_id' => 'required|exists:vehicules,id',
+            'titre' => 'required|string|max:255',
+            'montant' => 'required|numeric|min:0', // Changé à 'numeric' pour accepter les décimales si nécessaire, ou 'integer' si entier seulement
+            'observation' => 'nullable|string',
+            'date_intervention' => 'required|date',
+            'type_intervention_id' => 'required|exists:type_interventions,id',
+            'date_expiration' => 'nullable|date', // AJOUTÉ: Rendre date_expiration nullable et de type date
+        ]);
 
-       if ($validator->fails()) {
+        if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-       $interventionVehicule = InterventionVehicule::create($request->all());
+        // Crée l'intervention avec toutes les données validées
+        $interventionVehicule = InterventionVehicule::create($request->all());
 
-       return new PostResource(true, 'intervention créée avec succès', $interventionVehicule);
+        return new PostResource(true, 'intervention créée avec succès', $interventionVehicule);
    }
 
     /**
@@ -51,16 +53,18 @@ class InterventionVehiculeController extends Controller
         $validator = Validator::make($request->all(), [
             'vehicule_id' => 'required|exists:vehicules,id',
             'titre' => 'required|string|max:255',
-            'montant' => 'required|integer|min:0',
+            'montant' => 'required|numeric|min:0', // Changé à 'numeric'
             'observation' => 'nullable|string',
             'date_intervention' => 'required|date',
             'type_intervention_id' => 'required|exists:type_interventions,id',
+            'date_expiration' => 'nullable|date', // AJOUTÉ: Rendre date_expiration nullable et de type date
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        // Met à jour l'intervention avec toutes les données validées
         $interventionVehicule->update($request->all());
 
         return new PostResource(true, 'intervention mise à jour avec succès', $interventionVehicule);

@@ -21,6 +21,13 @@ class InterventionVehicule extends Model
         'observation',
         'date_intervention',
         'type_intervention_id', // Ajout de la clé étrangère
+        'date_expiration',
+    ];
+
+    // AJOUTÉ: Gérer date_expiration comme une date Carbon
+    protected $casts = [
+        'date_intervention' => 'date',
+        'date_expiration' => 'date', // Convertit automatiquement en instance Carbon
     ];
 
     // Définir la relation avec le modèle Vehicule
