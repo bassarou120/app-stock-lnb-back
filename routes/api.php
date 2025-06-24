@@ -192,3 +192,8 @@ Route::get('/rapports/parc/imprimer', [RapportParcController::class, 'imprimerRa
 
 Route::get('/rapports/ticket', [RapportTicketController::class, 'getRapportData']);
 Route::get('/rapports/ticket/imprimer', [RapportTicketController::class, 'imprimerRapportTicket']);
+// NOUVELLE ROUTE : Pour récupérer les données du rapport d'état de stock (JSON)
+Route::get('/rapports/etat-stock', [StockRapportController::class, 'getRapportFicheStock']);
+
+// NOUVELLE ROUTE : Pour l'impression PDF du rapport d'état de stock
+Route::get('/rapports/etat-stock/imprimer', [StockRapportController::class, 'imprimerRapportEtatStock']);
