@@ -39,6 +39,7 @@ class MouvementStockController extends Controller
 
 
     // store entrée simple
+
     public function storeEntreeStock(Request $request)
     {
         // Validation
@@ -50,7 +51,7 @@ class MouvementStockController extends Controller
             "qte" => 'required|integer',
             "prixUnitaire" => 'required|integer',
             "date_mouvement" => 'required',
-            "piece_jointe_mouvement" => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048', // <= ici
+            "piece_jointe_mouvement" => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -59,6 +60,48 @@ class MouvementStockController extends Controller
 
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Entrée de Stock")->latest()->first();
 
+        // Gestion du stock et calcul du CMP AVANT la création du mouvement
+        // On verifie si l'article existe deja en stock ou non
+        $stock = Stock::where('id_Article', $request->id_Article)->latest()->first();
+
+        // Initialisation des variables pour le calcul du CMP
+        $ancienne_quantite = 0;
+        $ancien_cmp = 0;
+        $nouveau_cmp = 0;
+
+        // si non, on utilise des valeures à 0
+        if ($stock == null) {
+            // PREMIÈRE ENTRÉE : Création du stock initial
+            $stock = Stock::create([
+                'id_Article' => $request->id_Article,
+                'Qte_actuel' => 0,
+                'cout_moyen_pondere' => 0
+            ]);
+
+            // Variables restent à 0 pour la première entrée
+            $ancienne_quantite = 0;
+            $ancien_cmp = 0;
+        } else {
+            // RÉAPPROVISIONNEMENT : Récupération des valeurs existantes
+            $ancienne_quantite = $stock->Qte_actuel;
+            $ancien_cmp = $stock->cout_moyen_pondere ?? 0;
+        }
+
+        // Calcul du nouveau CMP
+        if ($ancienne_quantite == 0) {
+            // Premier stock ou stock épuisé : CMP = prix d'achat actuel
+            $nouveau_cmp = $request->prixUnitaire;
+        } else {
+            // Réapprovisionnement : CMP pondéré
+            // CMP = (Valeur stock existant + Valeur nouvelle entrée) / (Quantité existante + Nouvelle quantité)
+            $valeur_stock_existant = $ancienne_quantite * $ancien_cmp;
+            $valeur_nouvelle_entree = $request->qte * $request->prixUnitaire;
+            $quantite_totale = $ancienne_quantite + $request->qte;
+
+            $nouveau_cmp = ($valeur_stock_existant + $valeur_nouvelle_entree) / $quantite_totale;
+        }
+
+        // Création du mouvement avec le CMP calculé
         $mouvement = MouvementStock::create([
             "id_Article" => $request->id_Article,
             "id_fournisseur" => $request->id_fournisseur,
@@ -67,6 +110,7 @@ class MouvementStockController extends Controller
             "id_type_mouvement" => $type_mouvement->id,
             "qte" => $request->qte,
             "prixUnitaire" => $request->prixUnitaire,
+            "cout_moyen_pondere" => round($nouveau_cmp, 2),
             "date_mouvement" => $request->date_mouvement,
         ]);
 
@@ -74,7 +118,6 @@ class MouvementStockController extends Controller
         if ($request->hasFile('piece_jointe_mouvement')) {
             $file = $request->file('piece_jointe_mouvement');
             $fileName = time() . '_' . $file->getClientOriginalName();
-
             $file->storeAs('piece_jointe_mouvement', $fileName, 'public');
 
             PieceJointeMouvement::create([
@@ -83,22 +126,13 @@ class MouvementStockController extends Controller
             ]);
         }
 
-        // Gestion du stock
-        $stock = Stock::where('id_Article', $request->id_Article)->latest()->first();
-
-        if ($stock == null) {
-            $stock = Stock::create([
-                'id_Article' => $request->id_Article,
-                'Qte_actuel' => 0
-            ]);
-        }
-
+        // Mise à jour du stock avec la nouvelle quantité et le nouveau CMP
         $stock->Qte_actuel += $request->qte;
+        $stock->cout_moyen_pondere = round($nouveau_cmp, 2);
         $stock->save();
 
         return new PostResource(true, 'Le mouvement d\'entrée de stock a été bien enregistré !', $mouvement);
     }
-
 
 
     // update entrée
@@ -121,15 +155,49 @@ class MouvementStockController extends Controller
             "date_mouvement" => 'required',
         ]);
 
-        // Vérifier si la validation échoue
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        // Récupérer l'ancien stock avant modification
-        $ancien_qte = $mouvement->qte;
+        // Récupérer les anciennes valeurs du mouvement
+        $ancienne_qte = $mouvement->qte;
+        $ancien_prix_unitaire = $mouvement->prixUnitaire;
+        $ancien_cmp = $mouvement->cout_moyen_pondere ?? 0;
 
-        // Mise à jour du mouvement
+        // Récupérer le stock actuel
+        $stock = Stock::where('id_Article', $request->id_Article)->latest()->first();
+        if (!$stock) {
+            return response()->json(['message' => 'Stock introuvable'], 404);
+        }
+
+        // ÉTAPE 1: Annuler l'impact de l'ancienne entrée
+        $quantite_avant_ancienne_entree = $stock->Qte_actuel - $ancienne_qte;
+
+        // Calculer le CMP avant l'ancienne entrée (reconstitution)
+        $cmp_avant_ancienne_entree = 0;
+        if ($quantite_avant_ancienne_entree > 0) {
+            // Reconstituer le CMP avant l'ancienne entrée
+            // Formule inverse : CMP_avant = (Valeur_totale_actuelle - Valeur_ancienne_entrée) / Qte_avant
+            $valeur_totale_actuelle = $stock->Qte_actuel * $stock->cout_moyen_pondere;
+            $valeur_ancienne_entree = $ancienne_qte * $ancien_prix_unitaire;
+            $cmp_avant_ancienne_entree = ($valeur_totale_actuelle - $valeur_ancienne_entree) / $quantite_avant_ancienne_entree;
+        }
+
+        // ÉTAPE 2: Calculer le nouveau CMP avec les nouvelles valeurs
+        $nouveau_cmp = 0;
+        if ($quantite_avant_ancienne_entree == 0) {
+            // Si c'était la seule entrée, le nouveau CMP = nouveau prix
+            $nouveau_cmp = $request->prixUnitaire;
+        } else {
+            // Calculer le nouveau CMP avec les nouvelles valeurs
+            $valeur_stock_avant = $quantite_avant_ancienne_entree * $cmp_avant_ancienne_entree;
+            $valeur_nouvelle_entree = $request->qte * $request->prixUnitaire;
+            $quantite_totale_nouvelle = $quantite_avant_ancienne_entree + $request->qte;
+
+            $nouveau_cmp = ($valeur_stock_avant + $valeur_nouvelle_entree) / $quantite_totale_nouvelle;
+        }
+
+        // ÉTAPE 3: Mise à jour du mouvement avec le nouveau CMP
         $mouvement->update([
             "id_Article" => $request->id_Article,
             "id_fournisseur" => $request->id_fournisseur,
@@ -137,28 +205,77 @@ class MouvementStockController extends Controller
             "description" => $request->description,
             "qte" => $request->qte,
             "prixUnitaire" => $request->prixUnitaire,
+            "cout_moyen_pondere" => round($nouveau_cmp, 2),
             "date_mouvement" => $request->date_mouvement,
         ]);
 
-        // Mise à jour du stock
-        $stock = Stock::where('id_Article', $request->id_Article)->latest()->first();
+        // ÉTAPE 4: Mise à jour du stock
+        $stock->Qte_actuel = $quantite_avant_ancienne_entree + $request->qte;
+        $stock->cout_moyen_pondere = round($nouveau_cmp, 2);
+        $stock->save();
 
-        if ($stock) {
-            $stock->Qte_actuel = $stock->Qte_actuel - $ancien_qte + $request->qte;
-            $stock->save();
-        } else {
-            return response()->json(['message' => 'Stock introuvable'], 404);
-        }
+        // ÉTAPE 5: Recalculer le CMP pour tous les mouvements postérieurs (optionnel mais recommandé)
+        $this->recalculerCMPPosterieur($request->id_Article, $mouvement->date_mouvement);
 
-        // Retourner la réponse
         return new PostResource(true, 'Le mouvement d\'entrée de stock a été mis à jour avec succès !', $mouvement);
     }
+
+    /**
+     * Recalcule le CMP pour tous les mouvements postérieurs à une date donnée
+     * Cette méthode est importante pour maintenir la cohérence des CMP
+     */
+    private function recalculerCMPPosterieur($id_article, $date_limite)
+    {
+        // Récupérer tous les mouvements d'entrée postérieurs à la date limite
+        $mouvements_posterieurs = MouvementStock::where('id_Article', $id_article)
+            ->where('date_mouvement', '>', $date_limite)
+            ->whereHas('typeMouvement', function($query) {
+                $query->where('libelle_type_mouvement', 'Entrée de Stock');
+            })
+            ->orderBy('date_mouvement', 'asc')
+            ->get();
+
+        // Récupérer le stock à la date limite
+        $stock = Stock::where('id_Article', $id_article)->first();
+        $quantite_courante = $stock->Qte_actuel;
+        $cmp_courant = $stock->cout_moyen_pondere;
+
+        // Soustraire les quantités des mouvements postérieurs pour avoir l'état à la date limite
+        foreach ($mouvements_posterieurs as $mouvement) {
+            $quantite_courante -= $mouvement->qte;
+        }
+
+        // Recalculer le CMP pour chaque mouvement postérieur
+        foreach ($mouvements_posterieurs as $mouvement) {
+            if ($quantite_courante == 0) {
+                $nouveau_cmp = $mouvement->prixUnitaire;
+            } else {
+                $valeur_stock_existant = $quantite_courante * $cmp_courant;
+                $valeur_nouvelle_entree = $mouvement->qte * $mouvement->prixUnitaire;
+                $quantite_totale = $quantite_courante + $mouvement->qte;
+
+                $nouveau_cmp = ($valeur_stock_existant + $valeur_nouvelle_entree) / $quantite_totale;
+            }
+
+            // Mettre à jour le mouvement
+            $mouvement->cout_moyen_pondere = round($nouveau_cmp, 2);
+            $mouvement->save();
+
+            // Mettre à jour les variables pour le prochain mouvement
+            $quantite_courante += $mouvement->qte;
+            $cmp_courant = $nouveau_cmp;
+        }
+
+        // Mettre à jour le stock final
+        $stock->cout_moyen_pondere = round($cmp_courant, 2);
+        $stock->save();
+    }
+
 
     //delete entrée
     public function deleteEntreeStock($id)
     {
         $mouvement = MouvementStock::find($id);
-
         if (!$mouvement) {
             return response()->json([
                 'success' => false,
@@ -168,25 +285,121 @@ class MouvementStockController extends Controller
 
         // Vérifier si un stock existe pour cet article
         $stock = Stock::where('id_Article', $mouvement->id_Article)->latest()->first();
+        if (!$stock) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Stock introuvable pour cet article.'
+            ], 404);
+        }
 
-        if ($stock) {
-            // Réduire la quantité du stock
-            $stock->Qte_actuel -= $mouvement->qte;
+        // Vérifier si la suppression est possible (quantité suffisante)
+        if ($stock->Qte_actuel < $mouvement->qte) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Impossible de supprimer cette entrée : quantité en stock insuffisante. Stock actuel: ' . $stock->Qte_actuel . ', Quantité à supprimer: ' . $mouvement->qte
+            ], 400);
+        }
 
-            // Empêcher que la quantité devienne négative
-            if ($stock->Qte_actuel < 0) {
-                $stock->Qte_actuel = 0;
+        // Vérifier s'il y a eu des sorties après cette entrée
+        $sorties_posterieures = MouvementStock::where('id_Article', $mouvement->id_Article)
+            ->where('date_mouvement', '>', $mouvement->date_mouvement)
+            ->whereHas('typeMouvement', function($query) {
+                $query->where('libelle_type_mouvement', '!=', 'Entrée de Stock');
+            })
+            ->sum('qte');
+
+        $quantite_apres_suppression = $stock->Qte_actuel - $mouvement->qte;
+        if ($quantite_apres_suppression < 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Suppression impossible : cela rendrait le stock négatif.'
+            ], 400);
+        }
+
+        // CALCUL DU NOUVEAU CMP après suppression
+        $nouveau_cmp = 0;
+        $nouvelle_quantite = $stock->Qte_actuel - $mouvement->qte;
+
+        if ($nouvelle_quantite == 0) {
+            // Si le stock devient vide, CMP = 0
+            $nouveau_cmp = 0;
+        } else {
+            // Reconstituer le CMP sans cette entrée
+            // Formule inverse : CMP_sans_entree = (Valeur_totale - Valeur_entree_supprimee) / (Qte_totale - Qte_supprimee)
+            $valeur_totale_actuelle = $stock->Qte_actuel * $stock->cout_moyen_pondere;
+            $valeur_entree_supprimee = $mouvement->qte * $mouvement->prixUnitaire;
+
+            // Vérifier si cette entrée était la seule
+            if ($stock->Qte_actuel == $mouvement->qte) {
+                $nouveau_cmp = 0;
+            } else {
+                $nouveau_cmp = ($valeur_totale_actuelle - $valeur_entree_supprimee) / $nouvelle_quantite;
             }
+        }
 
-            $stock->save();
+        // Mise à jour du stock
+        $stock->Qte_actuel = $nouvelle_quantite;
+        $stock->cout_moyen_pondere = round($nouveau_cmp, 2);
+        $stock->save();
+
+        // Recalculer le CMP pour tous les mouvements postérieurs
+        $this->recalculerCMPPosterieur($mouvement->id_Article, $mouvement->date_mouvement);
+
+        // Supprimer les pièces jointes associées
+        $pieces_jointes = PieceJointeMouvement::where('id_mouvement_stock', $mouvement->id)->get();
+        foreach ($pieces_jointes as $piece) {
+            // Supprimer le fichier physique
+            if (file_exists(public_path($piece->url))) {
+                unlink(public_path($piece->url));
+            }
+            // Supprimer l'enregistrement
+            $piece->delete();
         }
 
         // Supprimer le mouvement
-
         $mouvement->delete();
 
-        return new PostResource(true, 'Mouvement supprimé avec succès !', null);
+        return new PostResource(true, 'Mouvement supprimé avec succès ! CMP recalculé.', [
+            'nouveau_stock' => $nouvelle_quantite,
+            'nouveau_cmp' => round($nouveau_cmp, 2)
+        ]);
     }
+
+    /**
+     * Méthode utilitaire pour vérifier la cohérence du stock avant suppression
+     */
+    private function verifierCoherenceStock($id_article, $mouvement_a_supprimer)
+    {
+        // Récupérer tous les mouvements chronologiquement
+        $mouvements = MouvementStock::where('id_Article', $id_article)
+            ->with('typeMouvement')
+            ->orderBy('date_mouvement', 'asc')
+            ->get();
+
+        $stock_simule = 0;
+
+        foreach ($mouvements as $mouvement) {
+            if ($mouvement->id == $mouvement_a_supprimer->id) {
+                continue; // Ignorer le mouvement à supprimer
+            }
+
+            if ($mouvement->typeMouvement->libelle_type_mouvement == 'Entrée de Stock') {
+                $stock_simule += $mouvement->qte;
+            } else {
+                $stock_simule -= $mouvement->qte;
+
+                if ($stock_simule < 0) {
+                    return [
+                        'valide' => false,
+                        'message' => 'La suppression de cette entrée rendrait le stock négatif à la date du ' . $mouvement->date_mouvement
+                    ];
+                }
+            }
+        }
+
+        return ['valide' => true];
+    }
+
 
 
     // Ajout multiple de mouvement de stock entree
@@ -198,7 +411,7 @@ class MouvementStockController extends Controller
             "numero_borderau" => 'required|string|max:255',
             "date_mouvement" => 'required|date',
             "piece_jointe_mouvement" => 'nullable|array',
-            "piece_jointe_mouvement.*" => 'file|mimes:pdf,jpg,jpeg,png', // Ajustez selon vos besoins
+            "piece_jointe_mouvement.*" => 'file|mimes:pdf,jpg,jpeg,png',
             "articles" => 'required|array|min:1',
             "articles.*.id_Article" => 'required|exists:articles,id',
             "articles.*.id_unite_de_mesure" => 'required|exists:unite_de_mesures,id',
@@ -219,10 +432,51 @@ class MouvementStockController extends Controller
 
         try {
             $mouvements = [];
+            $resultats_cmp = []; // Pour stocker les résultats de calcul CMP
 
             // Traitement de chaque article
             foreach ($request->articles as $article) {
-                // Création du mouvement de stock
+
+                // ÉTAPE 1: Gestion du stock et calcul du CMP AVANT la création du mouvement
+                $stock = Stock::where('id_Article', $article['id_Article'])->latest()->first();
+
+                // Initialisation des variables pour le calcul du CMP
+                $ancienne_quantite = 0;
+                $ancien_cmp = 0;
+                $nouveau_cmp = 0;
+
+                if ($stock == null) {
+                    // PREMIÈRE ENTRÉE : Création du stock initial
+                    $stock = Stock::create([
+                        'id_Article' => $article['id_Article'],
+                        'Qte_actuel' => 0,
+                        'cout_moyen_pondere' => 0
+                    ]);
+
+                    // Variables restent à 0 pour la première entrée
+                    $ancienne_quantite = 0;
+                    $ancien_cmp = 0;
+                } else {
+                    // RÉAPPROVISIONNEMENT : Récupération des valeurs existantes
+                    $ancienne_quantite = $stock->Qte_actuel;
+                    $ancien_cmp = $stock->cout_moyen_pondere ?? 0;
+                }
+
+                // ÉTAPE 2: Calcul du nouveau CMP
+                if ($ancienne_quantite == 0) {
+                    // Premier stock ou stock épuisé : CMP = prix d'achat actuel
+                    $nouveau_cmp = $article['prixUnitaire'];
+                } else {
+                    // Réapprovisionnement : CMP pondéré
+                    // CMP = (Valeur stock existant + Valeur nouvelle entrée) / (Quantité existante + Nouvelle quantité)
+                    $valeur_stock_existant = $ancienne_quantite * $ancien_cmp;
+                    $valeur_nouvelle_entree = $article['qte'] * $article['prixUnitaire'];
+                    $quantite_totale = $ancienne_quantite + $article['qte'];
+
+                    $nouveau_cmp = ($valeur_stock_existant + $valeur_nouvelle_entree) / $quantite_totale;
+                }
+
+                // ÉTAPE 3: Création du mouvement de stock avec le CMP calculé
                 $mouvement = MouvementStock::create([
                     "id_Article" => $article['id_Article'],
                     "id_unite_de_mesure" => $article['id_unite_de_mesure'],
@@ -232,30 +486,33 @@ class MouvementStockController extends Controller
                     "id_type_mouvement" => $type_mouvement->id,
                     "qte" => $article['qte'],
                     "prixUnitaire" => $article['prixUnitaire'],
+                    "cout_moyen_pondere" => round($nouveau_cmp, 2), // Ajout du CMP calculé
                     "date_mouvement" => $request->date_mouvement,
                 ]);
 
-                // Mise à jour du stock
-                $stock = Stock::where('id_Article', $article['id_Article'])->latest()->first();
-
-                if ($stock == null) {
-                    $stock = Stock::create([
-                        'id_Article' => $article['id_Article'],
-                        'Qte_actuel' => 0
-                    ]);
-                }
-
-                $stock->Qte_actuel = $stock->Qte_actuel + $article['qte'];
+                // ÉTAPE 4: Mise à jour du stock avec la nouvelle quantité et le nouveau CMP
+                $stock->Qte_actuel += $article['qte'];
+                $stock->cout_moyen_pondere = round($nouveau_cmp, 2);
                 $stock->save();
 
+                // Stocker les informations pour le retour
                 $mouvements[] = $mouvement;
+                $resultats_cmp[] = [
+                    'id_article' => $article['id_Article'],
+                    'ancienne_quantite' => $ancienne_quantite,
+                    'ancien_cmp' => round($ancien_cmp, 2),
+                    'nouvelle_quantite' => $stock->Qte_actuel,
+                    'nouveau_cmp' => round($nouveau_cmp, 2),
+                    'qte_ajoutee' => $article['qte'],
+                    'prix_unitaire' => $article['prixUnitaire']
+                ];
             }
 
-            // Traitement des pièces jointes si présentes
+            // ÉTAPE 5: Traitement des pièces jointes si présentes
             if ($request->hasFile('piece_jointe_mouvement')) {
-                foreach ($request->file('piece_jointe_mouvement') as $file) {
+                foreach ($request->file('piece_jointe_mouvement') as $index => $file) {
                     // Générer un nom unique pour le fichier
-                    $fileName = time() . '_' . $file->getClientOriginalName();
+                    $fileName = time() . '_' . $index . '_' . $file->getClientOriginalName();
 
                     // Stocker le fichier
                     $file->storeAs('piece_jointe_mouvement', $fileName, 'public');
@@ -273,17 +530,29 @@ class MouvementStockController extends Controller
             // Valider la transaction
             DB::commit();
 
-            return new PostResource(true, 'Les mouvements d\'entrée de stock ont été bien enregistrés !', $mouvements);
+            return new PostResource(true, 'Les mouvements d\'entrée de stock ont été bien enregistrés avec calcul du CMP !', [
+                'mouvements' => $mouvements,
+                'calculs_cmp' => $resultats_cmp,
+                'resume' => [
+                    'nombre_articles' => count($mouvements),
+                    'fournisseur_id' => $request->id_fournisseur,
+                    'numero_borderau' => $request->numero_borderau,
+                    'date_mouvement' => $request->date_mouvement
+                ]
+            ]);
+
         } catch (\Exception $e) {
             // Annuler la transaction en cas d'erreur
             DB::rollBack();
 
             return response()->json([
+                'success' => false,
                 'message' => 'Une erreur est survenue lors de l\'enregistrement des mouvements',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
+
 
     // Méthode pour l'impression des mouvements d'entrée
     public function imprimerEntrees()
