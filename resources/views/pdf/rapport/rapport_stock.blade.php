@@ -227,6 +227,7 @@
             <th>Quantité</th>
             <th>Prix Unitaire</th>
             <th>Unité de mesure</th>
+            <th>CMP</th>
             @if($reportTypeLabel === 'd\'Entrée de Stock')
               <th>Code Article</th>
               <th>Fournisseur</th>
@@ -247,6 +248,7 @@
             <td>{{ $mouvement->qte }}</td>
             <td>{{ $mouvement->prixUnitaire }}</td>
             <td>{{ $mouvement->unite_de_mesure->libelle ?? 'N/A' }}</td>
+            <td>{{ $mouvement->cout_moyen_pondere}}</td>
             @if($reportTypeLabel === 'd\'Entrée de Stock')
               <td>{{ $mouvement->article->code_article ?? 'N/A' }}</td>
               <td>{{ $mouvement->fournisseur->nom ?? 'N/A' }}</td>
