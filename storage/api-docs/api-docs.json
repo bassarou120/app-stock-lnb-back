@@ -1,0 +1,116 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "APP-STOCK-LNB API",
+        "description": "Description de votre API",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/demande-de-sortie": {
+            "post": {
+                "tags": [
+                    "Demande de Sortie"
+                ],
+                "summary": "Créer une demande de sortie",
+                "description": "Permet de créer une nouvelle demande de sortie avec la liste des articles demandés.",
+                "operationId": "829b12a87c6c053a31fbfa8e68d17fef",
+                "requestBody": {
+                    "description": "Les données nécessaires pour créer une demande de sortie",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "dateDemande",
+                                    "id_bureau",
+                                    "id_personnel",
+                                    "articles"
+                                ],
+                                "properties": {
+                                    "dateDemande": {
+                                        "description": "Date à laquelle la demande de sortie est effectuée",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-05-27"
+                                    },
+                                    "id_bureau": {
+                                        "description": "Identifiant du bureau effectuant la demande (référence à la table bureaux)",
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "id_personnel": {
+                                        "description": "Identifiant du personnel responsable de la demande (référence à la table personnels)",
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "articles": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "code_article",
+                                                "qteDemande"
+                                            ],
+                                            "properties": {
+                                                "code_article": {
+                                                    "description": "Code unique de l'article concerné (référence à la table articles)",
+                                                    "type": "string",
+                                                    "example": "AAA67"
+                                                },
+                                                "description": {
+                                                    "description": "Description complémentaire de l'article demandé",
+                                                    "type": "string",
+                                                    "example": "Consommable de bureau"
+                                                },
+                                                "qteDemande": {
+                                                    "description": "Quantité d'article demandée pour la sortie (minimum 1)",
+                                                    "type": "integer",
+                                                    "example": 10
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "minItems": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Demande de sortie créée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Demande de sortie créée avec succès"
+                                        },
+                                        "demande": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Requête invalide - Erreur de validation"
+                    },
+                    "500": {
+                        "description": "Erreur interne du serveur"
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Demande de Sortie",
+            "description": "Demande de Sortie"
+        }
+    ]
+}
