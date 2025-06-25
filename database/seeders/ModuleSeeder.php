@@ -18,6 +18,7 @@ class ModuleSeeder extends Seeder
             ['libelle_module' => 'Gestion de Stock'],
             ['libelle_module' => 'Gestion de immobilisation'],
             ['libelle_module' => 'Gestion de parc'],
+            ['libelle_module' => 'Gestion Rapport'],
             ['libelle_module' => 'Parametrage'],
         ];
 
