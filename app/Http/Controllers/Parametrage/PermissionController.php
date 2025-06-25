@@ -121,4 +121,14 @@ class PermissionController extends Controller
     ]);
 }
 
+public function getByRole($roleId)
+{
+    $permissions = Permission::with(['module', 'fonctionnalite', 'role'])
+                            ->where('role_id', $roleId)
+                            ->get();
+
+    return response()->json($permissions);
+}
+
+
 }
