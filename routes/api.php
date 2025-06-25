@@ -197,3 +197,5 @@ Route::get('/rapports/etat-stock', [StockRapportController::class, 'getRapportFi
 
 // NOUVELLE ROUTE : Pour l'impression PDF du rapport d'état de stock
 Route::get('/rapports/etat-stock/imprimer', [StockRapportController::class, 'imprimerRapportEtatStock']);
+
+Route::get('/permissions/role/{roleId}', [PermissionController::class, 'getByRole']);
