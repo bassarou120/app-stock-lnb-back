@@ -21,17 +21,33 @@ class FonctionnaliteSeeder extends Seeder
                 'Ajout du Stock',
                 'Modification du Stock',
                 'Suppression du Stock',
+                'Voir Les demandes',
+                'Validation de demande',
+                'Sorties de Stock',
+                'Voir Etat de Stock',
+                'Export Stock',
+                'Export Rapport Stock'
             ],
             'Gestion de immobilisation' => [
                 'Ajout immobilisation',
                 'Modification immobilisation',
                 'Suppression immobilisation',
-
+                'Affectation Immobilisation',
+                'Intervention Immobilisation',
+                'Export Rapport Immobilisation'
             ],
             'Gestion de parc' => [
                 'Ajout parc',
                 'Modification parc',
                 'Suppression parc',
+                'Intervention Parc',
+                "Ajout d'intervention",
+                'Attribution ticket',
+                'Ajout de Ticket',
+                'Verifier Stock Ticket',
+                'Voir Retour Ticket',
+                'Annulation Ticket',
+                'Export Rapport Parc'
 
             ],
             'Parametrage' => [
@@ -44,6 +60,7 @@ class FonctionnaliteSeeder extends Seeder
                 'Rapport Immo',
                 'Rapport Parc',
                 'Rapport Ticket',
+                'Export Rapport Immo'
             ],
         ];
 

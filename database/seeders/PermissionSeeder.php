@@ -21,19 +21,36 @@ class PermissionSeeder extends Seeder
         $permissions = [
             'Super Admin' => [
                 'Gestion de Stock' => [
-                    'Ajout du Stock',
-                    'Modification du Stock',
-                    'Suppression du Stock',
+                'Ajout du Stock',
+                'Modification du Stock',
+                'Suppression du Stock',
+                'Voir Les demandes',
+                'Validation de demande',
+                'Sorties de Stock',
+                'Voir Etat de Stock',
+                'Export Stock',
+                'Export Rapport Stock'
                 ],
                 'Gestion de immobilisation' => [
-                    'Ajout immobilisation',
-                    'Modification immobilisation',
-                    'Suppression immobilisation',
+                'Ajout immobilisation',
+                'Modification immobilisation',
+                'Suppression immobilisation',
+                'Affectation Immobilisation',
+                'Intervention Immobilisation',
+                'Export Rapport Immobilisation'
                 ],
                 'Gestion de parc' => [
-                    'Ajout parc',
-                    'Modification parc',
-                    'Suppression parc',
+                'Ajout parc',
+                'Modification parc',
+                'Suppression parc',
+                'Intervention Parc',
+                "Ajout d'intervention",
+                'Attribution ticket',
+                'Ajout de Ticket',
+                'Verifier Stock Ticket',
+                'Voir Retour Ticket',
+                'Annulation Ticket',
+                'Export Rapport Parc'
                 ],
                 'Gestion Rapport' => [
                 'Rapport Stock',
@@ -49,19 +66,36 @@ class PermissionSeeder extends Seeder
             ],
             'Admin' => [
                 'Gestion de Stock' => [
-                    'Ajout du Stock',
-                    'Modification du Stock',
-                    'Suppression du Stock',
+                'Ajout du Stock',
+                'Modification du Stock',
+                'Suppression du Stock',
+                'Voir Les demandes',
+                'Validation de demande',
+                'Sorties de Stock',
+                'Voir Etat de Stock',
+                'Export Stock',
+                'Export Rapport Stock'
                 ],
                 'Gestion de immobilisation' => [
-                    'Ajout immobilisation',
-                    'Modification immobilisation',
-                    'Suppression immobilisation',
+                'Ajout immobilisation',
+                'Modification immobilisation',
+                'Suppression immobilisation',
+                'Affectation Immobilisation',
+                'Intervention Immobilisation',
+                'Export Rapport Immobilisation'
                 ],
                 'Gestion de parc' => [
-                    'Ajout parc',
-                    'Modification parc',
-                    'Suppression parc',
+                'Ajout parc',
+                'Modification parc',
+                'Suppression parc',
+                'Intervention Parc',
+                "Ajout d'intervention",
+                'Attribution ticket',
+                'Ajout de Ticket',
+                'Verifier Stock Ticket',
+                'Voir Retour Ticket',
+                'Annulation Ticket',
+                'Export Rapport Parc'
                 ],
                 'Gestion Rapport' => [
                 'Rapport Stock',
@@ -77,19 +111,36 @@ class PermissionSeeder extends Seeder
             ],
             'Manager' => [
                 'Gestion de Stock' => [
-                    'Ajout du Stock',
-                    'Modification du Stock',
-                    'Suppression du Stock',
+                'Ajout du Stock',
+                'Modification du Stock',
+                'Suppression du Stock',
+                'Voir Les demandes',
+                'Validation de demande',
+                'Sorties de Stock',
+                'Voir Etat de Stock',
+                'Export Stock',
+                'Export Rapport Stock'
                 ],
                 'Gestion de immobilisation' => [
-                    'Ajout immobilisation',
-                    'Modification immobilisation',
-                    'Suppression immobilisation',
+                'Ajout immobilisation',
+                'Modification immobilisation',
+                'Suppression immobilisation',
+                'Affectation Immobilisation',
+                'Intervention Immobilisation',
+                'Export Rapport Immobilisation'
                 ],
                 'Gestion de parc' => [
-                    'Ajout parc',
-                    'Modification parc',
-                    'Suppression parc',
+                'Ajout parc',
+                'Modification parc',
+                'Suppression parc',
+                'Intervention Parc',
+                "Ajout d'intervention",
+                'Attribution ticket',
+                'Ajout de Ticket',
+                'Verifier Stock Ticket',
+                'Voir Retour Ticket',
+                'Annulation Ticket',
+                'Export Rapport Parc'
                 ],
                 'Gestion Rapport' => [
                 'Rapport Stock',
