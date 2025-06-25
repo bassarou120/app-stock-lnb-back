@@ -138,12 +138,19 @@ class PermissionSeeder extends Seeder
                     }
 
                     // Créer la permission si elle n'existe pas déjà
-                    Permission::firstOrCreate([
+                    $permission = Permission::firstOrCreate([
                         'role_id' => $role->id,
                         'module_id' => $module->id,
                         'fonctionnalite_id' => $fonctionnalite->id,
+                    ],[
                         'is_active' => true, // définir à true ou selon ta logique
                     ]);
+
+                    // Si tu veux t'assurer que la permission est active, tu peux faire :
+                    if (!$permission->is_active) {
+                        $permission->is_active = true;
+                        $permission->save();
+                    }
                 }
             }
         }
