@@ -39,6 +39,12 @@ class FonctionnaliteSeeder extends Seeder
                 'Modification Parametrage',
                 'Suppression Parametrage',
             ],
+            'Gestion Rapport' => [
+                'Rapport Stock',
+                'Rapport Immo',
+                'Rapport Parc',
+                'Rapport Ticket',
+            ],
         ];
 
         foreach ($modules_fonctionnalites as $module_libelle => $fonctionnalites) {

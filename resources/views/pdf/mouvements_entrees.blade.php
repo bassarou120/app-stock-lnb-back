@@ -53,6 +53,7 @@
                 <th>Description</th>
                 <th>Qte</th>
                 <th>Prix Unitaire</th>
+                <th>CMP</th>
                 <th>Date Mouvement</th>
                 <th>Fournisseur</th>
             </tr>
@@ -66,6 +67,7 @@
                     <td>{{ $mouvement->description }}</td>
                     <td>{{ $mouvement->qte }}</td>
                     <td>{{ $mouvement->prixUnitaire }}</td>
+                    <td>{{ $mouvement->cout_moyen_pondere }}</td>
                     <td>{{ \Carbon\Carbon::parse($mouvement->date_mouvement)->format('d/m/Y') }}</td>
                     <td>{{ $mouvement->fournisseur->nom ?? 'N/A' }}</td>
                 </tr>

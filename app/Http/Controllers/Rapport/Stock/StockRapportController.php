@@ -414,7 +414,7 @@ class StockRapportController extends Controller
 
         // Chercher le prix dans l'article (avec le bon nom de champ)
         // CORRECTION: Utilisation de 'prixUnitaire' au lieu de 'prix_unitaire'
-        if (isset($article->prixUnitaire) && $article->prixUnitaire > 0) { 
+        if (isset($article->prixUnitaire) && $article->prixUnitaire > 0) {
             $prixUnitaireArticle = $article->prixUnitaire;
         } else {
             // Chercher le prix dans le dernier mouvement (avec le bon nom de champ)
@@ -430,6 +430,7 @@ class StockRapportController extends Controller
         }
 
         $stockActuel = [
+            'cmp'=> $article->stock->cout_moyen_pondere ,
             'quantite' => $article->stock->Qte_actuel ?? 0,
             'prix_unitaire' => $prixUnitaireArticle, // Garder 'prix_unitaire' ici car c'est le nom dans le tableau de sortie
             'montant_total' => ($article->stock->Qte_actuel ?? 0) * $prixUnitaireArticle,

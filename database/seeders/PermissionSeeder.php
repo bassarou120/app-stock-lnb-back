@@ -35,6 +35,12 @@ class PermissionSeeder extends Seeder
                     'Modification parc',
                     'Suppression parc',
                 ],
+                'Gestion Rapport' => [
+                'Rapport Stock',
+                'Rapport Immo',
+                'Rapport Parc',
+                'Rapport Ticket',
+                ],
                 'Parametrage' => [
                     'Ajout Parametrage',
                     'Modification Parametrage',
@@ -57,6 +63,12 @@ class PermissionSeeder extends Seeder
                     'Modification parc',
                     'Suppression parc',
                 ],
+                'Gestion Rapport' => [
+                'Rapport Stock',
+                'Rapport Immo',
+                'Rapport Parc',
+                'Rapport Ticket',
+            ],
                 'Parametrage' => [
                     'Ajout Parametrage',
                     'Modification Parametrage',
@@ -79,6 +91,12 @@ class PermissionSeeder extends Seeder
                     'Modification parc',
                     'Suppression parc',
                 ],
+                'Gestion Rapport' => [
+                'Rapport Stock',
+                'Rapport Immo',
+                'Rapport Parc',
+                'Rapport Ticket',
+            ],
                 'Parametrage' => [
                     'Ajout Parametrage',
                     'Modification Parametrage',
