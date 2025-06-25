@@ -1,0 +1,41 @@
+version: "3.4"
+
+services:
+
+  backend:
+    build: .
+    container_name: backend_lnb_stock
+    restart: always
+    ports:
+      - "8380:80"
+
+
+  postgres_lnb_stock:
+    image: postgres:17
+    container_name: postgres_lnb_stock
+    restart: always
+    environment:
+      POSTGRES_USER: lnb_user
+      POSTGRES_PASSWORD: 1sCisO3FAoZeKZe
+      POSTGRES_DB: lnb_db
+    expose:
+      - "5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+#  frontend:
+#    image: rregistry.gitlab.com/
+#    container_name: frontend_lnb_stock
+#    restart: always
+#    ports:
+#      - "8381:80"
+#    depends_on:
+#      - backend
+
+volumes:
+  pg_data:
+
+networks:
+  default:
+    external : true
+    name: lnb-network
