@@ -19,6 +19,7 @@ class FonctionnaliteSeeder extends Seeder
         $modules_fonctionnalites = [
             'Gestion de Stock' => [
                 'Ajout du Stock',
+                'Voir les entrées',
                 'Modification du Stock',
                 'Suppression du Stock',
                 'Voir Les demandes',

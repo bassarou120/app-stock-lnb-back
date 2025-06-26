@@ -22,6 +22,7 @@ class PermissionSeeder extends Seeder
             'Super Admin' => [
                 'Gestion de Stock' => [
                 'Ajout du Stock',
+                'Voir les entrées',
                 'Modification du Stock',
                 'Suppression du Stock',
                 'Voir Les demandes',
@@ -67,6 +68,7 @@ class PermissionSeeder extends Seeder
             'Admin' => [
                 'Gestion de Stock' => [
                 'Ajout du Stock',
+                'Voir les entrées',
                 'Modification du Stock',
                 'Suppression du Stock',
                 'Voir Les demandes',
@@ -112,6 +114,7 @@ class PermissionSeeder extends Seeder
             'Manager' => [
                 'Gestion de Stock' => [
                 'Ajout du Stock',
+                'Voir les entrées',
                 'Modification du Stock',
                 'Suppression du Stock',
                 'Voir Les demandes',
