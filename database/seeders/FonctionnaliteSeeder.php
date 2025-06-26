@@ -35,7 +35,12 @@ class FonctionnaliteSeeder extends Seeder
                 'Suppression immobilisation',
                 'Affectation Immobilisation',
                 'Intervention Immobilisation',
-                'Export Rapport Immobilisation'
+                'Export Rapport Immobilisation',
+                'Exporter immobilisation',
+                'Ajout d\'intervention',
+                'Modification intervention',
+                'Suppression intervention',
+                'Exporter immobilisation'
             ],
             'Gestion de parc' => [
                 'Ajout parc',
