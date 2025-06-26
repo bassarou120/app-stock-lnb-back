@@ -38,7 +38,31 @@ use App\Models\Vehicule;
  *     @OA\Property(property="employe_id", type="integer", nullable=true),
  *     @OA\Property(property="bureau_id", type="integer", nullable=true),
  *     @OA\Property(property="created_at", type="string", format="date-time"),
- *     @OA\Property(property="updated_at", type="string", format="date-time")
+ *     @OA\Property(property="updated_at", type="string", format="date-time"),
+ *     @OA\Property(
+ *         property="bureau",
+ *         ref="#/components/schemas/Bureau"
+ *     ),
+ *     @OA\Property(
+ *         property="groupe_type_immo",
+ *         ref="#/components/schemas/Groupe_type_immo"
+ *     ),
+ *     @OA\Property(
+ *         property="sous_type_immo",
+ *         ref="#/components/schemas/Sous_type_immo"
+ *     ),
+ *     @OA\Property(
+ *         property="status_immo",
+ *         ref="#/components/schemas/Status_immo"
+ *     ),
+ *     @OA\Property(
+ *         property="employe",
+ *         ref="#/components/schemas/Employe"
+ *     ),
+ *     @OA\Property(
+ *         property="fournisseur",
+ *         ref="#/components/schemas/Fournisseur"
+ *     ),
  * )
  */
 

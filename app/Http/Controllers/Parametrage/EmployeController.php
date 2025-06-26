@@ -16,7 +16,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
  * )
  */
 
- 
+
 
 
 class EmployeController extends Controller
@@ -31,7 +31,16 @@ class EmployeController extends Controller
      *     @OA\Response(
      *         response=200,
      *         description="Succès",
-     *         @OA\JsonContent(ref="#/components/schemas/EmployeResource")
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Liste des Employes"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(ref="#/components/schemas/Employe")
+     *             )
+     *         )
      *     )
      * )
      */
@@ -43,29 +52,38 @@ class EmployeController extends Controller
 
     // Créer un nouveau Employe
 
-    /**
-     * @OA\Post(
-     *     path="/api/employes",
-     *     tags={"Employés"},
-     *     summary="Créer un employé",
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"nom", "prenom"},
-     *             @OA\Property(property="nom", type="string"),
-     *             @OA\Property(property="prenom", type="string"),
-     *             @OA\Property(property="telephone", type="string"),
-     *             @OA\Property(property="email", type="string")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Employé créé",
-     *         @OA\JsonContent(ref="#/components/schemas/EmployeResource")
-     *     ),
-     *     @OA\Response(response=422, description="Erreur de validation")
-     * )
-     */
+  /**
+ * @OA\Post(
+ *     path="/api/employes",
+ *     tags={"Employés"},
+ *     summary="Créer un employé",
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"nom", "prenom"},
+ *             @OA\Property(property="nom", type="string"),
+ *             @OA\Property(property="prenom", type="string"),
+ *             @OA\Property(property="telephone", type="string"),
+ *             @OA\Property(property="email", type="string")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Employé créé avec succès",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Employé créé avec succès"),
+ *             @OA\Property(property="data", ref="#/components/schemas/Employe")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=422,
+ *         description="Erreur de validation"
+ *     )
+ * )
+ */
+
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -89,38 +107,46 @@ class EmployeController extends Controller
         return new PostResource(true, 'Employe créé avec succès', $employe);
     }
 
-    // Mettre à jour un Employe existant
+ /**
+ * @OA\Put(
+ *     path="/api/employes/{id}",
+ *     tags={"Employés"},
+ *     summary="Mettre à jour un employé",
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         required=true,
+ *         description="ID de l'employé",
+ *         @OA\Schema(type="integer")
+ *     ),
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"nom", "prenom"},
+ *             @OA\Property(property="nom", type="string"),
+ *             @OA\Property(property="prenom", type="string"),
+ *             @OA\Property(property="telephone", type="string"),
+ *             @OA\Property(property="email", type="string")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Employé mis à jour avec succès",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Employé mis à jour avec succès"),
+ *             @OA\Property(property="data", ref="#/components/schemas/Employe")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=422,
+ *         description="Erreur de validation"
+ *     )
+ * )
+ */
 
-    /**
-     * @OA\Put(
-     *     path="/api/employes/{id}",
-     *     tags={"Employés"},
-     *     summary="Mettre à jour un employé",
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         description="ID de l'employé",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"nom", "prenom"},
-     *             @OA\Property(property="nom", type="string"),
-     *             @OA\Property(property="prenom", type="string"),
-     *             @OA\Property(property="telephone", type="string"),
-     *             @OA\Property(property="email", type="string")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Employé mis à jour",
-     *         @OA\JsonContent(ref="#/components/schemas/EmployeResource")
-     *     ),
-     *     @OA\Response(response=422, description="Erreur de validation")
-     * )
-     */
+
     public function update(Request $request, Employe $employe)
     {
         $validator = Validator::make($request->all(), [

@@ -130,7 +130,22 @@ class ImmobilisationController extends Controller
  *     ),
  *     @OA\RequestBody(
  *         required=true,
- *         @OA\JsonContent(ref="#/components/schemas/Immobilisation")
+ *         @OA\JsonContent(
+ *             required={"id_groupe_type_immo", "id_sous_type_immo", "id_status_immo"},
+ *             @OA\Property(property="designation", type="string", example="Scanner HP"),
+ *             @OA\Property(property="code", type="string", example="IMMO-2025-002"),
+ *             @OA\Property(property="montant_ttc", type="integer", example=250000),
+ *             @OA\Property(property="date_acquisition", type="string", format="date"),
+ *             @OA\Property(property="date_mise_en_service", type="string", format="date"),
+ *             @OA\Property(property="id_groupe_type_immo", type="integer", example=1),
+ *             @OA\Property(property="id_sous_type_immo", type="integer", example=1),
+ *             @OA\Property(property="id_status_immo", type="integer", example=1),
+ *             @OA\Property(property="fournisseur_id", type="integer"),
+ *             @OA\Property(property="employe_id", type="integer"),
+ *             @OA\Property(property="bureau_id", type="integer"),
+ *             @OA\Property(property="vehicule_id", type="integer"),
+ *             @OA\Property(property="isVehicule", type="boolean", example=false)
+ *         )
  *     ),
  *     @OA\Response(
  *         response=200,

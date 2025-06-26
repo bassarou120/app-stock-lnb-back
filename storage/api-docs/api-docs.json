@@ -361,7 +361,62 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/Immobilisation"
+                                "required": [
+                                    "id_groupe_type_immo",
+                                    "id_sous_type_immo",
+                                    "id_status_immo"
+                                ],
+                                "properties": {
+                                    "designation": {
+                                        "type": "string",
+                                        "example": "Scanner HP"
+                                    },
+                                    "code": {
+                                        "type": "string",
+                                        "example": "IMMO-2025-002"
+                                    },
+                                    "montant_ttc": {
+                                        "type": "integer",
+                                        "example": 250000
+                                    },
+                                    "date_acquisition": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "date_mise_en_service": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "id_groupe_type_immo": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "id_sous_type_immo": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "id_status_immo": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "fournisseur_id": {
+                                        "type": "integer"
+                                    },
+                                    "employe_id": {
+                                        "type": "integer"
+                                    },
+                                    "bureau_id": {
+                                        "type": "integer"
+                                    },
+                                    "vehicule_id": {
+                                        "type": "integer"
+                                    },
+                                    "isVehicule": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
                             }
                         }
                     }
@@ -1284,7 +1339,23 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/EmployeResource"
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Liste des Employes"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Employe"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
@@ -1326,12 +1397,25 @@
                     }
                 },
                 "responses": {
-                    "201": {
-                        "description": "Employé créé",
+                    "200": {
+                        "description": "Employé créé avec succès",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/EmployeResource"
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Employé créé avec succès"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Employe"
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
@@ -1390,11 +1474,24 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Employé mis à jour",
+                        "description": "Employé mis à jour avec succès",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/EmployeResource"
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Employé mis à jour avec succès"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Employe"
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
@@ -1584,6 +1681,24 @@
                     "updated_at": {
                         "type": "string",
                         "format": "date-time"
+                    },
+                    "bureau": {
+                        "$ref": "#/components/schemas/Bureau"
+                    },
+                    "groupe_type_immo": {
+                        "$ref": "#/components/schemas/Groupe_type_immo"
+                    },
+                    "sous_type_immo": {
+                        "$ref": "#/components/schemas/Sous_type_immo"
+                    },
+                    "status_immo": {
+                        "$ref": "#/components/schemas/Status_immo"
+                    },
+                    "employe": {
+                        "$ref": "#/components/schemas/Employe"
+                    },
+                    "fournisseur": {
+                        "$ref": "#/components/schemas/Fournisseur"
                     }
                 },
                 "type": "object"
@@ -1739,48 +1854,188 @@
                 },
                 "type": "object"
             },
-            "EmployeResource": {
+            "Employe": {
+                "title": "Employe",
+                "description": "Modèle d'un Employe",
                 "properties": {
-                    "success": {
-                        "type": "boolean",
-                        "example": true
+                    "id": {
+                        "type": "integer",
+                        "example": 1
                     },
-                    "message": {
+                    "nom": {
                         "type": "string",
-                        "example": "Opération réussie"
+                        "example": "Doe"
                     },
-                    "data": {
-                        "properties": {
-                            "id": {
-                                "type": "integer",
-                                "example": 1
-                            },
-                            "nom": {
-                                "type": "string",
-                                "example": "Doe"
-                            },
-                            "prenom": {
-                                "type": "string",
-                                "example": "John"
-                            },
-                            "telephone": {
-                                "type": "string",
-                                "example": "+22912345678"
-                            },
-                            "email": {
-                                "type": "string",
-                                "example": "john.doe@example.com"
-                            },
-                            "created_at": {
-                                "type": "string",
-                                "format": "date-time"
-                            },
-                            "updated_at": {
-                                "type": "string",
-                                "format": "date-time"
-                            }
-                        },
-                        "type": "object"
+                    "prenom": {
+                        "type": "string",
+                        "example": "John"
+                    },
+                    "telephone": {
+                        "type": "string",
+                        "example": "+22912345678"
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "john.doe@example.com"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "Fournisseur": {
+                "title": "Fournisseur",
+                "description": "Modèle d'un Fournisseur",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "nom": {
+                        "type": "string",
+                        "example": "APS BENIN"
+                    },
+                    "telephone": {
+                        "type": "string",
+                        "example": "+229 0198899775"
+                    },
+                    "adresse": {
+                        "type": "string",
+                        "example": "Cotonou/Akpakpa"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "Groupe_type_immo": {
+                "title": "Groupe_type_immo",
+                "description": "Modèle d'un Groupe_type_immo",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "libelle": {
+                        "type": "string",
+                        "example": "Table Parakou"
+                    },
+                    "compte": {
+                        "type": "integer",
+                        "example": "24440005"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "Sous_type_immo": {
+                "title": "Sous_type_immo",
+                "description": "Modèle d'un Sous_type_immo",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "id_type_immo": {
+                        "type": "integer"
+                    },
+                    "libelle": {
+                        "type": "string",
+                        "example": "Mobilier de Bureau Parakou"
+                    },
+                    "compte": {
+                        "type": "string",
+                        "example": "24440005"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    },
+                    "typeImmo": {
+                        "$ref": "#/components/schemas/Bureau"
+                    }
+                },
+                "type": "object"
+            },
+            "Status_immo": {
+                "title": "Status_immo",
+                "description": "Modèle d'un Status_immo",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "libelle_status_immo": {
+                        "type": "string",
+                        "example": "En cours"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "TypeImmo": {
+                "title": "TypeImmo",
+                "description": "Modèle d'un TypeImmo",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "libelle_typeImmo": {
+                        "type": "string",
+                        "example": "Mobilier de Bureau"
+                    },
+                    "compte": {
+                        "type": "integer",
+                        "example": "2444"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
                     }
                 },
                 "type": "object"
