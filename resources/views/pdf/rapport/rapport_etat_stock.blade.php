@@ -125,6 +125,7 @@
                     <th>Code Article</th>
                     <th>Stock Actuel (Qté)</th>
                     <th>Prix Unitaire</th>
+                    <th>CMP</th>
                     <th>Total Stock</th>
                     <th>Dernière Entrée</th>
                     <th>Dernière Sortie</th>
@@ -141,6 +142,7 @@
                         <td>{{ $data['article']['code_article'] ?? 'N/A' }}</td>
                         <td class="numeric-col">{{ rtrim(rtrim(number_format($data['stock_actuel']['quantite'] ?? 0, 2, ',', ' '), '0'), ',') }}</td>
                         <td class="numeric-col">{{ rtrim(rtrim(number_format($data['stock_actuel']['prix_unitaire'] ?? 0, 2, ',', ' '), '0'), ',') }} F CFA</td>
+                        <td class="numeric-col">{{ rtrim(rtrim(number_format($data['stock_actuel']['cmp'] ?? 0, 2, ',', ' '), '0'), ',') }} F CFA</td>
                         <td class="numeric-col">{{ rtrim(rtrim(number_format($data['stock_actuel']['montant_total'] ?? 0, 2, ',', ' '), '0'), ',') }} F CFA</td>
 
                         {{-- Dernière Entrée --}}
