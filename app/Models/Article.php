@@ -10,6 +10,29 @@ use App\Models\Stock;          // Import nécessaire
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Parametrage\UniteDeMesure; // Si vous avez cette relation sur l'article
 
+/**
+ * @OA\Schema(
+ *     schema="Article",
+ *     title="Article",
+ *     type="object",
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="id_cat", type="integer", example=3),
+ *     @OA\Property(property="libelle", type="string", example="Chaussures de sport"),
+ *     @OA\Property(property="code_article", type="string", example="ART-2025-001"),
+ *     @OA\Property(property="description", type="string", example="Chaussures confortables pour la course"),
+ *     @OA\Property(property="stock_alerte", type="integer", example=5),
+ *     @OA\Property(property="created_at", type="string", format="date-time", example="2025-06-25T14:00:00Z"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time", example="2025-06-25T14:00:00Z"),
+ *     @OA\Property(
+ *         property="categorie",
+ *         ref="#/components/schemas/CategorieArticle"
+ *     ),
+ *     @OA\Property(
+ *         property="stock",
+ *         ref="#/components/schemas/Stock"
+ *     )
+ * )
+ */
 
 class Article extends Model
 {
@@ -22,9 +45,9 @@ class Article extends Model
         'stock_alerte',
         'code_article',
         // Si 'id_unite_de_mesure' est une colonne dans la table 'articles' et doit être mass-assignable
-        'id_unite_de_mesure', 
+        'id_unite_de_mesure',
         // Si 'prix_unitaire' est une colonne dans la table 'articles' et doit être mass-assignable
-        'prix_unitaire' 
+        'prix_unitaire'
     ];
 
     public function categorie()
