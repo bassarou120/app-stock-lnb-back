@@ -423,6 +423,192 @@
                 }
             }
         },
+        "/api/intervention-vehicules": {
+            "get": {
+                "tags": [
+                    "Intervention Véhicule"
+                ],
+                "summary": "Lister les interventions des véhicules",
+                "operationId": "aed7252502a5fb1e9a793bb3b0cdd360",
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Liste des interventions de véhicules"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/InterventionVehicule"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Intervention Véhicule"
+                ],
+                "summary": "Créer une nouvelle intervention de véhicule",
+                "operationId": "ad72552442adeb4acd55e0817a815c31",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "vehicule_id",
+                                    "titre",
+                                    "montant",
+                                    "date_intervention",
+                                    "type_intervention_id"
+                                ],
+                                "properties": {
+                                    "vehicule_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "titre": {
+                                        "type": "string",
+                                        "example": "Vidange"
+                                    },
+                                    "montant": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 25000
+                                    },
+                                    "observation": {
+                                        "type": "string",
+                                        "example": "RAS"
+                                    },
+                                    "date_intervention": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-06-15"
+                                    },
+                                    "type_intervention_id": {
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "date_expiration": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-12-15"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Intervention créée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PostResourceInterventionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                }
+            }
+        },
+        "/api/intervention-vehicules/{id}": {
+            "put": {
+                "tags": [
+                    "Intervention Véhicule"
+                ],
+                "summary": "Mettre à jour une intervention",
+                "operationId": "94b477d302da30d30302c623cba73b2e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'intervention",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InterventionVehicule"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Intervention mise à jour avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PostResourceInterventionResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Intervention Véhicule"
+                ],
+                "summary": "Supprimer une intervention",
+                "operationId": "ca99845c48cab21ff450f06d734e1ba4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Intervention supprimée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "intervention supprimé avec succès"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/demande-de-sortie": {
             "post": {
                 "tags": [
@@ -519,6 +705,366 @@
                     },
                     "500": {
                         "description": "Erreur interne du serveur"
+                    }
+                }
+            }
+        },
+        "/api/mouvement-ticket/entree": {
+            "get": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Lister les mouvements d'entrée de ticket",
+                "operationId": "740b1bc35d4f6a979ff4f97ccc738fa1",
+                "responses": {
+                    "200": {
+                        "description": "Liste des mouvements d'entrée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MouvementTicketResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Créer un mouvement d'entrée de ticket",
+                "operationId": "ee19f6eb31e8fe4a292927a9119518a5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "compagnie_petrolier_id",
+                                    "coupon_ticket_id",
+                                    "qte",
+                                    "date"
+                                ],
+                                "properties": {
+                                    "compagnie_petrolier_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "coupon_ticket_id": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Tickets reçus"
+                                    },
+                                    "objet": {
+                                        "type": "string",
+                                        "example": "Réapprovisionnement"
+                                    },
+                                    "qte": {
+                                        "type": "integer",
+                                        "example": 100
+                                    },
+                                    "date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-07-01"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Mouvement créé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MouvementTicketResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/mouvement-ticket/entree/{id}": {
+            "put": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Mettre à jour un mouvement d'entrée de ticket",
+                "operationId": "d921e01cecd69439347ff171b6062eb6",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MouvementTicket"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Mouvement mis à jour",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MouvementTicketResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Supprimer un mouvement d'entrée de ticket",
+                "operationId": "e90c6558ca66bbb4d9cd846a3630795a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Mouvement supprimé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MouvementTicketResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/mouvement-ticket/sortie": {
+            "get": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Lister les mouvements de sortie de ticket",
+                "operationId": "981a15fd6ffa4a138ba1528ceeca4ba1",
+                "responses": {
+                    "200": {
+                        "description": "Liste des mouvements de sortie",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MouvementTicketResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Créer un mouvement de sortie de ticket",
+                "operationId": "63f3260dd0aed388e1ee994304d80f37",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MouvementTicket"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Mouvement créé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MouvementTicketResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/mouvement-ticket/sortie/{id}": {
+            "put": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Mettre à jour un mouvement de sortie de ticket",
+                "operationId": "fb5acc617d7a49b7e346ab69b3f1c5b4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MouvementTicket"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Mouvement mis à jour",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MouvementTicketResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Supprimer un mouvement de sortie de ticket",
+                "operationId": "6880eeed1173741c395dc8ef0ffb3fe3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Mouvement supprimé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MouvementTicketResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/quantite-disponible-ticket/{idCoupon}/{idCompagnie}": {
+            "get": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Obtenir la quantité disponible d'un ticket",
+                "operationId": "9f251a559d8a0c321c3e8778958f4b62",
+                "parameters": [
+                    {
+                        "name": "idCoupon",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "idCompagnie",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Quantité retournée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MouvementTicketResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/get-quantite-ticket-attribution": {
+            "post": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Calculer la quantité de ticket nécessaire pour un trajet",
+                "operationId": "3e9ca88d5033d48f6cdf515c0e7ce4c0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "commune_depart",
+                                    "commune_arriver",
+                                    "trajet_aller_retour",
+                                    "coupon_ticket_id"
+                                ],
+                                "properties": {
+                                    "commune_depart": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "commune_arriver": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "trajet_aller_retour": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "coupon_ticket_id": {
+                                        "type": "integer",
+                                        "example": 3
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Quantité calculée"
                     }
                 }
             }
@@ -1042,6 +1588,115 @@
                 },
                 "type": "object"
             },
+            "InterventionVehicule": {
+                "title": "InterventionVehicule",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "vehicule_id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "titre": {
+                        "type": "string",
+                        "example": "Réparation moteur"
+                    },
+                    "montant": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 85000
+                    },
+                    "observation": {
+                        "type": "string",
+                        "example": "Pièce changée"
+                    },
+                    "date_intervention": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-07-01"
+                    },
+                    "date_expiration": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-12-01"
+                    },
+                    "type_intervention_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "MouvementTicket": {
+                "required": [
+                    "vehicule_id",
+                    "compagnie_petrolier_id",
+                    "coupon_ticket_id",
+                    "qte",
+                    "date"
+                ],
+                "properties": {
+                    "vehicule_id": {
+                        "type": "integer"
+                    },
+                    "compagnie_petrolier_id": {
+                        "type": "integer"
+                    },
+                    "coupon_ticket_id": {
+                        "type": "integer"
+                    },
+                    "employe_id": {
+                        "type": "integer"
+                    },
+                    "qte": {
+                        "type": "integer"
+                    },
+                    "date": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "objet": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "kilometrage": {
+                        "type": "integer"
+                    },
+                    "reference": {
+                        "type": "string"
+                    },
+                    "commune_depart": {
+                        "type": "integer"
+                    },
+                    "commune_arriver": {
+                        "type": "integer"
+                    },
+                    "trajet_aller_retour": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "Bureau": {
                 "title": "Bureau",
                 "description": "Modèle d'un bureau",
@@ -1147,6 +1802,90 @@
                 },
                 "type": "object"
             },
+            "MouvementTicketResource": {
+                "title": "Réponse d'un MouvementTicket",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Mouvement enregistré avec succès"
+                    },
+                    "data": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "vehicule_id": {
+                                "type": "integer",
+                                "example": 12
+                            },
+                            "compagnie_petrolier_id": {
+                                "type": "integer",
+                                "example": 5
+                            },
+                            "coupon_ticket_id": {
+                                "type": "integer",
+                                "example": 3
+                            },
+                            "employe_id": {
+                                "type": "integer",
+                                "example": 7
+                            },
+                            "qte": {
+                                "type": "integer",
+                                "example": 10
+                            },
+                            "date": {
+                                "type": "string",
+                                "format": "date",
+                                "example": "2025-06-26"
+                            },
+                            "kilometrage": {
+                                "type": "integer",
+                                "example": 15200
+                            },
+                            "objet": {
+                                "type": "string",
+                                "example": "Déplacement mission"
+                            },
+                            "description": {
+                                "type": "string",
+                                "example": "Sortie de tickets pour carburant"
+                            },
+                            "reference": {
+                                "type": "string",
+                                "example": "MVT-ABC1234567"
+                            },
+                            "commune_depart": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "commune_arriver": {
+                                "type": "integer",
+                                "example": 2
+                            },
+                            "trajet_aller_retour": {
+                                "type": "boolean",
+                                "example": true
+                            },
+                            "created_at": {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            "updated_at": {
+                                "type": "string",
+                                "format": "date-time"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
             "PostResourceImmobilisationResponse": {
                 "properties": {
                     "success": {
@@ -1162,6 +1901,22 @@
                         "items": {
                             "$ref": "#/components/schemas/Immobilisation"
                         }
+                    }
+                },
+                "type": "object"
+            },
+            "PostResourceInterventionResponse": {
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Intervention créée avec succès"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/InterventionVehicule"
                     }
                 },
                 "type": "object"
@@ -1201,8 +1956,16 @@
             "description": "Immobilisations"
         },
         {
+            "name": "Intervention Véhicule",
+            "description": "Intervention Véhicule"
+        },
+        {
             "name": "Demande de Sortie",
             "description": "Demande de Sortie"
+        },
+        {
+            "name": "Mouvement Ticket",
+            "description": "Mouvement Ticket"
         },
         {
             "name": "Bureaux",
