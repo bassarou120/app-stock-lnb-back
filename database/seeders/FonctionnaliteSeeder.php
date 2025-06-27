@@ -63,6 +63,8 @@ class FonctionnaliteSeeder extends Seeder
                 'Modification Retour Ticket',
                 'Supprimer Retour Ticket',
                 'Annulation Ticket',
+                'Voir Annulation Ticket',
+                'Ajout Annulation Ticket',
 
             ],
             'Parametrage' => [
