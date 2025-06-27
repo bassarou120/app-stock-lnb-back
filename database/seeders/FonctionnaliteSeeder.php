@@ -72,7 +72,7 @@ class FonctionnaliteSeeder extends Seeder
             ],
             'Parametrage' => [
                 'Ajout Parametrage',
-                'Modification Parametrage',
+                'Voir permissions',
                 'Suppression Parametrage',
                 'Ajout role',
                 'Voir Parametres Stock',
@@ -92,7 +92,8 @@ class FonctionnaliteSeeder extends Seeder
                 'Voir utilisateur',
                 'Modification utilisateur',
                 'Suppression utilisateur',
-                'Exporter utilisateur'
+                'Exporter utilisateur',
+                'Voir role'
             ],
         ];
 
