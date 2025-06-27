@@ -40,7 +40,7 @@ class PermissionSeeder extends Seeder
                     'Intervention Immobilisation',
                     'Export Rapport Immobilisation',
                     'Exporter immobilisation',
-                    'Ajout d\'intervention',
+                    'Ajout intervention',
                     'Modification intervention',
                     'Suppression intervention',
                     'Exporter immobilisation'
@@ -50,12 +50,15 @@ class PermissionSeeder extends Seeder
                     'Modification parc',
                     'Suppression parc',
                     'Intervention Parc',
-                    "Ajout d'intervention",
                     'Attribution ticket',
                     'Ajout de Ticket',
                     'Verifier Stock Ticket',
                     'Voir Retour Ticket',
-                    'Annulation Ticket',
+                    'Ajout Retour Ticket',
+                    'Modification Retour Ticket',
+                    'Supprimer Retour Ticket',
+                    'Voir Annulation Ticket',
+                    'Ajout Annulation Ticket',
                     'Export Rapport Parc'
                 ],
                 'Gestion Rapport' => [
@@ -68,6 +71,18 @@ class PermissionSeeder extends Seeder
                     'Ajout Parametrage',
                     'Modification Parametrage',
                     'Suppression Parametrage',
+                    'Ajout role',
+                    'Voir Parametres Stock',
+                    'Voir Parametres Parc',
+                    'Voir Parametres Immo',
+                    'Voir Parametres Généraux'
+                ],
+                'Gestion des utilisateurs' => [
+                    'Ajout utilisateur',
+                    'Voir utilisateur',
+                    'Modification utilisateur',
+                    'Suppression utilisateur',
+                    'Exporter utilisateur'
                 ],
             ],
             'Admin' => [
@@ -91,7 +106,7 @@ class PermissionSeeder extends Seeder
                     'Intervention Immobilisation',
                     'Export Rapport Immobilisation',
                     'Exporter immobilisation',
-                    'Ajout d\'intervention',
+                    'Ajout intervention',
                     'Modification intervention',
                     'Suppression intervention',
                     'Exporter immobilisation'
@@ -101,12 +116,15 @@ class PermissionSeeder extends Seeder
                     'Modification parc',
                     'Suppression parc',
                     'Intervention Parc',
-                    "Ajout d'intervention",
                     'Attribution ticket',
                     'Ajout de Ticket',
                     'Verifier Stock Ticket',
                     'Voir Retour Ticket',
-                    'Annulation Ticket',
+                    'Ajout Retour Ticket',
+                    'Modification Retour Ticket',
+                    'Supprimer Retour Ticket',
+                    'Voir Annulation Ticket',
+                    'Ajout Annulation Ticket',
                     'Export Rapport Parc'
                 ],
                 'Gestion Rapport' => [
@@ -119,6 +137,18 @@ class PermissionSeeder extends Seeder
                     'Ajout Parametrage',
                     'Modification Parametrage',
                     'Suppression Parametrage',
+                    'Ajout role',
+                    'Voir Parametres Stock',
+                    'Voir Parametres Parc',
+                    'Voir Parametres Immo',
+                    'Voir Parametres Généraux'
+                ],
+                'Gestion des utilisateurs' => [
+                    'Ajout utilisateur',
+                    'Voir utilisateur',
+                    'Modification utilisateur',
+                    'Suppression utilisateur',
+                    'Exporter utilisateur'
                 ],
             ],
             'Manager' => [
@@ -142,7 +172,7 @@ class PermissionSeeder extends Seeder
                     'Intervention Immobilisation',
                     'Export Rapport Immobilisation',
                     'Exporter immobilisation',
-                    'Ajout d\'intervention',
+                    'Ajout intervention',
                     'Modification intervention',
                     'Suppression intervention',
                     'Exporter immobilisation'
@@ -152,12 +182,15 @@ class PermissionSeeder extends Seeder
                     'Modification parc',
                     'Suppression parc',
                     'Intervention Parc',
-                    "Ajout d'intervention",
                     'Attribution ticket',
                     'Ajout de Ticket',
                     'Verifier Stock Ticket',
                     'Voir Retour Ticket',
-                    'Annulation Ticket',
+                    'Ajout Retour Ticket',
+                    'Modification Retour Ticket',
+                    'Supprimer Retour Ticket',
+                    'Voir Annulation Ticket',
+                    'Ajout Annulation Ticket',
                     'Export Rapport Parc'
                 ],
                 'Gestion Rapport' => [
@@ -170,6 +203,18 @@ class PermissionSeeder extends Seeder
                     'Ajout Parametrage',
                     'Modification Parametrage',
                     'Suppression Parametrage',
+                    'Ajout role',
+                    'Voir Parametres Stock',
+                    'Voir Parametres Parc',
+                    'Voir Parametres Immo',
+                    'Voir Parametres Généraux'
+                ],
+                'Gestion des utilisateurs' => [
+                    'Ajout utilisateur',
+                    'Voir utilisateur',
+                    'Modification utilisateur',
+                    'Suppression utilisateur',
+                    'Exporter utilisateur'
                 ],
             ],
         ];
