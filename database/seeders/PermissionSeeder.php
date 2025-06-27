@@ -22,6 +22,7 @@ class PermissionSeeder extends Seeder
             'Super Admin' => [
                 'Gestion de Stock' => [
                     'Ajout du Stock',
+                    'Traiter de demande',
                     'Voir les entrées',
                     'Modification du Stock',
                     'Suppression du Stock',
@@ -34,10 +35,11 @@ class PermissionSeeder extends Seeder
                 ],
                 'Gestion de immobilisation' => [
                     'Ajout immobilisation',
+                    'Voir les immobilisations',
                     'Modification immobilisation',
                     'Suppression immobilisation',
-                    'Affectation Immobilisation',
-                    'Intervention Immobilisation',
+                    'Voir les Transferts',
+                    'Voir les Interventions Immo',
                     'Export Rapport Immobilisation',
                     'Exporter immobilisation',
                     'Ajout intervention',
@@ -46,6 +48,9 @@ class PermissionSeeder extends Seeder
                     'Exporter immobilisation'
                 ],
                 'Gestion de parc' => [
+                    'Voir parc vehicule',
+                    'Voir entrée de ticket',
+                    'Voir intervention vehicule',
                     'Ajout vehicule',
                     'Modification vehicule',
                     'Suppression vehicule',
@@ -93,6 +98,7 @@ class PermissionSeeder extends Seeder
             'Admin' => [
                 'Gestion de Stock' => [
                     'Ajout du Stock',
+                    'Traiter de demande',
                     'Voir les entrées',
                     'Modification du Stock',
                     'Suppression du Stock',
@@ -105,10 +111,11 @@ class PermissionSeeder extends Seeder
                 ],
                 'Gestion de immobilisation' => [
                     'Ajout immobilisation',
+                    'Voir les immobilisations',
                     'Modification immobilisation',
                     'Suppression immobilisation',
-                    'Affectation Immobilisation',
-                    'Intervention Immobilisation',
+                    'Voir les Transferts',
+                    'Voir les Interventions Immo',
                     'Export Rapport Immobilisation',
                     'Exporter immobilisation',
                     'Ajout intervention',
@@ -117,6 +124,9 @@ class PermissionSeeder extends Seeder
                     'Exporter immobilisation'
                 ],
                 'Gestion de parc' => [
+                    'Voir parc vehicule',
+                    'Voir intervention vehicule',
+                    'Voir entrée de ticket',
                     'Ajout vehicule',
                     'Modification vehicule',
                     'Suppression vehicule',
@@ -164,6 +174,7 @@ class PermissionSeeder extends Seeder
             'Manager' => [
                 'Gestion de Stock' => [
                     'Ajout du Stock',
+                    'Traiter de demande',
                     'Voir les entrées',
                     'Modification du Stock',
                     'Suppression du Stock',
@@ -176,10 +187,11 @@ class PermissionSeeder extends Seeder
                 ],
                 'Gestion de immobilisation' => [
                     'Ajout immobilisation',
+                    'Voir les immobilisations',
                     'Modification immobilisation',
                     'Suppression immobilisation',
-                    'Affectation Immobilisation',
-                    'Intervention Immobilisation',
+                    'Voir les Transferts',
+                    'Voir les Interventions Immo',
                     'Export Rapport Immobilisation',
                     'Exporter immobilisation',
                     'Ajout intervention',
@@ -188,6 +200,9 @@ class PermissionSeeder extends Seeder
                     'Exporter immobilisation'
                 ],
                 'Gestion de parc' => [
+                    'Voir parc vehicule',
+                    'Voir intervention vehicule',
+                    'Voir entrée de ticket',
                     'Ajout vehicule',
                     'Modification vehicule',
                     'Suppression vehicule',
