@@ -79,7 +79,7 @@ class PermissionSeeder extends Seeder
                 ],
                 'Parametrage' => [
                     'Ajout Parametrage',
-                    'Modification Parametrage',
+                    'Voir permissions',
                     'Suppression Parametrage',
                     'Ajout role',
                     'Voir Parametres Stock',
@@ -92,7 +92,8 @@ class PermissionSeeder extends Seeder
                     'Voir utilisateur',
                     'Modification utilisateur',
                     'Suppression utilisateur',
-                    'Exporter utilisateur'
+                    'Exporter utilisateur',
+                    'Voir role'
                 ],
             ],
             'Admin' => [
@@ -155,7 +156,7 @@ class PermissionSeeder extends Seeder
             ],
                 'Parametrage' => [
                     'Ajout Parametrage',
-                    'Modification Parametrage',
+                    'Voir permissions',
                     'Suppression Parametrage',
                     'Ajout role',
                     'Voir Parametres Stock',
@@ -168,7 +169,8 @@ class PermissionSeeder extends Seeder
                     'Voir utilisateur',
                     'Modification utilisateur',
                     'Suppression utilisateur',
-                    'Exporter utilisateur'
+                    'Exporter utilisateur',
+                    'Voir role'
                 ],
             ],
             'Manager' => [
@@ -231,7 +233,7 @@ class PermissionSeeder extends Seeder
             ],
                 'Parametrage' => [
                     'Ajout Parametrage',
-                    'Modification Parametrage',
+                    'Voir permissions',
                     'Suppression Parametrage',
                     'Ajout role',
                     'Voir Parametres Stock',
@@ -244,7 +246,8 @@ class PermissionSeeder extends Seeder
                     'Voir utilisateur',
                     'Modification utilisateur',
                     'Suppression utilisateur',
-                    'Exporter utilisateur'
+                    'Exporter utilisateur',
+                    'Voir role'
                 ],
             ],
         ];
