@@ -27,9 +27,11 @@ return new class extends Migration
     {
         Schema::table('groupe_type_immos', function (Blueprint $table) {
            // On restaure la colonne et la contrainte
-           $table->foreignId('id_sous_type_immo')
+/*            $table->foreignId('id_sous_type_immo')
            ->constrained('sous_type_immos')
-           ->onDelete('cascade');
+           ->onDelete('cascade'); */
+           $table->foreignId('id_sous_type_immo')->nullable()->constrained('sous_type_immos')->onDelete('cascade');
+
         });
     }
 };

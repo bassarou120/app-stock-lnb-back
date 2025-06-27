@@ -18,8 +18,8 @@ class FonctionnaliteSeeder extends Seeder
         // Définition des modules et de leurs fonctionnalités
         $modules_fonctionnalites = [
             'Gestion de Stock' => [
-                'Ajout du Stock',
                 'Voir les entrées',
+                'Ajout du Stock',
                 'Modification du Stock',
                 'Suppression du Stock',
                 'Voir Les demandes',
@@ -30,6 +30,8 @@ class FonctionnaliteSeeder extends Seeder
                 'Export Rapport Stock'
             ],
             'Gestion de immobilisation' => [
+                'Voir les immobilisations',
+                'Voir les immobilisations',
                 'Ajout immobilisation',
                 'Modification immobilisation',
                 'Suppression immobilisation',
@@ -37,7 +39,7 @@ class FonctionnaliteSeeder extends Seeder
                 'Intervention Immobilisation',
                 'Export Rapport Immobilisation',
                 'Exporter immobilisation',
-                'Ajout d\'intervention',
+                'Ajout intervention',
                 'Modification intervention',
                 'Suppression intervention',
                 'Exporter immobilisation'
@@ -50,21 +52,28 @@ class FonctionnaliteSeeder extends Seeder
                 'Modification Intervention vehicule',
                 'Suppression Intervention vehicule',
                 'Intervention Parc',
-                "Ajout d'intervention",
                 'Attribution ticket',
                 'Ajout de Ticket',
                 'Modification de Ticket',
                 'Supression de Ticket',
                 'Verifier Stock Ticket',
+                'Export Rapport Parc',
                 'Voir Retour Ticket',
+                'Ajout Retour Ticket',
+                'Modification Retour Ticket',
+                'Supprimer Retour Ticket',
                 'Annulation Ticket',
-                'Export Rapport Parc'
 
             ],
             'Parametrage' => [
                 'Ajout Parametrage',
                 'Modification Parametrage',
                 'Suppression Parametrage',
+                'Ajout role',
+                'Voir Parametres Stock',
+                'Voir Parametres Parc',
+                'Voir Parametres Immo',
+                'Voir Parametres Généraux'
             ],
             'Gestion Rapport' => [
                 'Rapport Stock',
@@ -72,6 +81,13 @@ class FonctionnaliteSeeder extends Seeder
                 'Rapport Parc',
                 'Rapport Ticket',
                 'Export Rapport Immo'
+            ],
+            'Gestion des utilisateurs' => [
+                'Ajout utilisateur',
+                'Voir utilisateur',
+                'Modification utilisateur',
+                'Suppression utilisateur',
+                'Exporter utilisateur'
             ],
         ];
 
