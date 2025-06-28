@@ -2214,9 +2214,6 @@
             "name": "Intervention Véhicule",
             "description": "Intervention Véhicule"
         },
-        }
-    },
-    "tags": [
         {
             "name": "Demande de Sortie",
             "description": "Demande de Sortie"
