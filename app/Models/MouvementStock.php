@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Parametrage\Fournisseur;
 use App\Models\Parametrage\Employe;
 use App\Models\Parametrage\Bureau;
+use App\Models\Parametrage\UniteDeMesure;
 use App\Models\Parametrage\TypeMouvement;
 
 
@@ -20,6 +21,10 @@ class MouvementStock extends Model
     public function article(): BelongsTo
     {
         return $this->belongsTo(Article::class, 'id_Article');
+    }
+    public function unite_de_mesure(): BelongsTo
+    {
+        return $this->belongsTo(UniteDeMesure::class, 'id_unite_de_mesure');
     }
 
     public function fournisseur()

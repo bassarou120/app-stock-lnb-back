@@ -22,67 +22,232 @@ class PermissionSeeder extends Seeder
             'Super Admin' => [
                 'Gestion de Stock' => [
                     'Ajout du Stock',
+                    'Traiter de demande',
+                    'Voir les entrées',
                     'Modification du Stock',
                     'Suppression du Stock',
+                    'Voir Les demandes',
+                    'Validation de demande',
+                    'Sorties de Stock',
+                    'Voir Etat de Stock',
+                    'Export Stock',
+                    'Export Rapport Stock'
                 ],
                 'Gestion de immobilisation' => [
                     'Ajout immobilisation',
+                    'Voir les immobilisations',
                     'Modification immobilisation',
                     'Suppression immobilisation',
+                    'Voir les Transferts',
+                    'Voir les Interventions Immo',
+                    'Export Rapport Immobilisation',
+                    'Exporter immobilisation',
+                    'Ajout intervention',
+                    'Modification intervention',
+                    'Suppression intervention',
+                    'Exporter immobilisation'
                 ],
                 'Gestion de parc' => [
-                    'Ajout parc',
-                    'Modification parc',
-                    'Suppression parc',
+                    'Voir parc vehicule',
+                    'Voir entrée de ticket',
+                    'Voir intervention vehicule',
+                    'Ajout vehicule',
+                    'Modification vehicule',
+                    'Suppression vehicule',
+                    'Ajout Intervention vehicule',
+                    'Modification Intervention vehicule',
+                    'Suppression Intervention vehicule',
+                    'Intervention Parc',
+                    'Attribution ticket',
+                    'Ajout de Ticket',
+                    'Modification de Ticket',
+                    'Supression de Ticket',
+                    'Verifier Stock Ticket',
+                    'Voir Retour Ticket',
+                    'Ajout Retour Ticket',
+                    'Modification Retour Ticket',
+                    'Supprimer Retour Ticket',
+                    'Voir Annulation Ticket',
+                    'Ajout Annulation Ticket',
+                    'Export Rapport Parc'
+                ],
+                'Gestion Rapport' => [
+                    'Rapport Stock',
+                    'Rapport Immo',
+                    'Rapport Parc',
+                    'Rapport Ticket',
                 ],
                 'Parametrage' => [
                     'Ajout Parametrage',
-                    'Modification Parametrage',
+                    'Voir permissions',
                     'Suppression Parametrage',
+                    'Ajout role',
+                    'Voir Parametres Stock',
+                    'Voir Parametres Parc',
+                    'Voir Parametres Immo',
+                    'Voir Parametres Généraux'
+                ],
+                'Gestion des utilisateurs' => [
+                    'Ajout utilisateur',
+                    'Voir utilisateur',
+                    'Modification utilisateur',
+                    'Suppression utilisateur',
+                    'Exporter utilisateur',
+                    'Voir role'
                 ],
             ],
             'Admin' => [
                 'Gestion de Stock' => [
                     'Ajout du Stock',
+                    'Traiter de demande',
+                    'Voir les entrées',
                     'Modification du Stock',
                     'Suppression du Stock',
+                    'Voir Les demandes',
+                    'Validation de demande',
+                    'Sorties de Stock',
+                    'Voir Etat de Stock',
+                    'Export Stock',
+                    'Export Rapport Stock'
                 ],
                 'Gestion de immobilisation' => [
                     'Ajout immobilisation',
+                    'Voir les immobilisations',
                     'Modification immobilisation',
                     'Suppression immobilisation',
+                    'Voir les Transferts',
+                    'Voir les Interventions Immo',
+                    'Export Rapport Immobilisation',
+                    'Exporter immobilisation',
+                    'Ajout intervention',
+                    'Modification intervention',
+                    'Suppression intervention',
+                    'Exporter immobilisation'
                 ],
                 'Gestion de parc' => [
-                    'Ajout parc',
-                    'Modification parc',
-                    'Suppression parc',
+                    'Voir parc vehicule',
+                    'Voir intervention vehicule',
+                    'Voir entrée de ticket',
+                    'Ajout vehicule',
+                    'Modification vehicule',
+                    'Suppression vehicule',
+                    'Ajout Intervention vehicule',
+                    'Modification Intervention vehicule',
+                    'Suppression Intervention vehicule',
+                    'Intervention Parc',
+                    'Attribution ticket',
+                    'Ajout de Ticket',
+                    'Modification de Ticket',
+                    'Supression de Ticket',
+                    'Verifier Stock Ticket',
+                    'Voir Retour Ticket',
+                    'Ajout Retour Ticket',
+                    'Modification Retour Ticket',
+                    'Supprimer Retour Ticket',
+                    'Voir Annulation Ticket',
+                    'Ajout Annulation Ticket',
+                    'Export Rapport Parc'
                 ],
+                'Gestion Rapport' => [
+                    'Rapport Stock',
+                    'Rapport Immo',
+                    'Rapport Parc',
+                    'Rapport Ticket',
+            ],
                 'Parametrage' => [
                     'Ajout Parametrage',
-                    'Modification Parametrage',
+                    'Voir permissions',
                     'Suppression Parametrage',
+                    'Ajout role',
+                    'Voir Parametres Stock',
+                    'Voir Parametres Parc',
+                    'Voir Parametres Immo',
+                    'Voir Parametres Généraux'
+                ],
+                'Gestion des utilisateurs' => [
+                    'Ajout utilisateur',
+                    'Voir utilisateur',
+                    'Modification utilisateur',
+                    'Suppression utilisateur',
+                    'Exporter utilisateur',
+                    'Voir role'
                 ],
             ],
             'Manager' => [
                 'Gestion de Stock' => [
                     'Ajout du Stock',
+                    'Traiter de demande',
+                    'Voir les entrées',
                     'Modification du Stock',
                     'Suppression du Stock',
+                    'Voir Les demandes',
+                    'Validation de demande',
+                    'Sorties de Stock',
+                    'Voir Etat de Stock',
+                    'Export Stock',
+                    'Export Rapport Stock'
                 ],
                 'Gestion de immobilisation' => [
                     'Ajout immobilisation',
+                    'Voir les immobilisations',
                     'Modification immobilisation',
                     'Suppression immobilisation',
+                    'Voir les Transferts',
+                    'Voir les Interventions Immo',
+                    'Export Rapport Immobilisation',
+                    'Exporter immobilisation',
+                    'Ajout intervention',
+                    'Modification intervention',
+                    'Suppression intervention',
+                    'Exporter immobilisation'
                 ],
                 'Gestion de parc' => [
-                    'Ajout parc',
-                    'Modification parc',
-                    'Suppression parc',
+                    'Voir parc vehicule',
+                    'Voir intervention vehicule',
+                    'Voir entrée de ticket',
+                    'Ajout vehicule',
+                    'Modification vehicule',
+                    'Suppression vehicule',
+                    'Ajout Intervention vehicule',
+                    'Modification Intervention vehicule',
+                    'Suppression Intervention vehicule',
+                    'Intervention Parc',
+                    'Attribution ticket',
+                    'Ajout de Ticket',
+                    'Modification de Ticket',
+                    'Supression de Ticket',
+                    'Verifier Stock Ticket',
+                    'Voir Retour Ticket',
+                    'Ajout Retour Ticket',
+                    'Modification Retour Ticket',
+                    'Supprimer Retour Ticket',
+                    'Voir Annulation Ticket',
+                    'Ajout Annulation Ticket',
+                    'Export Rapport Parc'
                 ],
+                'Gestion Rapport' => [
+                    'Rapport Stock',
+                    'Rapport Immo',
+                    'Rapport Parc',
+                    'Rapport Ticket',
+            ],
                 'Parametrage' => [
                     'Ajout Parametrage',
-                    'Modification Parametrage',
+                    'Voir permissions',
                     'Suppression Parametrage',
+                    'Ajout role',
+                    'Voir Parametres Stock',
+                    'Voir Parametres Parc',
+                    'Voir Parametres Immo',
+                    'Voir Parametres Généraux'
+                ],
+                'Gestion des utilisateurs' => [
+                    'Ajout utilisateur',
+                    'Voir utilisateur',
+                    'Modification utilisateur',
+                    'Suppression utilisateur',
+                    'Exporter utilisateur',
+                    'Voir role'
                 ],
             ],
         ];
@@ -120,12 +285,19 @@ class PermissionSeeder extends Seeder
                     }
 
                     // Créer la permission si elle n'existe pas déjà
-                    Permission::firstOrCreate([
+                    $permission = Permission::firstOrCreate([
                         'role_id' => $role->id,
                         'module_id' => $module->id,
                         'fonctionnalite_id' => $fonctionnalite->id,
+                    ],[
                         'is_active' => true, // définir à true ou selon ta logique
                     ]);
+
+                    // Si tu veux t'assurer que la permission est active, tu peux faire :
+                    if (!$permission->is_active) {
+                        $permission->is_active = true;
+                        $permission->save();
+                    }
                 }
             }
         }

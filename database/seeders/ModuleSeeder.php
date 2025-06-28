@@ -18,7 +18,10 @@ class ModuleSeeder extends Seeder
             ['libelle_module' => 'Gestion de Stock'],
             ['libelle_module' => 'Gestion de immobilisation'],
             ['libelle_module' => 'Gestion de parc'],
+            ['libelle_module' => 'Gestion Rapport'],
+            ['libelle_module' => 'Gestion des utilisateurs'],
             ['libelle_module' => 'Parametrage'],
+
         ];
 
         foreach ($modules as $module) {

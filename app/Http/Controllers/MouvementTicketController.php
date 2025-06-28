@@ -14,6 +14,120 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 
+/**
+ * @OA\Get(
+ *     path="/api/mouvement-ticket/entree",
+ *     tags={"Mouvement Ticket"},
+ *     summary="Lister les mouvements d'entrée de ticket",
+ *     @OA\Response(
+ *         response=200,
+ *         description="Liste des mouvements d'entrée",
+ *         @OA\JsonContent(ref="#/components/schemas/MouvementTicketResource")
+ *     )
+ * )
+ *
+ * @OA\Post(
+ *     path="/api/mouvement-ticket/entree",
+ *     tags={"Mouvement Ticket"},
+ *     summary="Créer un mouvement d'entrée de ticket",
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"compagnie_petrolier_id", "coupon_ticket_id", "qte", "date"},
+ *             @OA\Property(property="compagnie_petrolier_id", type="integer", example=1),
+ *             @OA\Property(property="coupon_ticket_id", type="integer", example=2),
+ *             @OA\Property(property="description", type="string", example="Tickets reçus"),
+ *             @OA\Property(property="objet", type="string", example="Réapprovisionnement"),
+ *             @OA\Property(property="qte", type="integer", example=100),
+ *             @OA\Property(property="date", type="string", format="date", example="2025-07-01")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=201,
+ *         description="Mouvement créé",
+ *         @OA\JsonContent(ref="#/components/schemas/MouvementTicketResource")
+ *     )
+ * )
+ *
+ * @OA\Put(
+ *     path="/api/mouvement-ticket/entree/{id}",
+ *     tags={"Mouvement Ticket"},
+ *     summary="Mettre à jour un mouvement d'entrée de ticket",
+ *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(ref="#/components/schemas/MouvementTicket")
+ *     ),
+ *     @OA\Response(response=200, description="Mouvement mis à jour", @OA\JsonContent(ref="#/components/schemas/MouvementTicketResource"))
+ * )
+ *
+ * @OA\Delete(
+ *     path="/api/mouvement-ticket/entree/{id}",
+ *     tags={"Mouvement Ticket"},
+ *     summary="Supprimer un mouvement d'entrée de ticket",
+ *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+ *     @OA\Response(response=200, description="Mouvement supprimé", @OA\JsonContent(ref="#/components/schemas/MouvementTicketResource"))
+ * )
+ *
+ * @OA\Get(
+ *     path="/api/mouvement-ticket/sortie",
+ *     tags={"Mouvement Ticket"},
+ *     summary="Lister les mouvements de sortie de ticket",
+ *     @OA\Response(response=200, description="Liste des mouvements de sortie", @OA\JsonContent(ref="#/components/schemas/MouvementTicketResource"))
+ * )
+ *
+ * @OA\Post(
+ *     path="/api/mouvement-ticket/sortie",
+ *     tags={"Mouvement Ticket"},
+ *     summary="Créer un mouvement de sortie de ticket",
+ *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/MouvementTicket")),
+ *     @OA\Response(response=201, description="Mouvement créé", @OA\JsonContent(ref="#/components/schemas/MouvementTicketResource"))
+ * )
+ *
+ * @OA\Put(
+ *     path="/api/mouvement-ticket/sortie/{id}",
+ *     tags={"Mouvement Ticket"},
+ *     summary="Mettre à jour un mouvement de sortie de ticket",
+ *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+ *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/MouvementTicket")),
+ *     @OA\Response(response=200, description="Mouvement mis à jour", @OA\JsonContent(ref="#/components/schemas/MouvementTicketResource"))
+ * )
+ *
+ * @OA\Delete(
+ *     path="/api/mouvement-ticket/sortie/{id}",
+ *     tags={"Mouvement Ticket"},
+ *     summary="Supprimer un mouvement de sortie de ticket",
+ *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+ *     @OA\Response(response=200, description="Mouvement supprimé", @OA\JsonContent(ref="#/components/schemas/MouvementTicketResource"))
+ * )
+ *
+ * @OA\Get(
+ *     path="/api/quantite-disponible-ticket/{idCoupon}/{idCompagnie}",
+ *     tags={"Mouvement Ticket"},
+ *     summary="Obtenir la quantité disponible d'un ticket",
+ *     @OA\Parameter(name="idCoupon", in="path", required=true, @OA\Schema(type="integer")),
+ *     @OA\Parameter(name="idCompagnie", in="path", required=true, @OA\Schema(type="integer")),
+ *     @OA\Response(response=200, description="Quantité retournée", @OA\JsonContent(ref="#/components/schemas/MouvementTicketResource"))
+ * )
+ *
+ * @OA\Post(
+ *     path="/api/get-quantite-ticket-attribution",
+ *     tags={"Mouvement Ticket"},
+ *     summary="Calculer la quantité de ticket nécessaire pour un trajet",
+ *     @OA\RequestBody(required=true,
+ *         @OA\JsonContent(
+ *             required={"commune_depart", "commune_arriver", "trajet_aller_retour", "coupon_ticket_id"},
+ *             @OA\Property(property="commune_depart", type="integer", example=1),
+ *             @OA\Property(property="commune_arriver", type="integer", example=2),
+ *             @OA\Property(property="trajet_aller_retour", type="boolean", example=true),
+ *             @OA\Property(property="coupon_ticket_id", type="integer", example=3)
+ *         )
+ *     ),
+ *     @OA\Response(response=200, description="Quantité calculée")
+ * )
+ */
+
+
 
 
 class MouvementTicketController extends Controller

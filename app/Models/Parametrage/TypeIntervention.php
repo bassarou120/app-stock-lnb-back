@@ -12,6 +12,13 @@ class TypeIntervention extends Model
         'libelle_type_intervention',
         'applicable_seul_vehicule',
         'observation',
-        'date_expiration',
+        'has_expiration_date',
+        // 'date_expiration',
+    ];
+
+    protected $casts = [
+        'applicable_seul_vehicule' => 'boolean',
+        'has_expiration_date' => 'boolean', // NOUVEAU: Cast le nouveau champ en booléen
+        // 'date_expiration' n'est plus casté ici
     ];
 }

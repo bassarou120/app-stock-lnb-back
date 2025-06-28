@@ -43,6 +43,7 @@ class DatabaseSeeder extends Seeder
             ModuleSeeder::class,
             FonctionnaliteSeeder::class,
             PermissionSeeder::class,
+            UniteDeMesureSeeder::class,
         ]);
 
         // Appel de la commande artisan personnalisée

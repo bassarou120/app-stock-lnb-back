@@ -24,7 +24,8 @@ class TypeInterventionController extends Controller
             'libelle_type_intervention' => 'required|string|max:255',
             'applicable_seul_vehicule' => 'required|boolean',
             'observation' => 'nullable|string|max:255',
-            'date_expiration' => 'nullable|date',
+            'has_expiration_date' => 'required|boolean',
+            // 'date_expiration' => 'nullable|date',
         ]);
 
         if ($validator->fails()) {
@@ -35,7 +36,8 @@ class TypeInterventionController extends Controller
             'libelle_type_intervention' => $request->libelle_type_intervention,
             'applicable_seul_vehicule' => $request->applicable_seul_vehicule,
             'observation' => $request->observation,
-            'date_expiration' => $request->date_expiration,
+            'has_expiration_date' => $request->has_expiration_date,
+            // 'date_expiration' => $request->date_expiration,
         ]);
 
         return new PostResource(true, 'Type d\'intervention créé avec succès', $type);
@@ -48,7 +50,8 @@ class TypeInterventionController extends Controller
             'libelle_type_intervention' => 'required|string|max:255',
             'applicable_seul_vehicule' => 'required|boolean',
             'observation' => 'nullable|string|max:255',
-            'date_expiration' => 'nullable|date',
+            'has_expiration_date' => 'required|boolean',
+            // 'date_expiration' => 'nullable|date',
         ]);
 
         if ($validator->fails()) {
@@ -59,7 +62,8 @@ class TypeInterventionController extends Controller
             'libelle_type_intervention' => $request->libelle_type_intervention,
             'applicable_seul_vehicule' => $request->applicable_seul_vehicule,
             'observation' => $request->observation,
-            'date_expiration' => $request->date_expiration,
+            'has_expiration_date' => $request->has_expiration_date,
+            // 'date_expiration' => $request->date_expiration,
         ]);
 
         return new PostResource(true, 'Type d\'intervention mis à jour avec succès', $type_intervention);

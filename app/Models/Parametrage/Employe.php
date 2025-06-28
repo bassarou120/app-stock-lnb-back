@@ -6,6 +6,23 @@ use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
+
+
+ /**
+ * @OA\Schema(
+ *     schema="Employe",
+ *     title="Employe",
+ *     description="Modèle d'un Employe",
+ *     type="object",
+ *     @OA\Property(property="id", type="integer", example=1),
+ *         @OA\Property(property="nom", type="string", example="Doe"),
+ *         @OA\Property(property="prenom", type="string", example="John"),
+ *         @OA\Property(property="telephone", type="string", example="+22912345678"),
+ *         @OA\Property(property="email", type="string", example="john.doe@example.com"),
+ *         @OA\Property(property="created_at", type="string", format="date-time"),
+ *         @OA\Property(property="updated_at", type="string", format="date-time")
+ * )
+ */
 class Employe extends Model
 {
     use HasFactory;

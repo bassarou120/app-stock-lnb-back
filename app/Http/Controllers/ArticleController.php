@@ -21,6 +21,19 @@ use Illuminate\Support\Facades\Response;
 class ArticleController extends Controller
 {
     // Afficher la liste des articles
+
+    /**
+ * @OA\Get(
+ *     path="/api/articles",
+ *     tags={"Articles"},
+ *     summary="Liste des articles avec leurs catégories et stocks",
+ *     @OA\Response(
+ *         response=200,
+ *         description="Succès",
+ *         @OA\JsonContent(ref="#/components/schemas/PostResourceResponse")
+ *     )
+ * )
+ */
     public function index()
     {
         $articles = Article::with(['categorie', 'stock'])->latest()->paginate(1000);
@@ -52,6 +65,39 @@ class ArticleController extends Controller
     // }
 
     // Nouvelle méthode pour ajouter plusieurs articles
+
+    /**
+ * @OA\Post(
+ *     path="/api/articles/batch",
+ *     tags={"Articles"},
+ *     summary="Créer plusieurs articles en lot",
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(
+ *                 property="articles",
+ *                 type="array",
+ *                 @OA\Items(
+ *                     type="object",
+ *                     required={"id_cat","libelle","code_article","stock_alerte"},
+ *                     @OA\Property(property="id_cat", type="integer", example=3),
+ *                     @OA\Property(property="libelle", type="string", example="Chaussures de sport"),
+ *                     @OA\Property(property="code_article", type="string", example="ART-2025-001"),
+ *                     @OA\Property(property="description", type="string", example="Description optionnelle"),
+ *                     @OA\Property(property="stock_alerte", type="integer", example=5)
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=201,
+ *         description="Articles créés",
+ *         @OA\JsonContent(ref="#/components/schemas/PostResourceResponse")
+ *     ),
+ *     @OA\Response(response=422, description="Erreur de validation")
+ * )
+ */
     public function storeBatch(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -99,6 +145,38 @@ class ArticleController extends Controller
     }
 
     // Mettre à jour un article existant
+
+    /**
+ * @OA\Put(
+ *     path="/api/articles/{id}",
+ *     tags={"Articles"},
+ *     summary="Mettre à jour un article",
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         required=true,
+ *         description="ID de l'article",
+ *         @OA\Schema(type="integer")
+ *     ),
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"id_cat","libelle","code_article","stock_alerte"},
+ *             @OA\Property(property="id_cat", type="integer", example=3),
+ *             @OA\Property(property="libelle", type="string", example="Chaussures modifiées"),
+ *             @OA\Property(property="code_article", type="string", example="ART-2025-002"),
+ *             @OA\Property(property="description", type="string", example="Description mise à jour"),
+ *             @OA\Property(property="stock_alerte", type="integer", example=10)
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Article mis à jour",
+ *         @OA\JsonContent(ref="#/components/schemas/PostResourceResponse")
+ *     ),
+ *     @OA\Response(response=422, description="Erreur de validation")
+ * )
+ */
     public function update(Request $request, Article $article)
     {
         $validator = Validator::make($request->all(), [
@@ -128,6 +206,31 @@ class ArticleController extends Controller
     }
 
     // Supprimer un article
+
+    /**
+ * @OA\Delete(
+ *     path="/api/articles/{id}",
+ *     tags={"Articles"},
+ *     summary="Supprimer un article",
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         required=true,
+ *         description="ID de l'article",
+ *         @OA\Schema(type="integer")
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Article supprimé",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Article supprimé avec succès"),
+ *             @OA\Property(property="data", type="null", example=null)
+ *         )
+ *     )
+ * )
+ */
     public function destroy(Article $article)
     {
         $article->delete();

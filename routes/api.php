@@ -15,6 +15,7 @@ use App\Http\Controllers\Parametrage\FournisseurController;
 use App\Http\Controllers\Parametrage\TypeAffectationController;
 use App\Http\Controllers\Parametrage\TypeMouvementController;
 use App\Http\Controllers\Parametrage\BureauController;
+use App\Http\Controllers\Parametrage\UniteDeMesureController;
 use App\Http\Controllers\Parametrage\StatusImmoController;
 use App\Http\Controllers\Parametrage\TypeImmoController;
 use App\Http\Controllers\Parametrage\SousTypeImmoController;
@@ -42,6 +43,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\Rapport\Stock\StockRapportController;
 use App\Http\Controllers\Rapport\ImmobilisationRapportController;
 use App\Http\Controllers\Rapport\Parc\RapportParcController;
+use App\Http\Controllers\Rapport\Ticket\RapportTicketController;
 
 
 Route::get('/user', function (Request $request) {
@@ -68,6 +70,7 @@ Route::get('employes-imprimer', [EmployeController::class, 'imprimer']);
 Route::apiResource('type_affectations', TypeAffectationController::class);
 Route::apiResource('type_mouvements', TypeMouvementController::class);
 Route::apiResource('bureaux', BureauController::class);
+Route::apiResource('unite-de-mesure', UniteDeMesureController::class);
 Route::apiResource('status_immos', StatusImmoController::class);
 Route::apiResource('type_immos', TypeImmoController::class);
 Route::apiResource('sous_type_immos', SousTypeImmoController::class);
@@ -164,7 +167,7 @@ Route::get('/interventions-vehicule/imprimer', [InterventionVehiculeController::
 Route::get('vehicules-imprimer', [VehiculeController::class, 'imprimerVehicules']);
 
 //Rapport
-Route::post('rapport-entrestock', [EntrerController::class, 'rapport_EntreeStock']);
+// Route::post('rapport-entrestock', [EntrerController::class, 'rapport_EntreeStock']);
 
 
 Route::get('/rapports/immobilisations', [ImmobilisationRapportController::class, 'getRapportData']);
@@ -186,3 +189,13 @@ Route::get('/rapports/stock/imprimer', [StockRapportController::class, 'imprimer
 
 Route::get('/rapports/parc', [RapportParcController::class, 'getRapportData']);
 Route::get('/rapports/parc/imprimer', [RapportParcController::class, 'imprimerRapportParc']);
+
+Route::get('/rapports/ticket', [RapportTicketController::class, 'getRapportData']);
+Route::get('/rapports/ticket/imprimer', [RapportTicketController::class, 'imprimerRapportTicket']);
+// NOUVELLE ROUTE : Pour récupérer les données du rapport d'état de stock (JSON)
+Route::get('/rapports/etat-stock', [StockRapportController::class, 'getRapportFicheStock']);
+
+// NOUVELLE ROUTE : Pour l'impression PDF du rapport d'état de stock
+Route::get('/rapports/etat-stock/imprimer', [StockRapportController::class, 'imprimerRapportEtatStock']);
+
+Route::get('/permissions/role/{roleId}', [PermissionController::class, 'getByRole']);
