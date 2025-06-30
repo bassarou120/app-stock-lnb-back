@@ -26,7 +26,7 @@ class EmployeController extends Controller
     /**
      * @OA\Get(
      *     path="/api/employes",
-     *     tags={"Employés"},
+     *     tags={"Personnel"},
      *     summary="Liste du Personnel",
      *     @OA\Response(
      *         response=200,
@@ -34,7 +34,7 @@ class EmployeController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Liste des Employes"),
+     *             @OA\Property(property="message", type="string", example="Liste des Personnel"),
      *             @OA\Property(
      *                 property="data",
      *                 type="array",
@@ -55,7 +55,7 @@ class EmployeController extends Controller
   /**
  * @OA\Post(
  *     path="/api/employes",
- *     tags={"Employés"},
+ *     tags={"Personnel"},
  *     summary="Créer un Personnel",
  *     @OA\RequestBody(
  *         required=true,
@@ -110,7 +110,7 @@ class EmployeController extends Controller
  /**
  * @OA\Put(
  *     path="/api/employes/{id}",
- *     tags={"Employés"},
+ *     tags={"Personnel"},
  *     summary="Mettre à jour un Personnel",
  *     @OA\Parameter(
  *         name="id",
@@ -175,7 +175,7 @@ class EmployeController extends Controller
     /**
      * @OA\Delete(
      *     path="/api/employes/{id}",
-     *     tags={"Employés"},
+     *     tags={"Personnel"},
      *     summary="Supprimer un employé",
      *     @OA\Parameter(
      *         name="id",
@@ -201,7 +201,7 @@ class EmployeController extends Controller
     /**
      * @OA\Get(
      *     path="/api/employes/pdf",
-     *     tags={"Employés"},
+     *     tags={"Personnel"},
      *     summary="Télécharger la liste des employés en PDF",
      *     @OA\Response(
      *         response=200,
