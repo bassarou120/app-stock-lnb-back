@@ -287,9 +287,10 @@ class ImmobilisationRapportController extends Controller
         } elseif ($typeRapport === 'intervention') {
             $compactData = ['interventions' => $data];
         }
-        
+
         $pdf = \Pdf::loadView($viewName, $compactData);
 
         return $pdf->download($filename);
     }
+
 }

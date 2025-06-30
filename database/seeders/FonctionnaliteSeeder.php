@@ -23,8 +23,9 @@ class FonctionnaliteSeeder extends Seeder
                 'Modification du Stock',
                 'Suppression du Stock',
                 'Voir Les demandes',
-                'Traiter de demande',
                 'Validation de demande',
+                'Refus de demande',
+                'Accorder de demande',
                 'Sorties de Stock',
                 'Voir Etat de Stock',
                 'Export Stock',
@@ -42,7 +43,6 @@ class FonctionnaliteSeeder extends Seeder
                 'Ajout intervention',
                 'Modification intervention',
                 'Suppression intervention',
-                'Exporter immobilisation'
             ],
             'Gestion de parc' => [
                 'Voir parc vehicule',

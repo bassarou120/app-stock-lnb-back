@@ -199,3 +199,6 @@ Route::get('/rapports/etat-stock', [StockRapportController::class, 'getRapportFi
 Route::get('/rapports/etat-stock/imprimer', [StockRapportController::class, 'imprimerRapportEtatStock']);
 
 Route::get('/permissions/role/{roleId}', [PermissionController::class, 'getByRole']);
+
+Route::get('/intervention_immo', [InterventionController::class, 'Intervention_immo']);
+Route::get('/intervention_vehicule', [InterventionVehiculeController::class, 'Intervention_Vehicule']);

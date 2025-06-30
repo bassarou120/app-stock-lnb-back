@@ -22,12 +22,13 @@ class PermissionSeeder extends Seeder
             'Super Admin' => [
                 'Gestion de Stock' => [
                     'Ajout du Stock',
-                    'Traiter de demande',
                     'Voir les entrées',
                     'Modification du Stock',
                     'Suppression du Stock',
                     'Voir Les demandes',
                     'Validation de demande',
+                    'Refus de demande',
+                    'Accorder de demande',
                     'Sorties de Stock',
                     'Voir Etat de Stock',
                     'Export Stock',
@@ -45,7 +46,6 @@ class PermissionSeeder extends Seeder
                     'Ajout intervention',
                     'Modification intervention',
                     'Suppression intervention',
-                    'Exporter immobilisation'
                 ],
                 'Gestion de parc' => [
                     'Voir parc vehicule',
@@ -99,16 +99,17 @@ class PermissionSeeder extends Seeder
             'Admin' => [
                 'Gestion de Stock' => [
                     'Ajout du Stock',
-                    'Traiter de demande',
                     'Voir les entrées',
                     'Modification du Stock',
                     'Suppression du Stock',
                     'Voir Les demandes',
                     'Validation de demande',
+                    'Refus de demande',
+                    'Accorder de demande',
                     'Sorties de Stock',
                     'Voir Etat de Stock',
                     'Export Stock',
-                    'Export Rapport Stock'
+                    'Export Rapport Stock',
                 ],
                 'Gestion de immobilisation' => [
                     'Ajout immobilisation',
@@ -122,7 +123,6 @@ class PermissionSeeder extends Seeder
                     'Ajout intervention',
                     'Modification intervention',
                     'Suppression intervention',
-                    'Exporter immobilisation'
                 ],
                 'Gestion de parc' => [
                     'Voir parc vehicule',
@@ -176,12 +176,13 @@ class PermissionSeeder extends Seeder
             'Manager' => [
                 'Gestion de Stock' => [
                     'Ajout du Stock',
-                    'Traiter de demande',
                     'Voir les entrées',
                     'Modification du Stock',
                     'Suppression du Stock',
                     'Voir Les demandes',
                     'Validation de demande',
+                    'Refus de demande',
+                    'Accorder de demande',
                     'Sorties de Stock',
                     'Voir Etat de Stock',
                     'Export Stock',
@@ -199,7 +200,6 @@ class PermissionSeeder extends Seeder
                     'Ajout intervention',
                     'Modification intervention',
                     'Suppression intervention',
-                    'Exporter immobilisation'
                 ],
                 'Gestion de parc' => [
                     'Voir parc vehicule',
