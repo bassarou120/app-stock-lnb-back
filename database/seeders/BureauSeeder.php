@@ -20,6 +20,7 @@ class BureauSeeder extends Seeder
             ['libelle_bureau' => 'Bureau Comptabilité'],
             ['libelle_bureau' => 'Bureau Logistique'],
             ['libelle_bureau' => 'Bureau Technique'],
+            ['libelle_bureau' => 'Magasin'],
         ];
 
         foreach ($bureaux as $bureau) {

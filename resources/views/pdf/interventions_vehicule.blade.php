@@ -52,6 +52,7 @@
                 <th>Type Intervention</th>
                 <th>Titre</th>
                 <th>Date Intervention</th>
+                <th>Date d'expiration</th>
                 <th>Montant</th>
                 <th>Observation</th>
             </tr>
@@ -64,6 +65,7 @@
                     <td>{{ $intervention->typeIntervention->libelle_type_intervention ?? 'N/A' }}</td>
                     <td>{{ $intervention->titre }}</td>
                     <td>{{ \Carbon\Carbon::parse($intervention->date_intervention)->format('d/m/Y') }}</td>
+                    <td>{{ \Carbon\Carbon::parse($intervention->date_expiration)->format('d/m/Y') }}</td>
                     <td>{{ number_format($intervention->montant, 2, ',', ' ') }}</td>
                     <td>{{ $intervention->observation ?? 'N/A' }}</td>
                 </tr>

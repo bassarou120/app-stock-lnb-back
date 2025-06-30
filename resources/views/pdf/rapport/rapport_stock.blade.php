@@ -157,8 +157,7 @@
       <tr>
         <td style="width: 50%;">
           République du Bénin<br/>
-          Ministère/Institution/Collectivité locale<br/>
-          Direction/service
+          LNB-Lotterie National du Bénin SA
         </td>
         @if($reportTypeLabel === 'd\'Entrée de Stock')
             <td style="width: 50%; text-align: right;">
