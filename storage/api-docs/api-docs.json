@@ -1,0 +1,2230 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "APP-STOCK-LNB API",
+        "description": "Description de votre API",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/articles": {
+            "get": {
+                "tags": [
+                    "Articles"
+                ],
+                "summary": "Liste des articles avec leurs catégories et stocks",
+                "operationId": "11aa4cc6561a7b94c56d1201d62513ee",
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PostResourceResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/articles/batch": {
+            "post": {
+                "tags": [
+                    "Articles"
+                ],
+                "summary": "Créer plusieurs articles en lot",
+                "operationId": "44f9c655c7d56546beaa1a60fa0f4879",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "articles": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "id_cat",
+                                                "libelle",
+                                                "code_article",
+                                                "stock_alerte"
+                                            ],
+                                            "properties": {
+                                                "id_cat": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "libelle": {
+                                                    "type": "string",
+                                                    "example": "Chaussures de sport"
+                                                },
+                                                "code_article": {
+                                                    "type": "string",
+                                                    "example": "ART-2025-001"
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "Description optionnelle"
+                                                },
+                                                "stock_alerte": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Articles créés",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PostResourceResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                }
+            }
+        },
+        "/api/articles/{id}": {
+            "put": {
+                "tags": [
+                    "Articles"
+                ],
+                "summary": "Mettre à jour un article",
+                "operationId": "2717d5a8e3b1f16637aded325347f9ad",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'article",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id_cat",
+                                    "libelle",
+                                    "code_article",
+                                    "stock_alerte"
+                                ],
+                                "properties": {
+                                    "id_cat": {
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "libelle": {
+                                        "type": "string",
+                                        "example": "Chaussures modifiées"
+                                    },
+                                    "code_article": {
+                                        "type": "string",
+                                        "example": "ART-2025-002"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Description mise à jour"
+                                    },
+                                    "stock_alerte": {
+                                        "type": "integer",
+                                        "example": 10
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Article mis à jour",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PostResourceResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Articles"
+                ],
+                "summary": "Supprimer un article",
+                "operationId": "97f34592611a1dd53a086865e29706c9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'article",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Article supprimé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Article supprimé avec succès"
+                                        },
+                                        "data": {
+                                            "type": "null",
+                                            "example": null
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/immobilisations": {
+            "get": {
+                "tags": [
+                    "Immobilisations"
+                ],
+                "summary": "Liste des immobilisations",
+                "operationId": "4c65654d2af9005b61a847f66dc19222",
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Liste des immobilisations"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Immobilisation"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Immobilisations"
+                ],
+                "summary": "Créer une nouvelle immobilisation",
+                "operationId": "3d18686d6e5c6863bbdab8b9afe3336e",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id_groupe_type_immo",
+                                    "id_sous_type_immo",
+                                    "id_status_immo"
+                                ],
+                                "properties": {
+                                    "designation": {
+                                        "type": "string",
+                                        "example": "Scanner HP"
+                                    },
+                                    "code": {
+                                        "type": "string",
+                                        "example": "IMMO-2025-002"
+                                    },
+                                    "montant_ttc": {
+                                        "type": "integer",
+                                        "example": 250000
+                                    },
+                                    "date_acquisition": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "date_mise_en_service": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "id_groupe_type_immo": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "id_sous_type_immo": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "id_status_immo": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "fournisseur_id": {
+                                        "type": "integer"
+                                    },
+                                    "employe_id": {
+                                        "type": "integer"
+                                    },
+                                    "bureau_id": {
+                                        "type": "integer"
+                                    },
+                                    "vehicule_id": {
+                                        "type": "integer"
+                                    },
+                                    "isVehicule": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Immobilisation créée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PostResourceImmobilisationResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                }
+            }
+        },
+        "/api/immobilisations/{id}": {
+            "put": {
+                "tags": [
+                    "Immobilisations"
+                ],
+                "summary": "Mettre à jour une immobilisation",
+                "operationId": "830b3ac5530f952c093862fa78258215",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'immobilisation",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id_groupe_type_immo",
+                                    "id_sous_type_immo",
+                                    "id_status_immo"
+                                ],
+                                "properties": {
+                                    "designation": {
+                                        "type": "string",
+                                        "example": "Scanner HP"
+                                    },
+                                    "code": {
+                                        "type": "string",
+                                        "example": "IMMO-2025-002"
+                                    },
+                                    "montant_ttc": {
+                                        "type": "integer",
+                                        "example": 250000
+                                    },
+                                    "date_acquisition": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "date_mise_en_service": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "id_groupe_type_immo": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "id_sous_type_immo": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "id_status_immo": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "fournisseur_id": {
+                                        "type": "integer"
+                                    },
+                                    "employe_id": {
+                                        "type": "integer"
+                                    },
+                                    "bureau_id": {
+                                        "type": "integer"
+                                    },
+                                    "vehicule_id": {
+                                        "type": "integer"
+                                    },
+                                    "isVehicule": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Immobilisation mise à jour",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PostResourceImmobilisationResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Immobilisations"
+                ],
+                "summary": "Supprimer une immobilisation",
+                "operationId": "e1d120152511dc5c8740cbe16025ada9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Immobilisation supprimée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Immobilisation supprimée avec succès"
+                                        },
+                                        "data": {
+                                            "type": "null",
+                                            "example": null
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/intervention-vehicules": {
+            "get": {
+                "tags": [
+                    "Intervention Véhicule"
+                ],
+                "summary": "Lister les interventions des véhicules",
+                "operationId": "aed7252502a5fb1e9a793bb3b0cdd360",
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Liste des interventions de véhicules"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/InterventionVehicule"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Intervention Véhicule"
+                ],
+                "summary": "Créer une nouvelle intervention de véhicule",
+                "operationId": "ad72552442adeb4acd55e0817a815c31",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "vehicule_id",
+                                    "titre",
+                                    "montant",
+                                    "date_intervention",
+                                    "type_intervention_id"
+                                ],
+                                "properties": {
+                                    "vehicule_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "titre": {
+                                        "type": "string",
+                                        "example": "Vidange"
+                                    },
+                                    "montant": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 25000
+                                    },
+                                    "observation": {
+                                        "type": "string",
+                                        "example": "RAS"
+                                    },
+                                    "date_intervention": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-06-15"
+                                    },
+                                    "type_intervention_id": {
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "date_expiration": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-12-15"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Intervention créée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PostResourceInterventionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                }
+            }
+        },
+        "/api/intervention-vehicules/{id}": {
+            "put": {
+                "tags": [
+                    "Intervention Véhicule"
+                ],
+                "summary": "Mettre à jour une intervention",
+                "operationId": "94b477d302da30d30302c623cba73b2e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'intervention",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InterventionVehicule"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Intervention mise à jour avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PostResourceInterventionResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Intervention Véhicule"
+                ],
+                "summary": "Supprimer une intervention",
+                "operationId": "ca99845c48cab21ff450f06d734e1ba4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Intervention supprimée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "intervention supprimé avec succès"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/demande-de-sortie": {
+            "post": {
+                "tags": [
+                    "Demande de Sortie"
+                ],
+                "summary": "Créer une demande de sortie",
+                "description": "Permet de créer une nouvelle demande de sortie avec la liste des articles demandés.",
+                "operationId": "829b12a87c6c053a31fbfa8e68d17fef",
+                "requestBody": {
+                    "description": "Les données nécessaires pour créer une demande de sortie",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "dateDemande",
+                                    "id_bureau",
+                                    "id_personnel",
+                                    "articles"
+                                ],
+                                "properties": {
+                                    "dateDemande": {
+                                        "description": "Date à laquelle la demande de sortie est effectuée",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-05-27"
+                                    },
+                                    "id_bureau": {
+                                        "description": "Identifiant du bureau effectuant la demande (référence à la table bureaux)",
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "id_personnel": {
+                                        "description": "Identifiant du personnel responsable de la demande (référence à la table personnels)",
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "articles": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "code_article",
+                                                "qteDemande"
+                                            ],
+                                            "properties": {
+                                                "code_article": {
+                                                    "description": "Code unique de l'article concerné (référence à la table articles)",
+                                                    "type": "string",
+                                                    "example": "AAA67"
+                                                },
+                                                "description": {
+                                                    "description": "Description complémentaire de l'article demandé",
+                                                    "type": "string",
+                                                    "example": "Consommable de bureau"
+                                                },
+                                                "qteDemande": {
+                                                    "description": "Quantité d'article demandée pour la sortie (minimum 1)",
+                                                    "type": "integer",
+                                                    "example": 10
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "minItems": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Demande de sortie créée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Demande de sortie créée avec succès"
+                                        },
+                                        "demande": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Requête invalide - Erreur de validation"
+                    },
+                    "500": {
+                        "description": "Erreur interne du serveur"
+                    }
+                }
+            }
+        },
+        "/api/mouvement-ticket/entree": {
+            "get": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Lister les mouvements d'entrée de ticket",
+                "operationId": "740b1bc35d4f6a979ff4f97ccc738fa1",
+                "responses": {
+                    "200": {
+                        "description": "Liste des mouvements d'entrée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MouvementTicketResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Créer un mouvement d'entrée de ticket",
+                "operationId": "ee19f6eb31e8fe4a292927a9119518a5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "compagnie_petrolier_id",
+                                    "coupon_ticket_id",
+                                    "qte",
+                                    "date"
+                                ],
+                                "properties": {
+                                    "compagnie_petrolier_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "coupon_ticket_id": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Tickets reçus"
+                                    },
+                                    "objet": {
+                                        "type": "string",
+                                        "example": "Réapprovisionnement"
+                                    },
+                                    "qte": {
+                                        "type": "integer",
+                                        "example": 100
+                                    },
+                                    "date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-07-01"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Mouvement créé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MouvementTicketResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/mouvement-ticket/entree/{id}": {
+            "put": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Mettre à jour un mouvement d'entrée de ticket",
+                "operationId": "d921e01cecd69439347ff171b6062eb6",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MouvementTicket"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Mouvement mis à jour",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MouvementTicketResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Supprimer un mouvement d'entrée de ticket",
+                "operationId": "e90c6558ca66bbb4d9cd846a3630795a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Mouvement supprimé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MouvementTicketResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/mouvement-ticket/sortie": {
+            "get": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Lister les mouvements de sortie de ticket",
+                "operationId": "981a15fd6ffa4a138ba1528ceeca4ba1",
+                "responses": {
+                    "200": {
+                        "description": "Liste des mouvements de sortie",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MouvementTicketResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Créer un mouvement de sortie de ticket",
+                "operationId": "63f3260dd0aed388e1ee994304d80f37",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MouvementTicket"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Mouvement créé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MouvementTicketResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/mouvement-ticket/sortie/{id}": {
+            "put": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Mettre à jour un mouvement de sortie de ticket",
+                "operationId": "fb5acc617d7a49b7e346ab69b3f1c5b4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MouvementTicket"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Mouvement mis à jour",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MouvementTicketResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Supprimer un mouvement de sortie de ticket",
+                "operationId": "6880eeed1173741c395dc8ef0ffb3fe3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Mouvement supprimé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MouvementTicketResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/quantite-disponible-ticket/{idCoupon}/{idCompagnie}": {
+            "get": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Obtenir la quantité disponible d'un ticket",
+                "operationId": "9f251a559d8a0c321c3e8778958f4b62",
+                "parameters": [
+                    {
+                        "name": "idCoupon",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "idCompagnie",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Quantité retournée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MouvementTicketResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/get-quantite-ticket-attribution": {
+            "post": {
+                "tags": [
+                    "Mouvement Ticket"
+                ],
+                "summary": "Calculer la quantité de ticket nécessaire pour un trajet",
+                "operationId": "3e9ca88d5033d48f6cdf515c0e7ce4c0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "commune_depart",
+                                    "commune_arriver",
+                                    "trajet_aller_retour",
+                                    "coupon_ticket_id"
+                                ],
+                                "properties": {
+                                    "commune_depart": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "commune_arriver": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "trajet_aller_retour": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "coupon_ticket_id": {
+                                        "type": "integer",
+                                        "example": 3
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Quantité calculée"
+                    }
+                }
+            }
+        },
+        "/api/bureaux": {
+            "get": {
+                "tags": [
+                    "Bureaux"
+                ],
+                "summary": "Liste des bureaux",
+                "operationId": "510c6409ef9f77a1ca6684c884719192",
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Liste des bureaux"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Bureau"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Bureaux"
+                ],
+                "summary": "Créer un bureau",
+                "operationId": "e352dc0f9eab7a92ed9bf984ecf1a73a",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "libelle_bureau"
+                                ],
+                                "properties": {
+                                    "libelle_bureau": {
+                                        "type": "string",
+                                        "example": "Bureau des RH"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Bureau créé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Bureau créé avec succès"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Bureau"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                }
+            }
+        },
+        "/api/bureaux/{id}": {
+            "put": {
+                "tags": [
+                    "Bureaux"
+                ],
+                "summary": "Mettre à jour un bureau",
+                "operationId": "2d3f8f4c4fbfa216e47978a58596bd94",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du bureau à modifier",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "libelle_bureau"
+                                ],
+                                "properties": {
+                                    "libelle_bureau": {
+                                        "type": "string",
+                                        "example": "Bureau mis à jour"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Bureau mis à jour",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Bureau mis à jour avec succès"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Bureau"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Bureaux"
+                ],
+                "summary": "Supprimer un bureau",
+                "operationId": "48108232ea9566a9d73608a713c52b50",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du bureau à supprimer",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Bureau supprimé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Bureau supprimé avec succès"
+                                        },
+                                        "data": {
+                                            "type": "null",
+                                            "example": null
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/employes": {
+            "get": {
+                "tags": [
+                    "Employés"
+                ],
+                "summary": "Liste des employés",
+                "operationId": "736d36a6ea6bf628f1866d79e0ed4e7b",
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Liste des Employes"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Employe"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Employés"
+                ],
+                "summary": "Créer un employé",
+                "operationId": "1c932cbfe9b46b9e392629d1fce1dc20",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "nom",
+                                    "prenom"
+                                ],
+                                "properties": {
+                                    "nom": {
+                                        "type": "string"
+                                    },
+                                    "prenom": {
+                                        "type": "string"
+                                    },
+                                    "telephone": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Employé créé avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Employé créé avec succès"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Employe"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                }
+            }
+        },
+        "/api/employes/{id}": {
+            "put": {
+                "tags": [
+                    "Employés"
+                ],
+                "summary": "Mettre à jour un employé",
+                "operationId": "6a25ae1fc48797ccdbda475491dfdde1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'employé",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "nom",
+                                    "prenom"
+                                ],
+                                "properties": {
+                                    "nom": {
+                                        "type": "string"
+                                    },
+                                    "prenom": {
+                                        "type": "string"
+                                    },
+                                    "telephone": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Employé mis à jour avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Employé mis à jour avec succès"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Employe"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Employés"
+                ],
+                "summary": "Supprimer un employé",
+                "operationId": "d6ca01c633eef47ebbabb908a6271b29",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'employé",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Employé supprimé avec succès"
+                    }
+                }
+            }
+        },
+        "/api/employes/pdf": {
+            "get": {
+                "tags": [
+                    "Employés"
+                ],
+                "summary": "Télécharger la liste des employés en PDF",
+                "operationId": "c025e09d09756ceda1875f0298cbbe3c",
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF téléchargé",
+                        "content": {
+                            "application/pdf": {}
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Article": {
+                "title": "Article",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "id_cat": {
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "libelle": {
+                        "type": "string",
+                        "example": "Chaussures de sport"
+                    },
+                    "code_article": {
+                        "type": "string",
+                        "example": "ART-2025-001"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Chaussures confortables pour la course"
+                    },
+                    "stock_alerte": {
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    },
+                    "categorie": {
+                        "$ref": "#/components/schemas/CategorieArticle"
+                    },
+                    "stock": {
+                        "$ref": "#/components/schemas/Stock"
+                    }
+                },
+                "type": "object"
+            },
+            "Immobilisation": {
+                "title": "Immobilisation",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "designation": {
+                        "type": "string",
+                        "example": "Imprimante Canon"
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "IMMO-2025-001"
+                    },
+                    "montant_ttc": {
+                        "type": "integer",
+                        "example": 150000
+                    },
+                    "date_acquisition": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-01-01"
+                    },
+                    "date_mise_en_service": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-02-01"
+                    },
+                    "date_mouvement": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-02-10"
+                    },
+                    "duree_amorti": {
+                        "type": "integer",
+                        "example": 36
+                    },
+                    "duree_ammortissement": {
+                        "type": "integer",
+                        "example": 36
+                    },
+                    "taux_ammortissement": {
+                        "type": "integer",
+                        "example": 10
+                    },
+                    "etat": {
+                        "type": "string",
+                        "example": "Bon état"
+                    },
+                    "observation": {
+                        "type": "string",
+                        "example": "Affectée au bureau 1"
+                    },
+                    "isVehicule": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "vehicule_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "id_groupe_type_immo": {
+                        "type": "integer"
+                    },
+                    "id_sous_type_immo": {
+                        "type": "integer"
+                    },
+                    "id_status_immo": {
+                        "type": "integer"
+                    },
+                    "fournisseur_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "employe_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "bureau_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "bureau": {
+                        "$ref": "#/components/schemas/Bureau"
+                    },
+                    "groupe_type_immo": {
+                        "$ref": "#/components/schemas/Groupe_type_immo"
+                    },
+                    "sous_type_immo": {
+                        "$ref": "#/components/schemas/Sous_type_immo"
+                    },
+                    "status_immo": {
+                        "$ref": "#/components/schemas/Status_immo"
+                    },
+                    "employe": {
+                        "$ref": "#/components/schemas/Employe"
+                    },
+                    "fournisseur": {
+                        "$ref": "#/components/schemas/Fournisseur"
+                    }
+                },
+                "type": "object"
+            },
+            "InterventionVehicule": {
+                "title": "InterventionVehicule",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "vehicule_id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "titre": {
+                        "type": "string",
+                        "example": "Réparation moteur"
+                    },
+                    "montant": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 85000
+                    },
+                    "observation": {
+                        "type": "string",
+                        "example": "Pièce changée"
+                    },
+                    "date_intervention": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-07-01"
+                    },
+                    "date_expiration": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-12-01"
+                    },
+                    "type_intervention_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "MouvementTicket": {
+                "required": [
+                    "vehicule_id",
+                    "compagnie_petrolier_id",
+                    "coupon_ticket_id",
+                    "qte",
+                    "date"
+                ],
+                "properties": {
+                    "vehicule_id": {
+                        "type": "integer"
+                    },
+                    "compagnie_petrolier_id": {
+                        "type": "integer"
+                    },
+                    "coupon_ticket_id": {
+                        "type": "integer"
+                    },
+                    "employe_id": {
+                        "type": "integer"
+                    },
+                    "qte": {
+                        "type": "integer"
+                    },
+                    "date": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "objet": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "kilometrage": {
+                        "type": "integer"
+                    },
+                    "reference": {
+                        "type": "string"
+                    },
+                    "commune_depart": {
+                        "type": "integer"
+                    },
+                    "commune_arriver": {
+                        "type": "integer"
+                    },
+                    "trajet_aller_retour": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "Bureau": {
+                "title": "Bureau",
+                "description": "Modèle d'un bureau",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "libelle_bureau": {
+                        "type": "string",
+                        "example": "Bureau Central"
+                    },
+                    "valeur": {
+                        "type": "string",
+                        "example": "Valeur optionnelle"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "CategorieArticle": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "libelle_categorie_article": {
+                        "type": "string",
+                        "example": "Chaussures"
+                    }
+                },
+                "type": "object"
+            },
+            "Employe": {
+                "title": "Employe",
+                "description": "Modèle d'un Employe",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "nom": {
+                        "type": "string",
+                        "example": "Doe"
+                    },
+                    "prenom": {
+                        "type": "string",
+                        "example": "John"
+                    },
+                    "telephone": {
+                        "type": "string",
+                        "example": "+22912345678"
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "john.doe@example.com"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "Fournisseur": {
+                "title": "Fournisseur",
+                "description": "Modèle d'un Fournisseur",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "nom": {
+                        "type": "string",
+                        "example": "APS BENIN"
+                    },
+                    "telephone": {
+                        "type": "string",
+                        "example": "+229 0198899775"
+                    },
+                    "adresse": {
+                        "type": "string",
+                        "example": "Cotonou/Akpakpa"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "Groupe_type_immo": {
+                "title": "Groupe_type_immo",
+                "description": "Modèle d'un Groupe_type_immo",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "libelle": {
+                        "type": "string",
+                        "example": "Table Parakou"
+                    },
+                    "compte": {
+                        "type": "integer",
+                        "example": "24440005"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "Sous_type_immo": {
+                "title": "Sous_type_immo",
+                "description": "Modèle d'un Sous_type_immo",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "id_type_immo": {
+                        "type": "integer"
+                    },
+                    "libelle": {
+                        "type": "string",
+                        "example": "Mobilier de Bureau Parakou"
+                    },
+                    "compte": {
+                        "type": "string",
+                        "example": "24440005"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    },
+                    "typeImmo": {
+                        "$ref": "#/components/schemas/Bureau"
+                    }
+                },
+                "type": "object"
+            },
+            "Status_immo": {
+                "title": "Status_immo",
+                "description": "Modèle d'un Status_immo",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "libelle_status_immo": {
+                        "type": "string",
+                        "example": "En cours"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "TypeImmo": {
+                "title": "TypeImmo",
+                "description": "Modèle d'un TypeImmo",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "libelle_typeImmo": {
+                        "type": "string",
+                        "example": "Mobilier de Bureau"
+                    },
+                    "compte": {
+                        "type": "integer",
+                        "example": "2444"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-25T14:00:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "Stock": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "id_Article": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "Qte_actuel": {
+                        "type": "integer",
+                        "example": 10
+                    }
+                },
+                "type": "object"
+            },
+            "MouvementTicketResource": {
+                "title": "Réponse d'un MouvementTicket",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Mouvement enregistré avec succès"
+                    },
+                    "data": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "vehicule_id": {
+                                "type": "integer",
+                                "example": 12
+                            },
+                            "compagnie_petrolier_id": {
+                                "type": "integer",
+                                "example": 5
+                            },
+                            "coupon_ticket_id": {
+                                "type": "integer",
+                                "example": 3
+                            },
+                            "employe_id": {
+                                "type": "integer",
+                                "example": 7
+                            },
+                            "qte": {
+                                "type": "integer",
+                                "example": 10
+                            },
+                            "date": {
+                                "type": "string",
+                                "format": "date",
+                                "example": "2025-06-26"
+                            },
+                            "kilometrage": {
+                                "type": "integer",
+                                "example": 15200
+                            },
+                            "objet": {
+                                "type": "string",
+                                "example": "Déplacement mission"
+                            },
+                            "description": {
+                                "type": "string",
+                                "example": "Sortie de tickets pour carburant"
+                            },
+                            "reference": {
+                                "type": "string",
+                                "example": "MVT-ABC1234567"
+                            },
+                            "commune_depart": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "commune_arriver": {
+                                "type": "integer",
+                                "example": 2
+                            },
+                            "trajet_aller_retour": {
+                                "type": "boolean",
+                                "example": true
+                            },
+                            "created_at": {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            "updated_at": {
+                                "type": "string",
+                                "format": "date-time"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "PostResourceImmobilisationResponse": {
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Opération réussie"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Immobilisation"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "PostResourceInterventionResponse": {
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Intervention créée avec succès"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/InterventionVehicule"
+                    }
+                },
+                "type": "object"
+            },
+            "PostResourceResponse": {
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Opération réussie"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Article"
+                        }
+                    }
+                },
+                "type": "object"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Employés",
+            "description": "Gestion des employés"
+        },
+        {
+            "name": "Articles",
+            "description": "Articles"
+        },
+        {
+            "name": "Immobilisations",
+            "description": "Immobilisations"
+        },
+        {
+            "name": "Intervention Véhicule",
+            "description": "Intervention Véhicule"
+        },
+        {
+            "name": "Demande de Sortie",
+            "description": "Demande de Sortie"
+        },
+        {
+            "name": "Mouvement Ticket",
+            "description": "Mouvement Ticket"
+        },
+        {
+            "name": "Bureaux",
+            "description": "Bureaux"
+        }
+    ]
+}

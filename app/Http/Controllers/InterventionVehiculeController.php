@@ -11,18 +11,69 @@ use App\Http\Resources\PostResource;
 class InterventionVehiculeController extends Controller
 {
     // Afficher la liste des intervention
+
+    /**
+ * @OA\Get(
+ *     path="/api/intervention-vehicules",
+ *     tags={"Intervention Véhicule"},
+ *     summary="Lister les interventions des véhicules",
+ *     @OA\Response(
+ *         response=200,
+ *         description="Liste récupérée avec succès",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Liste des interventions de véhicules"),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="array",
+ *                 @OA\Items(ref="#/components/schemas/InterventionVehicule")
+ *             )
+ *         )
+ *     )
+ * )
+ */
+
     public function index()
     {
         $interventions = InterventionVehicule::with([
             'vehicule',
             'typeIntervention'
         ])->latest()->paginate(100);
- 
+
         return new PostResource(true, 'Liste des interventions de véhicules', $interventions);
     }
 
-    
+
     // Créer une nouvelle intervention
+
+    /**
+ * @OA\Post(
+ *     path="/api/intervention-vehicules",
+ *     tags={"Intervention Véhicule"},
+ *     summary="Créer une nouvelle intervention de véhicule",
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"vehicule_id", "titre", "montant", "date_intervention", "type_intervention_id"},
+ *             @OA\Property(property="vehicule_id", type="integer", example=1),
+ *             @OA\Property(property="titre", type="string", example="Vidange"),
+ *             @OA\Property(property="montant", type="number", format="float", example=25000),
+ *             @OA\Property(property="observation", type="string", example="RAS"),
+ *             @OA\Property(property="date_intervention", type="string", format="date", example="2025-06-15"),
+ *             @OA\Property(property="type_intervention_id", type="integer", example=3),
+ *             @OA\Property(property="date_expiration", type="string", format="date", example="2025-12-15")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=201,
+ *         description="Intervention créée",
+ *         @OA\JsonContent(ref="#/components/schemas/PostResourceInterventionResponse")
+ *     ),
+ *     @OA\Response(response=422, description="Erreur de validation")
+ * )
+ */
+
    public function store(Request $request)
    {
         $validator = Validator::make($request->all(), [
@@ -48,8 +99,34 @@ class InterventionVehiculeController extends Controller
     /**
      * Update the specified resource in storage.
      */
+
+     /**
+ * @OA\Put(
+ *     path="/api/intervention-vehicules/{id}",
+ *     tags={"Intervention Véhicule"},
+ *     summary="Mettre à jour une intervention",
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         required=true,
+ *         description="ID de l'intervention",
+ *         @OA\Schema(type="integer")
+ *     ),
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(ref="#/components/schemas/InterventionVehicule")
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Intervention mise à jour avec succès",
+ *         @OA\JsonContent(ref="#/components/schemas/PostResourceInterventionResponse")
+ *     )
+ * )
+ */
+
     public function update(Request $request, InterventionVehicule $interventionVehicule)
     {
+
         $validator = Validator::make($request->all(), [
             'vehicule_id' => 'required|exists:vehicules,id',
             'titre' => 'required|string|max:255',
@@ -70,7 +147,29 @@ class InterventionVehiculeController extends Controller
         return new PostResource(true, 'intervention mise à jour avec succès', $interventionVehicule);
     }
 
-    
+
+    /**
+ * @OA\Delete(
+ *     path="/api/intervention-vehicules/{id}",
+ *     tags={"Intervention Véhicule"},
+ *     summary="Supprimer une intervention",
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         required=true,
+ *         @OA\Schema(type="integer")
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Intervention supprimée",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="message", type="string", example="intervention supprimé avec succès")
+ *         )
+ *     )
+ * )
+ */
+
     public function destroy($id)
     {
         $intervention = InterventionVehicule::findOrFail($id);

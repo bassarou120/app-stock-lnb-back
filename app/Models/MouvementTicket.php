@@ -12,6 +12,29 @@ use App\Models\Vehicule;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @OA\Schema(
+ *     schema="MouvementTicket",
+ *     required={"vehicule_id", "compagnie_petrolier_id", "coupon_ticket_id", "qte", "date"},
+ *     @OA\Property(property="vehicule_id", type="integer"),
+ *     @OA\Property(property="compagnie_petrolier_id", type="integer"),
+ *     @OA\Property(property="coupon_ticket_id", type="integer"),
+ *     @OA\Property(property="employe_id", type="integer"),
+ *     @OA\Property(property="qte", type="integer"),
+ *     @OA\Property(property="date", type="string", format="date"),
+ *     @OA\Property(property="objet", type="string"),
+ *     @OA\Property(property="description", type="string"),
+ *     @OA\Property(property="kilometrage", type="integer"),
+ *     @OA\Property(property="reference", type="string"),
+ *     @OA\Property(property="commune_depart", type="integer"),
+ *     @OA\Property(property="commune_arriver", type="integer"),
+ *     @OA\Property(property="trajet_aller_retour", type="boolean"),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time")
+ * )
+ */
+
+
 class MouvementTicket extends Model
 {
     use HasFactory;
