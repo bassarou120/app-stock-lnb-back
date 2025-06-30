@@ -11,8 +11,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 /**
  * @OA\Tag(
- *     name="Employés",
- *     description="Gestion des employés"
+ *     name="Personnel",
+ *     description="Gestion du Personnel "
  * )
  */
 
@@ -27,7 +27,7 @@ class EmployeController extends Controller
      * @OA\Get(
      *     path="/api/employes",
      *     tags={"Employés"},
-     *     summary="Liste des employés",
+     *     summary="Liste du Personnel",
      *     @OA\Response(
      *         response=200,
      *         description="Succès",
@@ -56,7 +56,7 @@ class EmployeController extends Controller
  * @OA\Post(
  *     path="/api/employes",
  *     tags={"Employés"},
- *     summary="Créer un employé",
+ *     summary="Créer un Personnel",
  *     @OA\RequestBody(
  *         required=true,
  *         @OA\JsonContent(
@@ -69,7 +69,7 @@ class EmployeController extends Controller
  *     ),
  *     @OA\Response(
  *         response=200,
- *         description="Employé créé avec succès",
+ *         description="Personnel créé avec succès",
  *         @OA\JsonContent(
  *             type="object",
  *             @OA\Property(property="success", type="boolean", example=true),
@@ -111,7 +111,7 @@ class EmployeController extends Controller
  * @OA\Put(
  *     path="/api/employes/{id}",
  *     tags={"Employés"},
- *     summary="Mettre à jour un employé",
+ *     summary="Mettre à jour un Personnel",
  *     @OA\Parameter(
  *         name="id",
  *         in="path",
@@ -131,7 +131,7 @@ class EmployeController extends Controller
  *     ),
  *     @OA\Response(
  *         response=200,
- *         description="Employé mis à jour avec succès",
+ *         description="Personnel mis à jour avec succès",
  *         @OA\JsonContent(
  *             type="object",
  *             @OA\Property(property="success", type="boolean", example=true),
