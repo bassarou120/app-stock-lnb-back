@@ -173,8 +173,7 @@
       <tr>
         <td style="width: 50%;">
           République du Bénin<br/>
-          Ministère/Institution/Collectivité locale<br/>
-          Direction/service
+          LNB-Lotterie National du Bénin SA
         </td>
         @if($typeRapport === 'entree ticket')
             <td style="width: 50%; text-align: right;">

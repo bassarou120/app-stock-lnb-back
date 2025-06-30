@@ -90,8 +90,7 @@
         @if ($loop->first ?? true) {{-- Le ?? true est un fallback, mais $loop->first suffit si @foreach est bien là --}}
             <div class="header">
                 <p>République du Bénin</p>
-                <p>Ministère/Institution/Collectivité locale :____________________</p>
-                <p>Direction/service :____________________</p>
+                <p>LNB-Lotterie National du Bénin SA</p>
                 <p class="right">Rapport généré le: {{ date('d/m/Y H:i:s') }}</p>
             </div>
         @endif

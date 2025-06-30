@@ -84,8 +84,7 @@ th, td {
 
   <div class="header">
     <p><strong>République du Bénin</strong></p>
-    <p>Ministère/Institution/Collectivité locale : _____________________________</p>
-    <p>Structure/Direction/Service : _____________________________</p>
+    <p>LNB-Lotterie National du Bénin SA</p>
     <p class="right">Rapport généré le: {{ date('d/m/Y H:i:s') }} (*)</p>
   </div>
 
