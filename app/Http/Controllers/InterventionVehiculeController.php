@@ -44,6 +44,14 @@ class InterventionVehiculeController extends Controller
         return new PostResource(true, 'Liste des interventions de véhicules', $interventions);
     }
 
+    public function Intervention_vehicule()
+    {
+        $interventions = TypeIntervention::where("applicable_seul_vehicule", true)
+        ->latest()
+        ->paginate(100);
+
+    return new PostResource(true, 'Liste des interventions immos', $interventions);
+    }
 
     // Créer une nouvelle intervention
 
