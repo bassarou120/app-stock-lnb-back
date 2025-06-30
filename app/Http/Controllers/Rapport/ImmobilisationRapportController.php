@@ -6,15 +6,15 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Immobilisation;
 use App\Models\Transfert;
-use App\Models\Intervention; // NOUVEAU: Importer le modèle Intervention
+use App\Models\Intervention;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Barryvdh\DomPDF\Facade\Pdf; // Assurez-vous que c'est bien la façade Pdf et non '\Pdf'
 
 class ImmobilisationRapportController extends Controller
 {
     /**
-     * Récupère les données pour les rapports (enregistrement, transfert ou intervention) en fonction des filtres.
+     * Récupère les données pour les rapports (enregistrement, transfert, intervention ou inventaire) en fonction des filtres.
      */
     public function getRapportData(Request $request)
     {
@@ -103,7 +103,7 @@ class ImmobilisationRapportController extends Controller
                 $message = 'Rapport de transferts d\'immobilisations généré avec succès.';
                 break;
 
-            case 'intervention': // NOUVEAU: Logique pour les rapports d'intervention
+            case 'intervention':
                 // Validation spécifique pour le rapport d'intervention (dates obligatoires)
                 $validator = Validator::make($request->all(), [
                     'date_debut' => 'required|date',
@@ -135,6 +135,29 @@ class ImmobilisationRapportController extends Controller
                 $message = 'Rapport des interventions sur immobilisations généré avec succès.';
                 break;
 
+            case 'inventaire': // <-- NOUVEAU CASE POUR LA FICHE D'INVENTAIRE
+                // Validation spécifique pour la fiche d'inventaire (dates d'acquisition obligatoires)
+                $validator = Validator::make($request->all(), [
+                    'date_debut_acquisition' => 'required|date',
+                    'date_fin_acquisition' => 'required|date|after_or_equal:date_debut_acquisition',
+                    // Aucun autre filtre attendu pour l'inventaire simple, selon la discussion
+                ]);
+
+                if ($validator->fails()) {
+                    return new PostResource(false, 'Validation échouée pour la fiche d\'inventaire. Les dates d\'acquisition sont obligatoires.', [
+                        'errors' => $validator->errors()
+                    ]);
+                }
+
+                $query = Immobilisation::with([
+                    'vehicule', 'groupeTypeImmo', 'sousTypeImmo', 'statusImmo',
+                    'employe', 'bureau', 'fournisseur'
+                ])->whereBetween('date_acquisition', [$request->date_debut_acquisition, $request->date_fin_acquisition]);
+
+                $data = $query->latest()->paginate(100);
+                $message = 'Fiche d\'inventaire des immobilisations générée avec succès.';
+                break;
+
             default:
                 $success = false;
                 $message = 'Type de rapport non valide.';
@@ -146,7 +169,7 @@ class ImmobilisationRapportController extends Controller
     }
 
     /**
-     * Génère le PDF pour les rapports (enregistrement, transfert ou intervention) en fonction des filtres.
+     * Génère le PDF pour les rapports (enregistrement, transfert, intervention ou inventaire) en fonction des filtres.
      */
     public function imprimerRapportData(Request $request)
     {
@@ -154,6 +177,7 @@ class ImmobilisationRapportController extends Controller
         $data = null;
         $viewName = '';
         $filename = '';
+        $compactData = []; // Initialiser $compactData
 
         // Validation commune pour le type de rapport
         $validator = Validator::make($request->all(), [
@@ -192,6 +216,7 @@ class ImmobilisationRapportController extends Controller
                 $data = $query->latest()->get(); // Pas de pagination pour le PDF
                 $viewName = 'pdf.rapport.rapport_immobilisations'; // Chemin de la vue pour l'enregistrement
                 $filename = 'rapport_enregistrement_immobilisations.pdf';
+                $compactData = ['immobilisations' => $data]; // Définir les données pour la vue
                 break;
 
             case 'transfert':
@@ -237,9 +262,10 @@ class ImmobilisationRapportController extends Controller
                 $data = $query->latest()->get(); // Pas de pagination pour le PDF
                 $viewName = 'pdf.rapport.rapport_transferts'; // Chemin de la vue pour les transferts
                 $filename = 'rapport_transferts_immobilisations.pdf';
+                $compactData = ['transferts' => $data]; // Définir les données pour la vue
                 break;
 
-            case 'intervention': // NOUVEAU: Logique pour les rapports d'intervention
+            case 'intervention':
                 // Validation spécifique pour l'impression du rapport d'intervention (dates obligatoires)
                 $validator = Validator::make($request->all(), [
                     'date_debut' => 'required|date',
@@ -272,23 +298,42 @@ class ImmobilisationRapportController extends Controller
                 $data = $query->latest()->get(); // Pas de pagination pour le PDF
                 $viewName = 'pdf.rapport.rapport_interventions'; // Chemin de la vue pour les interventions
                 $filename = 'rapport_interventions_immobilisations.pdf';
+                $compactData = ['interventions' => $data]; // Définir les données pour la vue
+                break;
+
+            case 'inventaire': // <-- NOUVEAU CASE POUR LA FICHE D'INVENTAIRE PDF
+                // Validation spécifique pour l'impression de la fiche d'inventaire
+                $validator = Validator::make($request->all(), [
+                    'date_debut_acquisition' => 'required|date',
+                    'date_fin_acquisition' => 'required|date|after_or_equal:date_debut_acquisition',
+                ]);
+
+                if ($validator->fails()) {
+                    return response()->json(['success' => false, 'message' => 'Validation échouée pour la fiche d\'inventaire PDF. Les dates d\'acquisition sont obligatoires.', 'errors' => $validator->errors()], 422);
+                }
+
+                $query = Immobilisation::with([
+                    'vehicule', 'groupeTypeImmo', 'sousTypeImmo', 'statusImmo',
+                    'employe', 'bureau', 'fournisseur'
+                ])->whereBetween('date_acquisition', [$request->date_debut_acquisition, $request->date_fin_acquisition]);
+
+                $data = $query->latest()->get(); // Pas de pagination pour le PDF
+                $viewName = 'pdf.rapport.fiche_inventaire'; // <-- NOUVEAU Chemin de la vue pour la fiche d'inventaire
+                $filename = 'fiche_inventaire_immobilisations.pdf';
+                $compactData = ['immobilisations' => $data]; // Définir les données pour la vue (ce sera une liste d'immobilisations)
                 break;
 
             default:
                 return response()->json(['success' => false, 'message' => 'Type de rapport non valide pour l\'impression.'], 400);
         }
-
-        // Le nom de la variable dans la vue dépendra du type de rapport
-        $compactData = [];
-        if ($typeRapport === 'enregistrement') {
-            $compactData = ['immobilisations' => $data];
-        } elseif ($typeRapport === 'transfert') {
-            $compactData = ['transferts' => $data];
-        } elseif ($typeRapport === 'intervention') {
-            $compactData = ['interventions' => $data];
-        }
         
-        $pdf = \Pdf::loadView($viewName, $compactData);
+        // S'assurer que $compactData est défini avant d'appeler loadView
+        if (empty($compactData)) {
+            // Cela ne devrait pas arriver si tous les cases sont couverts, mais c'est une sécurité
+            return response()->json(['success' => false, 'message' => 'Erreur interne: Données du rapport non préparées pour la vue PDF.'], 500);
+        }
+
+        $pdf = Pdf::loadView($viewName, $compactData);
 
         return $pdf->download($filename);
     }

@@ -143,8 +143,7 @@
             <tr>
                 <td style="width: 50%;">
                     République du Bénin<br>
-                    Ministère/Institution/Collectivité locale<br>
-                    Direction/service
+                    LNB-Lotterie National du Bénin SA
                 </td>
                 <td style="width: 50%; text-align: right;">
                     Modèle n°2<br>

@@ -88,10 +88,10 @@
     {{-- Conditionnel pour le premier article, sinon il sera ignoré si $rapportArticles est vide --}}
     @if (!empty($rapportArticles))
         @if ($loop->first ?? true) {{-- Le ?? true est un fallback, mais $loop->first suffit si @foreach est bien là --}}
-            <div class="header-document-top">
+            <div class="header">
                 <p>République du Bénin</p>
-                <p>Ministère/Institution/Collectivité locale</p>
-                <p>Direction/service</p>
+                <p>LNB-Lotterie National du Bénin SA</p>
+                <p class="right">Rapport généré le: {{ date('d/m/Y H:i:s') }}</p>
             </div>
         @endif
     @endif
@@ -124,12 +124,13 @@
                     <th>Code Article</th>
                     <th>Stock Actuel (Qté)</th>
                     <th>Prix Unitaire</th>
+                    <th>CMP</th>
                     <th>Total Stock</th>
                     <th>Dernière Entrée</th>
                     <th>Dernière Sortie</th>
-                    <th>Total Entrées (Période)</th>
-                    <th>Total Sorties (Période)</th>
-                    <th>Mouvement Net (Période)</th>
+                    <th>Total Entrées</th>
+                    <th>Total Sorties</th>
+                    <th>Mouvement Net</th>
                 </tr>
             </thead>
             <tbody>
@@ -138,15 +139,16 @@
                         <td class="center-col">{{ $index + 1 }}</td>
                         <td>{{ $data['article']['libelle'] ?? 'N/A' }}</td>
                         <td>{{ $data['article']['code_article'] ?? 'N/A' }}</td>
-                        <td class="numeric-col">{{ number_format($data['stock_actuel']['quantite'] ?? 0, 2, ',', ' ') }}</td>
-                        <td class="numeric-col">{{ number_format($data['stock_actuel']['prix_unitaire'] ?? 0, 2, ',', ' ') }} F CFA</td>
-                        <td class="numeric-col">{{ number_format($data['stock_actuel']['montant_total'] ?? 0, 2, ',', ' ') }} F CFA</td>
+                        <td class="numeric-col">{{ rtrim(rtrim(number_format($data['stock_actuel']['quantite'] ?? 0, 2, ',', ' '), '0'), ',') }}</td>
+                        <td class="numeric-col">{{ rtrim(rtrim(number_format($data['stock_actuel']['prix_unitaire'] ?? 0, 2, ',', ' '), '0'), ',') }} F CFA</td>
+                        <td class="numeric-col">{{ rtrim(rtrim(number_format($data['stock_actuel']['cmp'] ?? 0, 2, ',', ' '), '0'), ',') }} F CFA</td>
+                        <td class="numeric-col">{{ rtrim(rtrim(number_format($data['stock_actuel']['montant_total'] ?? 0, 2, ',', ' '), '0'), ',') }} F CFA</td>
 
                         {{-- Dernière Entrée --}}
                         <td class="center-col">
                             @if(isset($data['derniere_entree']) && !empty($data['derniere_entree']['date']))
                                 {{-- Correction ici: Utilisation de Carbon::createFromFormat --}}
-                                {{ Carbon\Carbon::createFromFormat('d/m/Y H:i', $data['derniere_entree']['date'])->format('d/m/Y') }} (Qté: {{ number_format($data['derniere_entree']['quantite'] ?? 0, 0, ',', ' ') }})
+                                {{ Carbon\Carbon::createFromFormat('d/m/Y H:i', $data['derniere_entree']['date'])->format('d/m/Y') }} <br>(Qté: {{ number_format($data['derniere_entree']['quantite'] ?? 0, 0, ',', ' ') }})
                             @else
                                 N/A
                             @endif
@@ -156,15 +158,15 @@
                         <td class="center-col">
                             @if(isset($data['derniere_sortie']) && !empty($data['derniere_sortie']['date']))
                                 {{-- Correction ici: Utilisation de Carbon::createFromFormat --}}
-                                {{ Carbon\Carbon::createFromFormat('d/m/Y H:i', $data['derniere_sortie']['date'])->format('d/m/Y') }} (Qté: {{ number_format($data['derniere_sortie']['quantite'] ?? 0, 0, ',', ' ') }})
+                                {{ Carbon\Carbon::createFromFormat('d/m/Y H:i', $data['derniere_sortie']['date'])->format('d/m/Y') }} <br>(Qté: {{ number_format($data['derniere_sortie']['quantite'] ?? 0, 0, ',', ' ') }})
                             @else
                                 N/A
                             @endif
                         </td>
 
-                        <td class="numeric-col">{{ number_format($data['synthese_periode']['total_entrees'] ?? 0, 2, ',', ' ') }}</td>
-                        <td class="numeric-col">{{ number_format($data['synthese_periode']['total_sorties'] ?? 0, 2, ',', ' ') }}</td>
-                        <td class="numeric-col">{{ number_format($data['synthese_periode']['mouvement_net'] ?? 0, 2, ',', ' ') }}</td>
+                        <td class="numeric-col">{{ rtrim(rtrim(number_format($data['synthese_periode']['total_entrees'] ?? 0, 2, ',', ' '), '0'), ',') }}</td>
+                        <td class="numeric-col">{{ rtrim(rtrim(number_format($data['synthese_periode']['total_sorties'] ?? 0, 2, ',', ' '), '0'), ',') }}</td>
+                        <td class="numeric-col">{{ rtrim(rtrim(number_format($data['synthese_periode']['mouvement_net'] ?? 0, 2, ',', ' '), '0'), ',') }}</td>
                     </tr>
                 @endforeach
             </tbody>
