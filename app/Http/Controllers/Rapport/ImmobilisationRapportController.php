@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Immobilisation;
 use App\Models\Transfert;
-use App\Models\Intervention;
+use App\Models\Intervention; // NOUVEAU: Importer le modèle Intervention
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use Barryvdh\DomPDF\Facade\Pdf; // Assurez-vous que c'est bien la façade Pdf et non '\Pdf'
@@ -14,7 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf; // Assurez-vous que c'est bien la façade Pdf et
 class ImmobilisationRapportController extends Controller
 {
     /**
-     * Récupère les données pour les rapports (enregistrement, transfert, intervention ou inventaire) en fonction des filtres.
+     * Récupère les données pour les rapports (enregistrement, transfert ou intervention) en fonction des filtres.
      */
     public function getRapportData(Request $request)
     {
@@ -103,7 +103,7 @@ class ImmobilisationRapportController extends Controller
                 $message = 'Rapport de transferts d\'immobilisations généré avec succès.';
                 break;
 
-            case 'intervention':
+            case 'intervention': // NOUVEAU: Logique pour les rapports d'intervention
                 // Validation spécifique pour le rapport d'intervention (dates obligatoires)
                 $validator = Validator::make($request->all(), [
                     'date_debut' => 'required|date',
@@ -169,7 +169,7 @@ class ImmobilisationRapportController extends Controller
     }
 
     /**
-     * Génère le PDF pour les rapports (enregistrement, transfert, intervention ou inventaire) en fonction des filtres.
+     * Génère le PDF pour les rapports (enregistrement, transfert ou intervention) en fonction des filtres.
      */
     public function imprimerRapportData(Request $request)
     {
@@ -265,7 +265,7 @@ class ImmobilisationRapportController extends Controller
                 $compactData = ['transferts' => $data]; // Définir les données pour la vue
                 break;
 
-            case 'intervention':
+            case 'intervention': // NOUVEAU: Logique pour les rapports d'intervention
                 // Validation spécifique pour l'impression du rapport d'intervention (dates obligatoires)
                 $validator = Validator::make($request->all(), [
                     'date_debut' => 'required|date',
@@ -326,14 +326,14 @@ class ImmobilisationRapportController extends Controller
             default:
                 return response()->json(['success' => false, 'message' => 'Type de rapport non valide pour l\'impression.'], 400);
         }
-        
+
         // S'assurer que $compactData est défini avant d'appeler loadView
         if (empty($compactData)) {
             // Cela ne devrait pas arriver si tous les cases sont couverts, mais c'est une sécurité
             return response()->json(['success' => false, 'message' => 'Erreur interne: Données du rapport non préparées pour la vue PDF.'], 500);
         }
 
-        $pdf = Pdf::loadView($viewName, $compactData);
+        $pdf = \Pdf::loadView($viewName, $compactData);
 
         return $pdf->download($filename);
     }

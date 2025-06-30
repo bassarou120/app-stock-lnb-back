@@ -6,7 +6,7 @@ use App\Models\Intervention;
 use Illuminate\Http\Request;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
-
+use App\Models\Parametrage\TypeIntervention;
 
 
 class InterventionController extends Controller
@@ -21,6 +21,15 @@ class InterventionController extends Controller
 
        return new PostResource(true, 'Liste des interventions', $interventions);
    }
+
+    public function Intervention_immo()
+    {
+        $interventions = TypeIntervention::where("applicable_seul_vehicule", false)
+        ->latest()
+        ->paginate(100);
+
+    return new PostResource(true, 'Liste des interventions immos', $interventions);
+    }
 
    // Créer une nouvelle intervention
    public function store(Request $request)
@@ -77,10 +86,10 @@ class InterventionController extends Controller
         $interventions = Intervention::with([
             'typeIntervention',
             'immobilisation',
-        ])->latest()->get(); 
+        ])->latest()->get();
 
         $pdf = \Pdf::loadView('pdf.interventions', compact('interventions'));
 
-        return $pdf->download('liste_interventions.pdf'); 
+        return $pdf->download('liste_interventions.pdf');
     }
 }
