@@ -73,7 +73,7 @@ class EmployeController extends Controller
  *         @OA\JsonContent(
  *             type="object",
  *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Employé créé avec succès"),
+ *             @OA\Property(property="message", type="string", example="Personnel créé avec succès"),
  *             @OA\Property(property="data", ref="#/components/schemas/Employe")
  *         )
  *     ),
@@ -116,7 +116,7 @@ class EmployeController extends Controller
  *         name="id",
  *         in="path",
  *         required=true,
- *         description="ID de l'employé",
+ *         description="ID de l'Personnel",
  *         @OA\Schema(type="integer")
  *     ),
  *     @OA\RequestBody(
@@ -135,7 +135,7 @@ class EmployeController extends Controller
  *         @OA\JsonContent(
  *             type="object",
  *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Employé mis à jour avec succès"),
+ *             @OA\Property(property="message", type="string", example="Personnel mis à jour avec succès"),
  *             @OA\Property(property="data", ref="#/components/schemas/Employe")
  *         )
  *     ),
@@ -176,12 +176,12 @@ class EmployeController extends Controller
      * @OA\Delete(
      *     path="/api/employes/{id}",
      *     tags={"Personnel"},
-     *     summary="Supprimer un employé",
+     *     summary="Supprimer un Personnel",
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         required=true,
-     *         description="ID de l'employé",
+     *         description="ID de l'Personnel",
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
