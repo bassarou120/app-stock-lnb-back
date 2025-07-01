@@ -155,6 +155,14 @@ class InterventionVehiculeController extends Controller
         return new PostResource(true, 'intervention mise à jour avec succès', $interventionVehicule);
     }
 
+    public function Intervention_Vehicule()
+    {
+        $interventions = TypeIntervention::where("applicable_seul_vehicule", true)
+        ->latest()
+        ->paginate(100);
+
+    return new PostResource(true, 'Liste des interventions vehicules', $interventions);
+    }
 
     /**
  * @OA\Delete(
