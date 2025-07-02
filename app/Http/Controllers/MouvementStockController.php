@@ -673,10 +673,6 @@ class MouvementStockController extends Controller
         return $pdf->download('liste_mouvements_entrees.pdf');
     }
 
-
-
-
-
     // index sortieStock regroupé par code_mouvement
     public function indexSortieStockGrouped()
     {
@@ -731,14 +727,6 @@ class MouvementStockController extends Controller
     }
 
 
-
-
-
-
-
-
-
-
     // index sortieStock
     public function indexSortieStock()
     {
@@ -764,7 +752,10 @@ class MouvementStockController extends Controller
     }
 
 
-public function storeSortieStockMultiple(Request $request)
+
+
+
+    public function storeSortieStockMultiple(Request $request)
 {
     // Validation de base
     $validator = Validator::make($request->all(), [
@@ -852,6 +843,66 @@ public function storeSortieStockMultiple(Request $request)
 
     return new PostResource(true, $message, $response);
 }
+
+
+
+    /**
+     * Imprimer la liste des sorties de stock en PDF
+     */
+    public function imprimerSortiesStock()
+    {
+        try {
+            // Récupérer l'ID du type de mouvement "Sortie de Stock"
+            $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Stock')->first();
+
+            if (!$type_mouvement) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Type de mouvement "Sortie de Stock" non trouvé.'
+                ], 404);
+            }
+
+            // Récupérer tous les mouvements de sortie
+            $mouvements = MouvementStock::with([
+                'bureau',
+                'employe',
+                'article',
+                'unite_de_mesure',
+                'fournisseur',
+                'affectation.bureau',
+                'affectation.employe' => function ($query) {
+                    $query->select('id', 'nom', 'prenom')
+                        ->selectRaw("CONCAT(nom, ' ', prenom) as full_name");
+                }
+            ])
+            ->where('id_type_mouvement', $type_mouvement->id)
+            ->latest()
+            ->get();
+
+            echo "ici 1";
+
+            // Données pour le PDF
+            $data = [
+                'titre' => 'LISTE DES SORTIES DE STOCK',
+                'mouvements' => $mouvements,
+                'date_impression' => now()->format('d/m/Y à H:i')
+            ];
+            echo "ici2";
+            // Générer le PDF
+            $pdf = \PDF::loadView('pdf.mouvement_sortie', compact('mouvements'));
+            echo "ici3";
+            return $pdf->download('liste_mouvements_sorties.pdf');
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la génération du PDF.'
+            ], 500);
+        }
+    }
+
+
+
 
 
 
