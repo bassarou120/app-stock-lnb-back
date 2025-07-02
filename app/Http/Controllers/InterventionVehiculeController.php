@@ -155,7 +155,7 @@ class InterventionVehiculeController extends Controller
         return new PostResource(true, 'intervention mise à jour avec succès', $interventionVehicule);
     }
 
-    public function Intervention_Vehicule()
+    public function InterventionVehicule()
     {
         $interventions = TypeIntervention::where("applicable_seul_vehicule", true)
         ->latest()
