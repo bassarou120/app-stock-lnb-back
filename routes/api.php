@@ -205,3 +205,5 @@ Route::get('/permissions/role/{roleId}', [PermissionController::class, 'getByRol
 
 Route::get('/intervention_immo', [InterventionController::class, 'Intervention_immo']);
 Route::get('/intervention_vehicule', [InterventionVehiculeController::class, 'Intervention_Vehicule']);
+Route::get('/imprimerSorties', [MouvementStockController::class, 'imprimerSortiesStock']);
+
