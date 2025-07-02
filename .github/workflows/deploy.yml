@@ -1,0 +1,28 @@
+
+name: Deploy Backnd LNB STOCK
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Déployer sur le VPS avec Docker Compose
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e  # Arrête le script en cas d'erreur
+
+            cd /home/debian/botbenin/
+
+            echo "📥 Mise à jour du code..."
+            git pull origin main || { echo "❌ Erreur lors du git pull"; exit 1; }
+
+            echo "🛑 Arrêt des anciens conteneurs..."
+            docker compose down || echo "⚠️ Aucun conteneur à arrêter"

@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('mouvement_stocks', function (Blueprint $table) {
-            $table->date('date_mouvement')->nullable()->change();
-    });
+            $table->date('date_mouvement')->nullable()->default(now()->format('Y-m-d'))->change();
+        });
     }
 
     /**

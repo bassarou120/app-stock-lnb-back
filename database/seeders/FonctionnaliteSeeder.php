@@ -43,7 +43,6 @@ class FonctionnaliteSeeder extends Seeder
                 'Ajout intervention',
                 'Modification intervention',
                 'Suppression intervention',
-                'Exporter immobilisation'
             ],
             'Gestion de parc' => [
                 'Voir parc vehicule',

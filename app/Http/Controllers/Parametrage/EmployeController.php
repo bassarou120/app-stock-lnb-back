@@ -11,8 +11,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 /**
  * @OA\Tag(
- *     name="Employés",
- *     description="Gestion des employés"
+ *     name="Personnel",
+ *     description="Gestion du Personnel "
  * )
  */
 
@@ -26,15 +26,15 @@ class EmployeController extends Controller
     /**
      * @OA\Get(
      *     path="/api/employes",
-     *     tags={"Employés"},
-     *     summary="Liste des employés",
+     *     tags={"Personnel"},
+     *     summary="Liste du Personnel",
      *     @OA\Response(
      *         response=200,
      *         description="Succès",
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Liste des Employes"),
+     *             @OA\Property(property="message", type="string", example="Liste des Personnel"),
      *             @OA\Property(
      *                 property="data",
      *                 type="array",
@@ -55,8 +55,8 @@ class EmployeController extends Controller
   /**
  * @OA\Post(
  *     path="/api/employes",
- *     tags={"Employés"},
- *     summary="Créer un employé",
+ *     tags={"Personnel"},
+ *     summary="Créer un Personnel",
  *     @OA\RequestBody(
  *         required=true,
  *         @OA\JsonContent(
@@ -69,11 +69,11 @@ class EmployeController extends Controller
  *     ),
  *     @OA\Response(
  *         response=200,
- *         description="Employé créé avec succès",
+ *         description="Personnel créé avec succès",
  *         @OA\JsonContent(
  *             type="object",
  *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Employé créé avec succès"),
+ *             @OA\Property(property="message", type="string", example="Personnel créé avec succès"),
  *             @OA\Property(property="data", ref="#/components/schemas/Employe")
  *         )
  *     ),
@@ -110,13 +110,13 @@ class EmployeController extends Controller
  /**
  * @OA\Put(
  *     path="/api/employes/{id}",
- *     tags={"Employés"},
- *     summary="Mettre à jour un employé",
+ *     tags={"Personnel"},
+ *     summary="Mettre à jour un Personnel",
  *     @OA\Parameter(
  *         name="id",
  *         in="path",
  *         required=true,
- *         description="ID de l'employé",
+ *         description="ID de l'Personnel",
  *         @OA\Schema(type="integer")
  *     ),
  *     @OA\RequestBody(
@@ -131,11 +131,11 @@ class EmployeController extends Controller
  *     ),
  *     @OA\Response(
  *         response=200,
- *         description="Employé mis à jour avec succès",
+ *         description="Personnel mis à jour avec succès",
  *         @OA\JsonContent(
  *             type="object",
  *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Employé mis à jour avec succès"),
+ *             @OA\Property(property="message", type="string", example="Personnel mis à jour avec succès"),
  *             @OA\Property(property="data", ref="#/components/schemas/Employe")
  *         )
  *     ),
@@ -175,13 +175,13 @@ class EmployeController extends Controller
     /**
      * @OA\Delete(
      *     path="/api/employes/{id}",
-     *     tags={"Employés"},
-     *     summary="Supprimer un employé",
+     *     tags={"Personnel"},
+     *     summary="Supprimer un Personnel",
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         required=true,
-     *         description="ID de l'employé",
+     *         description="ID de l'Personnel",
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
@@ -201,7 +201,7 @@ class EmployeController extends Controller
     /**
      * @OA\Get(
      *     path="/api/employes/pdf",
-     *     tags={"Employés"},
+     *     tags={"Personnel"},
      *     summary="Télécharger la liste des employés en PDF",
      *     @OA\Response(
      *         response=200,

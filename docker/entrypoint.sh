@@ -20,6 +20,9 @@ chmod 755 /var/www/html/storage/oauth-*
 chmod 755 -R /var/www/html/storage/
 php artisan  storage:link
 
+php artisan l5-swagger:generate
+
+
 
 
 # Set permissions
