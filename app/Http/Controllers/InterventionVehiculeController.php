@@ -205,3 +205,5 @@ class InterventionVehiculeController extends Controller
         return $pdf->download('liste_interventions_vehicule.pdf');
     }
 }
+
+ 
