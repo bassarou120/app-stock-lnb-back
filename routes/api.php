@@ -210,3 +210,5 @@ Route::get('/intervention_vehicule', [InterventionVehiculeController::class, 'In
 // Routes pour les paramètres du site
 Route::get('/site-settings', [SiteSettingController::class, 'index']);
 Route::post('/site-settings/store', [SiteSettingController::class, 'store']); // <-- C'EST LA ROUTE MANQUANTE
+Route::get('/imprimerSorties', [MouvementStockController::class, 'imprimerSortiesStock']);
+

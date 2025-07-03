@@ -124,4 +124,48 @@ class SiteSettingController extends Controller
             return response()->json(['message' => 'Erreur serveur lors de la mise à jour des paramètres.'], 500);
         }
     }
+
+    public function getThemeColors(): \Illuminate\Http\JsonResponse
+{
+    try {
+        // Récupère les paramètres de couleur
+        $colorSettings = Setting::whereIn('key', [
+            'primary_color',
+            'secondary_color',
+            'success_color',
+            'danger_color',
+            'warning_color',
+            'info_color',
+            'dark_color',
+            'light_color'
+        ])->get();
+
+        // Formate les couleurs en objet
+        $colors = [];
+        foreach ($colorSettings as $setting) {
+            $colors[$setting->key] = $setting->value;
+        }
+
+        // Valeurs par défaut si aucune couleur n'est définie
+        $defaultColors = [
+            'primary_color' => '#4d8af0',
+            'secondary_color' => '#6c757d',
+            'success_color' => '#28a745',
+            'danger_color' => '#dc3545',
+            'warning_color' => '#ffc107',
+            'info_color' => '#17a2b8',
+            'dark_color' => '#343a40',
+            'light_color' => '#f8f9fa'
+        ];
+
+        // Merge avec les valeurs par défaut
+        $finalColors = array_merge($defaultColors, $colors);
+
+        return response()->json($finalColors, 200);
+    } catch (\Exception $e) {
+        \Log::error('Erreur lors de la récupération des couleurs du thème: ' . $e->getMessage());
+        return response()->json(['message' => 'Erreur lors du chargement des couleurs du thème.'], 500);
+    }
+}
+
 }
