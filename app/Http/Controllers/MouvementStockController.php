@@ -761,7 +761,7 @@ class MouvementStockController extends Controller
         try {
             // Récupérer l'ID du type de mouvement "Sortie de Stock"
             $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Stock')->first();
-            
+
             if (!$type_mouvement) {
                 return response()->json([
                     'success' => false,
@@ -771,18 +771,18 @@ class MouvementStockController extends Controller
 
             // Récupérer tous les mouvements de sortie
             $mouvements = MouvementStock::with([
-                'bureau', 
-                'employe', 
-                'article', 
+                'bureau',
+                'employe',
+                'article',
                 'unite_de_mesure',
                 'fournisseur',
-                'affectation.bureau', 
+                'affectation.bureau',
                 'affectation.employe' => function ($query) {
                     $query->select('id', 'nom', 'prenom')
                         ->selectRaw("CONCAT(nom, ' ', prenom) as full_name");
                 }
             ])
-            ->where('id_type_mouvement', $type_mouvement->id)
+            ->where('id_type_mouvement', 2)
             ->latest()
             ->get();
 
@@ -898,7 +898,7 @@ class MouvementStockController extends Controller
         return new PostResource(true, $message, $response);
     }
 
-    
+
 
     // store sortie Article
     public function storeSortieStock(Request $request)
