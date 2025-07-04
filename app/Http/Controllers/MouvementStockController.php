@@ -782,7 +782,7 @@ class MouvementStockController extends Controller
                         ->selectRaw("CONCAT(nom, ' ', prenom) as full_name");
                 }
             ])
-            ->where('id_type_mouvement', $type_mouvement->id)
+            ->where('id_type_mouvement', 2)
             ->latest()
             ->get();
 

@@ -44,6 +44,14 @@ class InterventionVehiculeController extends Controller
         return new PostResource(true, 'Liste des interventions de véhicules', $interventions);
     }
 
+    public function Intervention_vehicule()
+    {
+        $interventions = TypeIntervention::where("applicable_seul_vehicule", true)
+        ->latest()
+        ->paginate(100);
+
+    return new PostResource(true, 'Liste des interventions immos', $interventions);
+    }
 
     // Créer une nouvelle intervention
 
@@ -147,7 +155,7 @@ class InterventionVehiculeController extends Controller
         return new PostResource(true, 'intervention mise à jour avec succès', $interventionVehicule);
     }
 
-    public function Intervention_Vehicule()
+    public function InterventionVehicule()
     {
         $interventions = TypeIntervention::where("applicable_seul_vehicule", true)
         ->latest()
@@ -197,3 +205,5 @@ class InterventionVehiculeController extends Controller
         return $pdf->download('liste_interventions_vehicule.pdf');
     }
 }
+
+ 

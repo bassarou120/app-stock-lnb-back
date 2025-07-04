@@ -1329,9 +1329,9 @@
         "/api/employes": {
             "get": {
                 "tags": [
-                    "Employés"
+                    "Personnel"
                 ],
-                "summary": "Liste des employés",
+                "summary": "Liste du Personnel",
                 "operationId": "736d36a6ea6bf628f1866d79e0ed4e7b",
                 "responses": {
                     "200": {
@@ -1346,7 +1346,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Liste des Employes"
+                                            "example": "Liste des Personnel"
                                         },
                                         "data": {
                                             "type": "array",
@@ -1364,9 +1364,9 @@
             },
             "post": {
                 "tags": [
-                    "Employés"
+                    "Personnel"
                 ],
-                "summary": "Créer un employé",
+                "summary": "Créer un Personnel",
                 "operationId": "1c932cbfe9b46b9e392629d1fce1dc20",
                 "requestBody": {
                     "required": true,
@@ -1398,7 +1398,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Employé créé avec succès",
+                        "description": "Personnel créé avec succès",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1409,7 +1409,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Employé créé avec succès"
+                                            "example": "Personnel créé avec succès"
                                         },
                                         "data": {
                                             "$ref": "#/components/schemas/Employe"
@@ -1429,15 +1429,15 @@
         "/api/employes/{id}": {
             "put": {
                 "tags": [
-                    "Employés"
+                    "Personnel"
                 ],
-                "summary": "Mettre à jour un employé",
+                "summary": "Mettre à jour un Personnel",
                 "operationId": "6a25ae1fc48797ccdbda475491dfdde1",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "ID de l'employé",
+                        "description": "ID de l'Personnel",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -1474,7 +1474,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Employé mis à jour avec succès",
+                        "description": "Personnel mis à jour avec succès",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1485,7 +1485,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Employé mis à jour avec succès"
+                                            "example": "Personnel mis à jour avec succès"
                                         },
                                         "data": {
                                             "$ref": "#/components/schemas/Employe"
@@ -1503,15 +1503,15 @@
             },
             "delete": {
                 "tags": [
-                    "Employés"
+                    "Personnel"
                 ],
-                "summary": "Supprimer un employé",
+                "summary": "Supprimer un Personnel",
                 "operationId": "d6ca01c633eef47ebbabb908a6271b29",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "ID de l'employé",
+                        "description": "ID de l'Personnel",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -1528,7 +1528,7 @@
         "/api/employes/pdf": {
             "get": {
                 "tags": [
-                    "Employés"
+                    "Personnel"
                 ],
                 "summary": "Télécharger la liste des employés en PDF",
                 "operationId": "c025e09d09756ceda1875f0298cbbe3c",
@@ -2199,8 +2199,8 @@
     },
     "tags": [
         {
-            "name": "Employés",
-            "description": "Gestion des employés"
+            "name": "Personnel",
+            "description": "Gestion du Personnel "
         },
         {
             "name": "Articles",

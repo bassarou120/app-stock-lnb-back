@@ -44,6 +44,7 @@ use App\Http\Controllers\Rapport\Stock\StockRapportController;
 use App\Http\Controllers\Rapport\ImmobilisationRapportController;
 use App\Http\Controllers\Rapport\Parc\RapportParcController;
 use App\Http\Controllers\Rapport\Ticket\RapportTicketController;
+use App\Http\Controllers\Api\SiteSettingController;
 
 
 Route::get('/user', function (Request $request) {
@@ -205,5 +206,9 @@ Route::get('/permissions/role/{roleId}', [PermissionController::class, 'getByRol
 
 Route::get('/intervention_immo', [InterventionController::class, 'Intervention_immo']);
 Route::get('/intervention_vehicule', [InterventionVehiculeController::class, 'Intervention_Vehicule']);
+
+// Routes pour les paramètres du site
+Route::get('/site-settings', [SiteSettingController::class, 'index']);
+Route::post('/site-settings/store', [SiteSettingController::class, 'store']); // <-- C'EST LA ROUTE MANQUANTE
 Route::get('/imprimerSorties', [MouvementStockController::class, 'imprimerSortiesStock']);
 
