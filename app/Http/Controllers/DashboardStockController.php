@@ -20,34 +20,42 @@ class DashboardStockController extends Controller
     }
 
     public function dashInfoStock()
-    {
-        // Construction de la requête pour les articles en alerte
-        $query = Article::with('stock')
-            ->where(function ($q) {
-                $q->whereHas('stock', function ($subQuery) {
-                    $subQuery->whereColumn('Qte_actuel', '<=', 'articles.stock_alerte');
-                })
-                ->orWhereDoesntHave('stock');
-            });
+{
+    // Articles en alerte (rupture ou pas)
+    $query = Article::with('stock')
+        ->where(function ($q) {
+            $q->whereHas('stock', function ($subQuery) {
+                $subQuery->whereColumn('Qte_actuel', '<=', 'articles.stock_alerte');
+            })
+            ->orWhereDoesntHave('stock');
+        });
 
-        // Exécution pour les articles en alerte
-        $articles = $query->latest()->get();
-        $total_article_en_alerte = $articles->count();
+    $articles = $query->latest()->get();
+    $total_article_en_alerte = $articles->count();
 
-        $total_article = Article::latest()->get()->count();
+    // Articles dont le stock est en alerte MAIS qui ne sont pas en rupture totale (Qte_actuel > 0)
+    $articles_stock_alerte_sans_rupture = Article::whereHas('stock', function ($q) {
+        $q->whereColumn('Qte_actuel', '<=', 'articles.stock_alerte')
+          ->where('Qte_actuel', '>', 0);
+    })->count();
 
-        // Récupérer le nombre de demandes en attente
-        $total_demandes_en_attente = MouvementStock::where('statut', 'En attente')->count();
+    // Total des articles
+    $total_article = Article::count();
 
-        // Récupérer le nombre de demandes Accordé
-        $total_demandes_accorde = MouvementStock::where('statut', 'Accordé')->count();
+    // Demandes en attente
+    $total_demandes_en_attente = MouvementStock::where('statut', 'En attente')->count();
 
-        return new PostResource(true, 'Articles en alerte', [
-            'total_article_en_alerte' => $total_article_en_alerte,
-            'total_article' => $total_article,
-            'total_demandes_en_attente' => $total_demandes_en_attente,
-            'total_demandes_accorde' => $total_demandes_accorde,
-        ]);
-    }
+    // Demandes accordées
+    $total_demandes_accorde = MouvementStock::where('statut', 'Accordé')->count();
+
+    return new PostResource(true, 'Données du dashboard stock', [
+        'total_article_en_alerte' => $total_article_en_alerte,
+        'article_stock_alerte_sans_rupture' => $articles_stock_alerte_sans_rupture,
+        'total_article' => $total_article,
+        'total_demandes_en_attente' => $total_demandes_en_attente,
+        'total_demandes_accorde' => $total_demandes_accorde,
+    ]);
+}
+
 
 }

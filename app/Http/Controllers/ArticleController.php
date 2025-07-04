@@ -182,7 +182,7 @@ class ArticleController extends Controller
         $validator = Validator::make($request->all(), [
             'id_cat' => 'required|exists:categorie_articles,id',
             'libelle' => 'required|string|max:255',
-            'code_article' => 'required|string|max:255|unique:articles,code_article',
+            'code_article' => 'required|string|max:255',
             'description' => 'string|max:255',
             'stock_alerte' => 'required|integer|min:0',
         ]);
