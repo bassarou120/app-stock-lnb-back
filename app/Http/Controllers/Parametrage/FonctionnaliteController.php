@@ -13,7 +13,7 @@ class FonctionnaliteController extends Controller
     // Afficher une liste paginée des fonctionnalités
     public function index()
     {
-        $fonctionnalites = Fonctionnalite::with('module')->latest()->paginate(200);
+        $fonctionnalites = Fonctionnalite::with('module')->where('isdeleted', false)->latest()->paginate(200);
         return new PostResource(true, 'Liste des fonctionnalités', $fonctionnalites);
     }
 
@@ -64,7 +64,8 @@ class FonctionnaliteController extends Controller
     // Supprimer une fonctionnalité
     public function destroy(Fonctionnalite $fonctionnalite)
     {
-        $fonctionnalite->delete();
+        $fonctionnalite->isdeleted = true;
+        $fonctionnalite->save();
         return new PostResource(true, 'Fonctionnalité supprimée avec succès', null);
     }
 }

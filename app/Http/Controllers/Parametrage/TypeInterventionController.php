@@ -13,7 +13,10 @@ class TypeInterventionController extends Controller
     // Afficher la liste des types d'intervention
     public function index()
     {
-        $types = TypeIntervention::latest()->paginate(100);
+        $types = TypeIntervention::latest()
+        ->where('isdeleted', false)
+        ->paginate(100);
+
         return new PostResource(true, 'Liste des types d\'intervention', $types);
     }
 
@@ -72,7 +75,8 @@ class TypeInterventionController extends Controller
     // Supprimer un type d'intervention
     public function destroy(TypeIntervention $type_intervention)
     {
-        $type_intervention->delete();
+        $type_intervention->isdeleted = true;
+        $type_intervention->save();
         return new PostResource(true, 'Type d\'intervention supprimé avec succès', null);
     }
 }

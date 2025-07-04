@@ -36,7 +36,9 @@ class ArticleController extends Controller
  */
     public function index()
     {
-        $articles = Article::with(['categorie', 'stock'])->latest()->paginate(1000);
+        $articles = Article::with(['categorie', 'stock'])
+        ->where('isdeleted', false)
+        ->latest()->paginate(1000);
         return new PostResource(true, 'Liste des articles', $articles);
     }
 
@@ -233,14 +235,16 @@ class ArticleController extends Controller
  */
     public function destroy(Article $article)
     {
-        $article->delete();
+
+        $article->isdeleted = true;
+        $article->save();
         return new PostResource(true, 'Article supprimé avec succès', null);
     }
 
 
     public function imprimer()
     {
-        $articles = Article::with(['categorie', 'stock'])->get();
+        $articles = Article::with(['categorie', 'stock'])->where('isdeleted', false)->get();
 
         $pdf = Pdf::loadView('pdf.articles', compact('articles'));
 

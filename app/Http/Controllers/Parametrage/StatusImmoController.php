@@ -13,7 +13,7 @@ class StatusImmoController extends Controller
     // Afficher la liste des statuts immobiliers
     public function index()
     {
-        $status_immos = StatusImmo::latest()->paginate(100);
+        $status_immos = StatusImmo::latest()->where('isdeleted', false)->paginate(100);
         return new PostResource(true, 'Liste des statuts immobiliers', $status_immos);
     }
 
@@ -56,7 +56,8 @@ class StatusImmoController extends Controller
     // Supprimer un statut immobilier
     public function destroy(StatusImmo $status_immo)
     {
-        $status_immo->delete();
+        $status_immo->isdeleted = true;
+        $status_immo->save();
         return new PostResource(true, 'Statut immobilier supprimé avec succès', null);
     }
 }

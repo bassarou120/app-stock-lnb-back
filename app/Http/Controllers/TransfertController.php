@@ -19,7 +19,9 @@ class TransfertController extends Controller
             'bureau',
             'old_employe',
             'employe',
-        ])->latest()->paginate(1000);
+        ])
+        ->where('isdeleted', false)
+        ->latest()->paginate(1000);
 
         return new PostResource(true, 'Liste des transferts', $transferts);
     }
@@ -111,7 +113,8 @@ class TransfertController extends Controller
 
 
         // Supprimer le transfert
-        $transfert->delete();
+        $transfert->isdeleted = true;
+        $transfert->save();
 
         return new PostResource(true, 'Transfert supprimé et immobilisation restaurée avec succès', null);
     }
@@ -119,7 +122,7 @@ class TransfertController extends Controller
 
     public function getOldInfo($idImmo)
     {
-        $immo = Immobilisation::with(['bureau', 'employe'])->find($idImmo);
+        $immo = Immobilisation::with(['bureau', 'employe'])->where('isdeleted', false)->find($idImmo);
         if (!$immo) {
             return response()->json(['message' => 'Immobilisation non trouvée'], 404);
         }
@@ -141,7 +144,9 @@ class TransfertController extends Controller
             'bureau',
             'old_employe',
             'employe'
-        ])->latest()->get();
+        ])
+        ->where('isdeleted', false)
+        ->latest()->get();
 
         // Charge la vue Blade qui servira de template pour le PDF
         // Utilise l'alias global pour la façade Pdf (\Pdf)

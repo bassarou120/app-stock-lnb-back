@@ -12,7 +12,7 @@ class PermissionController extends Controller
 {
     public function index()
     {
-        $permissions = Permission::with(['role', 'module', 'fonctionnalite'])->latest()->paginate(200);
+        $permissions = Permission::with(['role', 'module', 'fonctionnalite'])->where('isdeleted', false)->latest()->paginate(200);
         return new PostResource(true, 'Liste des permissions', $permissions);
     }
 //     public function index()
@@ -83,7 +83,8 @@ class PermissionController extends Controller
     // Supprimer une permission
     public function destroy(Permission $permission)
     {
-        $permission->delete();
+        $permission->isdeleted = true;
+        $permission->save();
         return new PostResource(true, 'Permission supprimée avec succès', null);
     }
 
@@ -125,6 +126,7 @@ public function getByRole($roleId)
 {
     $permissions = Permission::with(['module', 'fonctionnalite', 'role'])
                             ->where('role_id', $roleId)
+                            ->where('isdeleted', false)
                             ->get();
 
     return response()->json($permissions);

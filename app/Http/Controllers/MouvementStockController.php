@@ -40,7 +40,12 @@ class MouvementStockController extends Controller
 
         // Si le type de mouvement existe, récupérer les mouvements correspondants
         if ($type_mouvement) {
-            $mouvements = MouvementStock::with(['article', 'fournisseur', 'piecesJointes', 'unite_de_mesure'])->where('id_type_mouvement', $type_mouvement->id)->latest()->paginate(1000);
+            $mouvements = MouvementStock::with(['article', 'fournisseur', 'piecesJointes', 'unite_de_mesure'])
+            ->where('id_type_mouvement', $type_mouvement->id)
+            ->where('isdeleted', false)
+            ->latest()
+            ->paginate(1000);
+
 
             return new PostResource(true, 'Liste des mouvements', $mouvements);
         }
@@ -366,11 +371,13 @@ class MouvementStockController extends Controller
                 unlink(public_path($piece->url));
             }
             // Supprimer l'enregistrement
-            $piece->delete();
+            $piece->isdeleted = true;
+            $piece->save();
         }
 
         // Supprimer le mouvement
-        $mouvement->delete();
+        $mouvement->isdeleted = true;
+        $mouvement->save();
 
         return new PostResource(true, 'Mouvement supprimé avec succès ! CMP recalculé.', [
             'nouveau_stock' => $nouvelle_quantite,
@@ -664,6 +671,7 @@ class MouvementStockController extends Controller
     {
         $mouvements = MouvementStock::with(['article', 'fournisseur', 'piecesJointes', 'unite_de_mesure'])
                                     ->where('id_type_mouvement', 1)
+                                    ->where('isdeleted', false)
                                     ->latest()
                                     ->get();
 
@@ -685,6 +693,7 @@ class MouvementStockController extends Controller
             $codesMouvements = MouvementStock::where('id_type_mouvement', $type_mouvement->id)
                 ->orderBy('created_at', 'desc')
                 ->select('code_mouvement', 'created_at')
+                ->where('isdeleted', false)
                 ->distinct()
                 ->get()
                 ->pluck('code_mouvement');
@@ -741,6 +750,7 @@ class MouvementStockController extends Controller
             }])
                 ->where('id_type_mouvement', $type_mouvement->id)
                 // ->where('statut', '!=', 'Accordé')
+                ->where('isdeleted', false)
                 ->latest()
                 ->paginate(1000);
 
@@ -783,6 +793,7 @@ class MouvementStockController extends Controller
                 }
             ])
             ->where('id_type_mouvement', 2)
+            ->where('isdeleted', false)
             ->latest()
             ->get();
 
@@ -1163,7 +1174,8 @@ class MouvementStockController extends Controller
                 'message' => 'Mouvement introuvable.'
             ], 404);
         }
-        $mouvement->delete();
+        $mouvement->isdeleted = true;
+        $mouvement->save();
 
         return new PostResource(true, 'Sortie de stock supprimée avec succès !', null);
     }
