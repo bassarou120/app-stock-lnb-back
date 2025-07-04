@@ -17,7 +17,9 @@ class InterventionController extends Controller
        $interventions = Intervention::with([
            'typeIntervention',
            'immobilisation',
-       ])->latest()->paginate(100);
+       ])
+       ->where('isdeleted', false)
+       ->latest()->paginate(100);
 
        return new PostResource(true, 'Liste des interventions', $interventions);
    }
@@ -26,9 +28,10 @@ class InterventionController extends Controller
     {
         $interventions = TypeIntervention::where("applicable_seul_vehicule", false)
         ->latest()
+        ->where('isdeleted', false)
         ->paginate(100);
 
-    return new PostResource(true, 'Liste des interventions immos', $interventions);
+        return new PostResource(true, 'Liste des interventions immos', $interventions);
     }
 
    // Créer une nouvelle intervention
@@ -76,7 +79,8 @@ class InterventionController extends Controller
    // Supprimer une intervention
    public function destroy(Intervention $intervention)
    {
-       $intervention->delete();
+       $intervention->isdeleted = true;
+       $intervention->save();
 
        return new PostResource(true, 'intervention supprimée avec succès', null);
    }
@@ -86,7 +90,8 @@ class InterventionController extends Controller
         $interventions = Intervention::with([
             'typeIntervention',
             'immobilisation',
-        ])->latest()->get();
+        ])->where('isdeleted', false)
+        ->latest()->get();
 
         $pdf = \Pdf::loadView('pdf.interventions', compact('interventions'));
 

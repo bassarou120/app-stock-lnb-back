@@ -14,7 +14,7 @@ class GroupeTypeImmoController extends Controller
     // Afficher la liste des groupes de type immo
     public function index()
     {
-        $groupe_type_immos = GroupeTypeImmo::latest()->paginate(1000);
+        $groupe_type_immos = GroupeTypeImmo::latest()->where('isdeleted', false)->paginate(1000);
         return new PostResource(true, 'Liste des groupes de type immmo', $groupe_type_immos);
     }
 
@@ -61,7 +61,8 @@ class GroupeTypeImmoController extends Controller
     // Supprimer un groupe de type immo
     public function destroy(GroupeTypeImmo $groupe_type_immo)
     {
-        $groupe_type_immo->delete();
+        $groupe_type_immo->isdeleted = true;
+        $groupe_type_immo->save();
         return new PostResource(true, 'Groupe de type immo supprimé avec succès', null);
     }
 }

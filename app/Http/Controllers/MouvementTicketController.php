@@ -140,7 +140,11 @@ class MouvementTicketController extends Controller
 
         // Si le type de mouvement existe, récupérer les mouvements correspondants
         if ($type_mouvement) {
-            $mouvements = MouvementTicket::with(['compagniePetrolier', 'coupon_ticket'])->where('id_type_mouvement', $type_mouvement->id)->latest()->paginate(1000);
+            $mouvements = MouvementTicket::with(['compagniePetrolier', 'coupon_ticket'])
+            ->where('id_type_mouvement', $type_mouvement->id)
+            ->where('isdeleted', false)
+            ->latest()
+            ->paginate(1000);
 
             return new PostResource(true, 'Liste des mouvements d\'Entrée de Ticket', $mouvements);
         }
@@ -273,6 +277,7 @@ class MouvementTicketController extends Controller
         // Chercher le stock correspondant à la combinaison coupon + compagnie
         $stock = StockTicket::where('coupon_ticket_id', $mouvement->coupon_ticket_id)
             ->where('compagnie_petrolier_id', $mouvement->compagnie_petrolier_id)
+            ->where('isdeleted', false)
             ->first();
 
         if ($stock) {
@@ -285,9 +290,11 @@ class MouvementTicketController extends Controller
             }
 
             $stock->save();
+
         }
 
         // Supprimer le mouvement
+        $mouvement->isdeleted = true;
         $mouvement->delete();
 
         return new PostResource(true, 'Mouvement supprimé avec succès !', null);
@@ -304,7 +311,10 @@ class MouvementTicketController extends Controller
 
         // Si le type de mouvement existe, récupérer les mouvements correspondants
         if ($type_mouvement) {
-            $mouvements = MouvementTicket::with(['employe', 'compagniePetrolier', 'vehicule', 'coupon_ticket', 'depart', 'arriver'])->where('id_type_mouvement', $type_mouvement->id)->latest()->paginate(1000);
+            $mouvements = MouvementTicket::with(['employe', 'compagniePetrolier', 'vehicule', 'coupon_ticket', 'depart', 'arriver'])
+            ->where('id_type_mouvement', $type_mouvement->id)
+            ->where('isdeleted', false)
+            ->latest()->paginate(1000);
 
             return new PostResource(true, 'Liste des mouvements de sortie de Ticket', $mouvements);
         }
@@ -425,7 +435,12 @@ class MouvementTicketController extends Controller
         }
 
         // Vérifier le stock actuel pour ce ticket
-        $stock = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->where('compagnie_petrolier_id', $request->compagnie_petrolier_id)->latest()->first();
+        $stock = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)
+            ->where('isdeleted', false)
+            ->where('compagnie_petrolier_id', $request->compagnie_petrolier_id)
+            ->latest()
+            ->first();
+
         if (!$stock) {
             return response()->json(['error' => "Stock introuvable pour cet article."], 400);
         }
@@ -494,7 +509,9 @@ class MouvementTicketController extends Controller
 
         // Supprimer le mouvement
 
-        $mouvement->delete();
+
+        $mouvement->isdeleted = true;
+        $mouvement->save();
 
         return new PostResource(true, 'Mouvement supprimé avec succès !', null);
     }

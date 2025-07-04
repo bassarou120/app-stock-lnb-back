@@ -19,7 +19,9 @@ class AnnulationTicketController extends Controller
             'mouvement.vehicule',
             'coupon',
             'compagnie',
-        ])->latest()->paginate(1000);
+        ])
+        ->where('isdeleted', false)
+        ->latest()->paginate(1000);
 
         return new PostResource(true, 'Liste des annulations', $annulations);
     }
@@ -45,7 +47,7 @@ class AnnulationTicketController extends Controller
             "qte" => $request->qte,
         ]);
 
-        $stockTicket = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->where('compagnie_petrolier_id', $request->compagnie_petrolier_id)->latest()->first();
+        $stockTicket = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->where('compagnie_petrolier_id', $request->compagnie_petrolier_id)->where('isdeleted', false)->latest()->first();
 
         if ($stockTicket == null) {
             $stockTicket = StockTicket::create([
@@ -57,7 +59,7 @@ class AnnulationTicketController extends Controller
 
         $stockTicket->qte_actuel = $stockTicket->qte_actuel + $request->qte;
         $stockTicket->save();
-        
+
         return new PostResource(true, 'L\'annulation de ticket a été enregistrée avec succès !', $annulation);
     }
 
@@ -75,7 +77,8 @@ class AnnulationTicketController extends Controller
         $quantite = $annulationTicket->qte;
         $couponTicketId = $annulationTicket->coupon_ticket_id;
 
-        $annulationTicket->delete();
+        $annulationTicket->isdeleted = true;
+        $annulationTicket->save();
 
         $stock = StockTicket::where('coupon_ticket_id', $couponTicketId)->latest()->first();
 
@@ -97,6 +100,7 @@ class AnnulationTicketController extends Controller
             $mouvements = MouvementTicket::with(['employe', 'compagniePetrolier', 'vehicule', 'coupon_ticket'])
                 ->where('id_type_mouvement', $type_mouvement->id)
                 ->whereNotIn('id', $mouvementsAvecAnnulation)
+                ->where('isdeleted', false)
                 ->latest()
                 ->paginate(1000);
 
@@ -108,7 +112,9 @@ class AnnulationTicketController extends Controller
 
     public function getMouvementInfo($idMouvement)
     {
-        $mouvement = MouvementTicket::with(['compagniePetrolier', 'coupon_ticket'])->find($idMouvement);
+        $mouvement = MouvementTicket::with(['compagniePetrolier', 'coupon_ticket'])
+        ->where('isdeleted', false)
+        ->find($idMouvement);
 
         if (!$mouvement) {
             return response()->json(['message' => 'Mouvement non trouvé'], 404);

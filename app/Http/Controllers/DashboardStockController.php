@@ -10,12 +10,15 @@ class DashboardStockController extends Controller
 {
     public function indexArticles()
     {
-        $articles = Article::with(['categorie', 'stock'])->latest()->paginate(1000);
+        $articles = Article::with(['categorie', 'stock'])->where('isdeleted', false)
+        ->latest()->paginate(1000);
         return new PostResource(true, 'Liste des articles', $articles);
     }
     public function articlesEnAlerte()
     {
-        $articles = Article::with(['categorie', 'stock'])->latest()->paginate(1000);
+        $articles = Article::with(['categorie', 'stock'])
+        ->where('isdeleted', false)
+        ->latest()->paginate(1000);
         return new PostResource(true, 'Liste des articles', $articles);
     }
 
@@ -28,7 +31,8 @@ class DashboardStockController extends Controller
                     $subQuery->whereColumn('Qte_actuel', '<=', 'articles.stock_alerte');
                 })
                 ->orWhereDoesntHave('stock');
-            });
+            })
+            ->where('isdeleted', false);
 
         // Exécution pour les articles en alerte
         $articles = $query->latest()->get();

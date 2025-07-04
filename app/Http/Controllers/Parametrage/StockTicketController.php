@@ -14,7 +14,10 @@ class StockTicketController extends Controller
     // Afficher la liste des stocks de tickets
     public function index()
     {
-        $stock_tickets = StockTicket::with('couponTicket', 'compagnie')->latest()->paginate(1000);
+        $stock_tickets = StockTicket::with('couponTicket', 'compagnie')
+        ->latest()
+        ->where('isdeleted', false)
+        ->paginate(1000);
         return new PostResource(true, 'Liste des stocks de tickets', $stock_tickets);
     }
 
@@ -61,16 +64,21 @@ class StockTicketController extends Controller
     // Supprimer un stock de ticket
     public function destroy(StockTicket $stock_ticket)
     {
-        $stock_ticket->delete();
+        $stock_ticket->isdeleted = true;
+        $stock_ticket->save();
+
         return new PostResource(true, 'Stock de ticket supprimé avec succès', null);
     }
 
     public function imprimerEtatStockTickets()
     {
-        $stock_tickets = StockTicket::with('couponTicket', 'compagnie')->latest()->get();
-        
+        $stock_tickets = StockTicket::with('couponTicket', 'compagnie')
+        ->latest()
+        ->where('isdeleted', false)
+        ->get();
+
         $pdf = \Pdf::loadView('pdf.etat_stock_tickets', compact('stock_tickets'));
 
-        return $pdf->download('etat_stock_tickets.pdf'); 
+        return $pdf->download('etat_stock_tickets.pdf');
     }
 }

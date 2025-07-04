@@ -13,7 +13,7 @@ class TypeImmoController extends Controller
     // Afficher la liste des types d'immo
     public function index()
     {
-        $type_immos = TypeImmo::latest()->paginate(100);
+        $type_immos = TypeImmo::latest()->where('isdeleted', false)->paginate(100);
         return new PostResource(true, 'Liste des types d\'immos', $type_immos);
     }
 
@@ -60,7 +60,8 @@ class TypeImmoController extends Controller
     // Supprimer un type d'immo
     public function destroy(TypeImmo $type_immo)
     {
-        $type_immo->delete();
+        $type_immo->isdeleted = true;
+        $type_immo->save();
         return new PostResource(true, 'Type d\'immo supprimé avec succès', null);
     }
 }
