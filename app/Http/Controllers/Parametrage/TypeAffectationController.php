@@ -13,7 +13,7 @@ class TypeAffectationController extends Controller
     // Afficher la liste des types d'affectation
     public function index()
     {
-        $typesAffectation = TypeAffectation::latest()->paginate(100);
+        $typesAffectation = TypeAffectation::latest()->where('isdeleted', false)->paginate(100);
         return new PostResource(true, 'Liste des types d\'affectation', $typesAffectation);
     }
 
@@ -60,7 +60,8 @@ class TypeAffectationController extends Controller
     // Supprimer un type d'affectation
     public function destroy(TypeAffectation $typeAffectation)
     {
-        $typeAffectation->delete();
+        $typeAffectation->isdeleted = true;
+        $typeAffectation->save();
         return new PostResource(true, 'Type d\'affectation supprimé avec succès', null);
     }
 }

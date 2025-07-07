@@ -14,7 +14,7 @@ class MarqueController extends Controller
     public function index()
     {
         // Récupérer toutes les marques triées par ordre décroissant
-        $marques = Marque::latest()->paginate(100);
+        $marques = Marque::latest()->where('isdeleted', false)->paginate(100);
 
         // Retourner la réponse formatée avec MarqueResource
         return new PostResource(true, 'Liste des marques', $marques);
@@ -68,8 +68,8 @@ class MarqueController extends Controller
     public function destroy(Marque $marque)
     {
         // Supprimer la marque
-        $marque->delete();
-
+        $marque->isdeleted = true;
+        $marque->save();
         // Retourner la réponse formatée avec MarqueResource, indiquant que la suppression a réussi
         return new PostResource(true, 'Marque supprimée avec succès', null);
     }

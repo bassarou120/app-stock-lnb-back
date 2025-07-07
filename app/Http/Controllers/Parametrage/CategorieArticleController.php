@@ -13,7 +13,7 @@ class CategorieArticleController extends Controller
     // Afficher la liste des catégories d'articles
     public function index()
     {
-        $categories = CategorieArticle::latest()->paginate(1000);
+        $categories = CategorieArticle::latest()->where('isdeleted', false)->paginate(1000);
         return new PostResource(true, 'Liste des catégories d\'articles', $categories);
     }
 
@@ -64,7 +64,8 @@ class CategorieArticleController extends Controller
     // Supprimer une catégorie d'article
     public function destroy(CategorieArticle $categorie_article)
     {
-        $categorie_article->delete();
+        $categorie_article->isdeleted = true;
+        $categorie_article->save();
         return new PostResource(true, 'Catégorie d\'article supprimée avec succès', null);
     }
 }

@@ -16,7 +16,7 @@ class CompagniePetrolierController extends Controller
     public function index()
     {
         // Récupérer toutes les compagnies pétrolières triées par ordre décroissant
-        $compagnies = CompagniePetrolier::latest()->paginate(1000);
+        $compagnies = CompagniePetrolier::latest()->where('isdeleted', false)->paginate(1000);
 
         // Retourner la réponse formatée avec PostResource
         return new PostResource(true, 'Liste des compagnies pétrolières', $compagnies);
@@ -74,15 +74,15 @@ class CompagniePetrolierController extends Controller
     public function destroy(CompagniePetrolier $compagnie_petrolier)
     {
         // Supprimer la compagnie pétrolière
-        $compagnie_petrolier->delete();
-
+        $compagnie_petrolier->isdeleted = true;
+        $compagnie_petrolier->save();
         // Retourner la réponse formatée avec PostResource, indiquant que la suppression a réussi
         return new PostResource(true, 'Compagnie pétrolière supprimée avec succès', null);
     }
 
     public function imprimer()
     {
-        $compagnies = CompagniePetrolier::all();
+        $compagnies = CompagniePetrolier::all()->where('isdeleted', false);
 
         $pdf = Pdf::loadView('pdf.compagnies', compact('compagnies'));
 

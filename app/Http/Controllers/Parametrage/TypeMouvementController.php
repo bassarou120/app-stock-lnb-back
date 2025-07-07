@@ -13,7 +13,7 @@ class TypeMouvementController extends Controller
     // Afficher la liste des types de mouvement
     public function index()
     {
-        $typesMouvement = TypeMouvement::latest()->paginate(100);
+        $typesMouvement = TypeMouvement::latest()->where('isdeleted', false)->paginate(100);
         return new PostResource(true, 'Liste des types de mouvement', $typesMouvement);
     }
 
@@ -60,7 +60,8 @@ class TypeMouvementController extends Controller
     // Supprimer un type de mouvement
     public function destroy(TypeMouvement $typeMouvement)
     {
-        $typeMouvement->delete();
+        $typeMouvement->isdeleted = true;
+        $typeMouvement->save();
         return new PostResource(true, 'Type de mouvement supprimé avec succès', null);
     }
 }

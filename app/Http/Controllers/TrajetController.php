@@ -17,7 +17,9 @@ class TrajetController extends Controller
         $trajet = Trajet::with([
             'depart',
             'arriver'
-        ])->latest()->paginate(1000);
+        ])
+        ->where('isdeleted', false)
+        ->latest()->paginate(1000);
 
         return new PostResource(true, 'Liste des trajets', $trajet);
     }
@@ -65,7 +67,9 @@ class TrajetController extends Controller
     public function destroy($id)
     {
         $trajet = Trajet::findOrFail($id);
-        $trajet->delete();
+        $trajet->isdeleted = true;
+        $trajet->save();
+
         return response()->json(['message' => 'Trajet supprimé avec succès']);
     }
 }

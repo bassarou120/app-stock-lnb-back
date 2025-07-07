@@ -39,7 +39,7 @@ class BureauController extends Controller
  */
     public function index()
     {
-        $bureaux = Bureau::latest()->paginate(100);
+        $bureaux = Bureau::latest()->where('isdeleted', false)->paginate(100);
         return new PostResource(true, 'Liste des bureaux', $bureaux);
     }
 
@@ -170,7 +170,8 @@ class BureauController extends Controller
  */
     public function destroy(Bureau $bureaux)
     {
-        $bureaux->delete();
+        $bureaux->isdeleted = true;
+        $bureaux->save();
         return new PostResource(true, 'Bureau supprimé avec succès', null);
     }
 }

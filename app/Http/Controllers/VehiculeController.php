@@ -11,7 +11,9 @@ class VehiculeController extends Controller
      // Afficher la liste des véhicules
      public function index()
      {
-         $vehicules = Vehicule::with(['modele', 'marque'])->latest()->paginate(1000);
+         $vehicules = Vehicule::with(['modele', 'marque'])
+         ->where('isdeleted', false)
+         ->latest()->paginate(1000);
          return new PostResource(true, 'Liste des véhicules', $vehicules);
      }
 
@@ -94,7 +96,8 @@ class VehiculeController extends Controller
     // Supprimer un vehicule
     public function destroy(Vehicule $vehicule)
     {
-        $vehicule->delete();
+        $vehicule->isdeleted = true;
+        $vehicule->save();
         return new PostResource(true, 'vehicule supprimé avec succès', null);
     }
 
@@ -102,6 +105,7 @@ class VehiculeController extends Controller
     public function imprimerVehicules()
     {
         $vehicules = Vehicule::with(['modele', 'marque'])
+                                    ->where('isdeleted', false)
                                     ->latest()
                                     ->get();
 

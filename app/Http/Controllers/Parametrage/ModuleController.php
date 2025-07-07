@@ -14,7 +14,7 @@ class ModuleController extends Controller
     // Liste des modules
     public function index()
     {
-        $modules = Module::latest()->paginate(200);
+        $modules = Module::latest()->where('isdeleted', false)->paginate(200);
         return new PostResource(true, 'Liste des modules', $modules);
     }
 
@@ -57,7 +57,8 @@ class ModuleController extends Controller
     // Suppression d'un module
     public function destroy(Module $module)
     {
-        $module->delete();
+        $module->isdeleted = true;
+        $module->save();
         return new PostResource(true, 'Module supprimé avec succès', null);
     }
 }

@@ -13,7 +13,7 @@ class RoleController extends Controller
     // Afficher une liste paginée des rôles
     public function index()
     {
-        $roles = Role::latest()->paginate(200);
+        $roles = Role::latest()->where('isdeleted', false)->paginate(200);
         return new PostResource(true, 'Liste des rôles', $roles);
     }
 
@@ -73,7 +73,8 @@ class RoleController extends Controller
     // Supprimer un rôle
     public function destroy(Role $role)
     {
-        $role->delete();
+        $role->isdeleted = true;
+        $role->save();
         return new PostResource(true, 'Rôle supprimé avec succès', null);
     }
 }

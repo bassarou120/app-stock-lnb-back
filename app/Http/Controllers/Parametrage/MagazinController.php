@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Parametrage;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Parametrage\Magazin;
-use App\Http\Resources\PostResource; 
+use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 
 class MagazinController extends Controller
@@ -13,7 +13,7 @@ class MagazinController extends Controller
     // Afficher la liste des magasins
     public function index()
     {
-        $magazins = Magazin::latest()->paginate(100);
+        $magazins = Magazin::latest()->where('isdeleted', false)->paginate(100);
 
         return new PostResource(true, 'Liste des magasins', $magazins);
     }
@@ -61,8 +61,8 @@ class MagazinController extends Controller
     // Supprimer un magasin
     public function destroy(Magazin $magazin)
     {
-        $magazin->delete();
-
+        $magazin->isdeleted = true;
+        $magazin->save();
         return new PostResource(true, 'Magasin supprimé avec succès', null);
     }
 }

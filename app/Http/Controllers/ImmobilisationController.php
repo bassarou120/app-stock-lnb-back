@@ -42,7 +42,8 @@ class ImmobilisationController extends Controller
             'employe',
             'bureau',
             'fournisseur'
-        ])->latest()->paginate(100);
+        ])->where('isdeleted', false)
+        ->latest()->paginate(100);
 
         return new PostResource(true, 'Liste des immobilisations', $immos);
     }
@@ -214,7 +215,8 @@ class ImmobilisationController extends Controller
  */
     public function destroy(Immobilisation $immobilisation)
     {
-        $immobilisation->delete();
+        $immobilisation->isdeleted = true;
+        $immobilisation->save();
 
         return new PostResource(true, 'Immobilisation supprimée avec succès', null);
     }
@@ -230,7 +232,9 @@ class ImmobilisationController extends Controller
             'employe',
             'bureau',
             'fournisseur'
-        ])->latest()->get();
+        ])
+        ->where('isdeleted', false)
+        ->latest()->get();
 
         $pdf = \Pdf::loadView('pdf.immobilisations', compact('immobilisations'));
 

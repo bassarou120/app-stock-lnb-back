@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Parametrage;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Parametrage\Modele;
-use App\Http\Resources\PostResource; 
+use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 
 class ModeleController extends Controller
@@ -13,7 +13,7 @@ class ModeleController extends Controller
     // Afficher la liste des modèles
     public function index()
     {
-        $modeles = Modele::latest()->paginate(100);
+        $modeles = Modele::latest()->where('isdeleted', false)->paginate(100);
 
         return new PostResource(true, 'Liste des modèles', $modeles);
     }
@@ -57,8 +57,8 @@ class ModeleController extends Controller
     // Supprimer un modèle
     public function destroy(Modele $modele)
     {
-        $modele->delete();
-
+        $modele->isdeleted = true;
+        $modele->save();
         return new PostResource(true, 'Modèle supprimé avec succès', null);
     }
 }
