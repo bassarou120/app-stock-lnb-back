@@ -8,7 +8,6 @@ use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Parametrage\TypeIntervention;
 
-
 class InterventionController extends Controller
 {
    // Afficher la liste des intervention
