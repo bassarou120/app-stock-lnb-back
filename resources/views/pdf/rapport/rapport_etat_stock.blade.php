@@ -81,6 +81,32 @@
         .center-col {
             text-align: center;
         }
+
+        /* Debut css pour l'entete gauche droite */
+
+        .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start; /* <-- aligne les deux colonnes en haut */
+        padding: 10px;
+        }
+
+        .left p, .right p {
+        margin: 2px 0;
+        }
+
+        .right {
+        text-align: right;
+        }
+
+        .right img {
+        height: 60px;
+        margin: 0 0 5px 0; /* supprime tout décalage vertical */
+        display: block;
+        }
+
+        /* Fin css pour l'entete gauche droite */
+
     </style>
 </head>
 <body>
@@ -88,11 +114,26 @@
     {{-- Conditionnel pour le premier article, sinon il sera ignoré si $rapportArticles est vide --}}
     @if (!empty($rapportArticles))
         @if ($loop->first ?? true) {{-- Le ?? true est un fallback, mais $loop->first suffit si @foreach est bien là --}}
-            <div class="header">
-                <p>République du Bénin</p>
-                <p>LNB-Lotterie National du Bénin SA</p>
-                <p class="right">Rapport généré le: {{ date('d/m/Y H:i:s') }}</p>
-            </div>
+
+        <table width="100%" style="border-collapse: collapse; height: 80px; border: none;">
+            <tr>
+                <td style="width: 70%; text-align: left; vertical-align: middle; border: none;">
+                <p style="margin: 2px 0;"><strong>République du Bénin</strong></p>
+                <p style="margin: 2px 0;">LNB - Lotterie Nationale du Bénin SA</p>
+                </td>
+                <td style="width: 30%; text-align: right; vertical-align: top; border: none;">
+                <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
+                <p style="margin: 2px 0;">Rapport généré le: {{ date('d/m/Y H:i:s') }} (*)</p>
+                </td>
+            </tr>
+        </table>
+
+
+
+
+
+
+
         @endif
     @endif
 

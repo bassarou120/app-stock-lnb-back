@@ -74,7 +74,30 @@ th, td {
   margin-top: 30px;
 }
 
+        /* Debut css pour l'entete gauche droite */
 
+        .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start; /* <-- aligne les deux colonnes en haut */
+        padding: 10px;
+        }
+
+        .left p, .right p {
+        margin: 2px 0;
+        }
+
+        .right {
+        text-align: right;
+        }
+
+        .right img {
+        height: 60px;
+        margin: 0 0 5px 0; /* supprime tout décalage vertical */
+        display: block;
+        }
+
+        /* Fin css pour l'entete gauche droite */
 
   </style>
 
@@ -82,11 +105,20 @@ th, td {
 </head>
 <body>
 
-  <div class="header">
-    <p><strong>République du Bénin</strong></p>
-    <p>LNB-Lotterie National du Bénin SA</p>
-    <p class="right">Rapport généré le: {{ date('d/m/Y H:i:s') }} (*)</p>
-  </div>
+<table width="100%" style="border-collapse: collapse; height: 80px; border: none;">
+  <tr>
+    <td style="width: 70%; text-align: left; vertical-align: middle; border: none;">
+      <p style="margin: 2px 0;"><strong>République du Bénin</strong></p>
+      <p style="margin: 2px 0;">LNB - Lotterie Nationale du Bénin SA</p>
+    </td>
+    <td style="width: 30%; text-align: right; vertical-align: top; border: none;">
+      <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
+      <p style="margin: 2px 0;">Rapport généré le: {{ date('d/m/Y H:i:s') }} (*)</p>
+    </td>
+  </tr>
+</table>
+
+
 
   <h1 style="font-size:25px;text-align:center">Rapport des Transferts d'Immobilisations</h1>
   <h2 style="font-size:18px;text-align:center">LNB-Stock & Parc</h2>
@@ -135,7 +167,7 @@ th, td {
     <div>Nom et Prénoms des membres de la commission d’inventaire</div>
   </div>
 
-  @endif 
+  @endif
 
 </body>
 </html>

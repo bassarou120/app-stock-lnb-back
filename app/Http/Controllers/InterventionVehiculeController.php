@@ -7,6 +7,7 @@ use App\Models\Parametrage\TypeIntervention;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\PostResource;
+use Carbon\Carbon;
 
 class InterventionVehiculeController extends Controller
 {
@@ -55,6 +56,55 @@ class InterventionVehiculeController extends Controller
 
         return new PostResource(true, 'Liste des interventions immos', $interventions);
     }
+
+public function getVehiculesAssuranceExpireSoon()
+{
+    $today = Carbon::now();
+
+    // On eager load la relation "vehicule.marque"
+    $interventions = InterventionVehicule::with(['vehicule.marque'])
+        ->where('isdeleted', false)
+        ->get()
+        ->filter(function ($intervention) use ($today) {
+            $expiration = Carbon::parse($intervention->date_expiration);
+            $diffInMonths = $today->diffInMonths($expiration, false);
+            return $diffInMonths >= 0 && $diffInMonths <= 3;
+        })
+        ->map(function ($intervention) use ($today) {
+            $expiration = Carbon::parse($intervention->date_expiration);
+            $vehicule = $intervention->vehicule;
+            return [
+                'id' => $intervention->id,
+                'vehicule_id' => $intervention->vehicule_id,
+                'titre' => $intervention->titre,
+                'montant' => $intervention->montant,
+                'observation' => $intervention->observation,
+                'type_intervention_id' => $intervention->type_intervention_id,
+                'date_intervention' => Carbon::parse($intervention->date_intervention)->format('Y-m-d'),
+                'date_expiration' => $expiration->format('Y-m-d'),
+                'created_at' => Carbon::parse($intervention->created_at)->format('Y-m-d H:i:s'),
+                'updated_at' => Carbon::parse($intervention->updated_at)->format('Y-m-d H:i:s'),
+                'jours_restants' => (int) $today->diffInDays($expiration, false),
+
+                // Infos du véhicule
+                'vehicule' => [
+                    'immatriculation' => $vehicule->immatriculation,
+                    'marque' => $vehicule->marque->libelle ?? null,
+                ],
+            ];
+        })
+        ->sortBy('date_expiration')
+        ->values();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Véhicules avec assurance expirant dans 3 mois ou moins',
+        'data' => $interventions,
+    ]);
+}
+
+
+
 
     // Créer une nouvelle intervention
 

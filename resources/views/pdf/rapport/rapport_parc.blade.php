@@ -29,7 +29,7 @@
             padding: 2px 0;
             vertical-align: top;
         }
-        
+
         /* Styles de tableau génériques pour les données dynamiques */
         .dynamic-table th, .dynamic-table td {
             border: 1px solid black; /* Bordures noires comme dans le bon d'entrée */
@@ -99,6 +99,7 @@
         <table>
             <tr>
                 <td style="width: 50%;">
+                    <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
                     République du Bénin<br><br>
                     LNB-Lotterie National du Bénin SA
                 </td>
@@ -118,35 +119,35 @@
     <!-- Bloc d'informations sur les filtres appliqués -->
     <div class="filters-info">
         <h3>Critères d'exportation    :</h3>
-        
-            
+
+
                 <strong>Période du :</strong>
                 {{ $filterLabels['date_debut'] ?? 'Toutes les dates' }} <br>
-            
-            
+
+
                 <strong>Au :</strong>
                 {{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}<br>
-            
+
             @if($typeRapport === 'vehicule')
-                
+
                     <strong>Marque :</strong>
                     {{ $filterLabels['marque'] ?? 'Tous' }}<br>
-                
-                
+
+
                     <strong>Modele :</strong>
                     {{ $filterLabels['modele'] ?? 'Tous' }}<br>
-                
+
             @elseif($typeRapport === 'intervention_vehicule')
-                
+
                     <strong>Véhicule :</strong>
                     {{ $filterLabels['vehicule'] ?? 'Tous' }}<br>
-                
-                
+
+
                     <strong>Type Intervention :</strong>
                     {{ $filterLabels['modele'] ?? 'Tous' }}
-                
+
             @endif
-        
+
     </div><br>
 
     @if($data->isEmpty())

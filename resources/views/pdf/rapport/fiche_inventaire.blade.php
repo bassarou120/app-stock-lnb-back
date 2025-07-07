@@ -136,12 +136,31 @@
 <body>
     @php use Carbon\Carbon; @endphp
 
-    <div class="header">
+<!--     <div class="header">
         <p><strong>République du Bénin</strong></p>
         <p>LNB-Lotterie National du Bénin SA</p>
         <p class="right">Rapport généré le: {{ Carbon::now()->format('d/m/Y H:i:s') }}</p>
         <p class="right">Période d'Acquisition: Du {{ Carbon::parse(request()->date_debut_acquisition)->format('d/m/Y') }} au {{ Carbon::parse(request()->date_fin_acquisition)->format('d/m/Y') }}</p>
     </div>
+
+    // -->
+        <table width="100%" style="border-collapse: collapse; height: 80px; border: none;">
+        <tr>
+            <td style="width: 70%; text-align: left; vertical-align: middle; border: none;">
+                <p style="margin: 2px 0;"><strong>République du Bénin</strong></p>
+                <p style="margin: 2px 0;">LNB - Lotterie Nationale du Bénin SA</p>
+                </td>
+                <td style="width: 30%; text-align: right; vertical-align: top; border: none;">
+                <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
+                <p style="margin: 2px 0;">Rapport généré le: {{ Carbon::now()->format('d/m/Y H:i:s') }}</p>
+                <p class="right">Période d'Acquisition: Du {{ Carbon::parse(request()->date_debut_acquisition)->format('d/m/Y') }} au {{ Carbon::parse(request()->date_fin_acquisition)->format('d/m/Y') }}</p>
+            </td>
+        </tr>
+    </table>
+
+
+
+
 
     <h1 class="title">FICHE D'INVENTAIRE DES IMMOBILISATIONS</h1>
     <h2 style="font-style: italic;">(LNB-Stock & Parc)</h2>

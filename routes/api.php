@@ -212,3 +212,4 @@ Route::get('/site-settings', [SiteSettingController::class, 'index']);
 Route::post('/site-settings/store', [SiteSettingController::class, 'store']); // <-- C'EST LA ROUTE MANQUANTE
 Route::get('/imprimerSorties', [MouvementStockController::class, 'imprimerSortiesStock']);
 
+Route::get('/assurance-expiresoon', [InterventionVehiculeController::class, 'getVehiculesAssuranceExpireSoon']);
