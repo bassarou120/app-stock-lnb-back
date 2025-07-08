@@ -429,13 +429,13 @@ class MouvementStockController extends Controller
     /**
      * @OA\Post(
      *     path="/api/demande-de-sortie",
-     *     summary="Créer une demande de sortie",
+     *     summary="Créer une demande de fourniture",
      *     description="Permet de créer une nouvelle demande de sortie avec la liste des articles demandés.",
-     *     tags={"Demande de Sortie"},
+     *     tags={"Demande de fourniture"},
      *
      *     @OA\RequestBody(
      *         required=true,
-     *         description="Les données nécessaires pour créer une demande de sortie",
+     *         description="Les données nécessaires pour créer une demande de fournitures",
      *         @OA\JsonContent(
      *             required={"dateDemande", "id_bureau", "id_personnel", "articles"},
      *
@@ -444,7 +444,7 @@ class MouvementStockController extends Controller
      *                 type="string",
      *                 format="date",
      *                 example="2025-05-27",
-     *                 description="Date à laquelle la demande de sortie est effectuée"
+     *                 description="Date à laquelle la demande de fourniture est effectuée"
      *             ),
      *
      *             @OA\Property(
@@ -496,9 +496,9 @@ class MouvementStockController extends Controller
      *
      *     @OA\Response(
      *         response=201,
-     *         description="Demande de sortie créée avec succès",
+     *         description="Demande de fourniture créée avec succès",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Demande de sortie créée avec succès"),
+     *             @OA\Property(property="message", type="string", example="Demande de fourniture créée avec succès"),
      *             @OA\Property(property="demande", type="object")
      *         )
      *     ),
