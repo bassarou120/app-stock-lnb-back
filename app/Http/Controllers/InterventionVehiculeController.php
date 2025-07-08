@@ -57,50 +57,137 @@ class InterventionVehiculeController extends Controller
         return new PostResource(true, 'Liste des interventions immos', $interventions);
     }
 
-public function getVehiculesAssuranceExpireSoon()
-{
-    $today = Carbon::now();
+    public function getVehiculesAssuranceExpireSoon()
+    {
+        $today = Carbon::now();
+        $sevenDaysAgo = $today->copy()->subDays(7);
 
-    // On eager load la relation "vehicule.marque"
-    $interventions = InterventionVehicule::with(['vehicule.marque'])
-        ->where('isdeleted', false)
-        ->get()
-        ->filter(function ($intervention) use ($today) {
-            $expiration = Carbon::parse($intervention->date_expiration);
-            $diffInMonths = $today->diffInMonths($expiration, false);
-            return $diffInMonths >= 0 && $diffInMonths <= 3;
-        })
-        ->map(function ($intervention) use ($today) {
-            $expiration = Carbon::parse($intervention->date_expiration);
-            $vehicule = $intervention->vehicule;
-            return [
-                'id' => $intervention->id,
-                'vehicule_id' => $intervention->vehicule_id,
-                'titre' => $intervention->titre,
-                'montant' => $intervention->montant,
-                'observation' => $intervention->observation,
-                'type_intervention_id' => $intervention->type_intervention_id,
-                'date_intervention' => Carbon::parse($intervention->date_intervention)->format('Y-m-d'),
-                'date_expiration' => $expiration->format('Y-m-d'),
-                'created_at' => Carbon::parse($intervention->created_at)->format('Y-m-d H:i:s'),
-                'updated_at' => Carbon::parse($intervention->updated_at)->format('Y-m-d H:i:s'),
-                'jours_restants' => (int) $today->diffInDays($expiration, false),
+        // CONVERTIR AU FORMAT Y-m-d AVANT LA REQUÊTE
+        $sevenDaysAgoFormatted = $sevenDaysAgo->format('Y-m-d');
+        $todayFormatted = $today->format('Y-m-d');
 
-                // Infos du véhicule
-                'vehicule' => [
-                    'immatriculation' => $vehicule->immatriculation,
-                    'marque' => $vehicule->marque->libelle ?? null,
-                ],
-            ];
-        })
-        ->sortBy('date_expiration')
-        ->values();
+        // 1. ASSURANCES EXPIRANT DANS 3 MOIS OU MOINS
+        $assurancesExpirantes = InterventionVehicule::with(['vehicule.marque'])
+            ->where('isdeleted', false)
+            ->get()
+            ->filter(function ($intervention) use ($today) {
+                $expiration = Carbon::parse($intervention->date_expiration);
+                $diffInMonths = $today->diffInMonths($expiration, false);
+                return $diffInMonths >= 0 && $diffInMonths <= 3;
+            })
+            ->map(function ($intervention) use ($today) {
+                $expiration = Carbon::parse($intervention->date_expiration);
+                $vehicule = $intervention->vehicule;
+                return [
+                    'id' => $intervention->id,
+                    'vehicule_id' => $intervention->vehicule_id,
+                    'titre' => $intervention->titre,
+                    'montant' => $intervention->montant,
+                    'observation' => $intervention->observation,
+                    'type_intervention_id' => $intervention->type_intervention_id,
+                    'date_intervention' => Carbon::parse($intervention->date_intervention)->format('Y-m-d'),
+                    'date_expiration' => $expiration->format('Y-m-d'),
+                    'created_at' => Carbon::parse($intervention->created_at)->format('Y-m-d H:i:s'),
+                    'updated_at' => Carbon::parse($intervention->updated_at)->format('Y-m-d H:i:s'),
+                    'jours_restants' => (int) $today->diffInDays($expiration, false),
+                    'vehicule' => [
+                        'immatriculation' => $vehicule->immatriculation,
+                        'marque' => $vehicule->marque->libelle ?? null,
+                    ],
+                ];
+            })
+            ->sortBy('date_expiration')
+            ->values();
+
+        // 2. RÉPARATIONS EFFECTUÉES DANS LES 7 DERNIERS JOURS
+        $reparationsRecentes = InterventionVehicule::with(['vehicule.marque'])
+            ->where('isdeleted', false)
+            ->whereBetween('date_intervention', [$sevenDaysAgoFormatted, $todayFormatted]) // UTILISER LES VARIABLES FORMATÉES
+            ->get()
+            ->map(function ($intervention) {
+                $vehicule = $intervention->vehicule;
+                return [
+                    'id' => $intervention->id,
+                    'vehicule_id' => $intervention->vehicule_id,
+                    'titre' => $intervention->titre,
+                    'montant' => $intervention->montant,
+                    'observation' => $intervention->observation,
+                    'date_intervention' => Carbon::parse($intervention->date_intervention)->format('Y-m-d'),
+                    'vehicule' => [
+                        'immatriculation' => $vehicule->immatriculation,
+                        'marque' => $vehicule->marque->libelle ?? null,
+                    ],
+                ];
+            });
+
+            // 3. VISITES TECHNIQUES PROCHES DE L'EXPIRATION (dans moins de 2 mois)
+            $visitesTechniquesProches = InterventionVehicule::with(['vehicule.marque', 'typeIntervention'])
+                ->where('isdeleted', false)
+                ->whereHas('typeIntervention', function ($query) {
+                    $query->where(function ($q) {
+                        $q->where('libelle_type_intervention', 'ILIKE', '%visite technique%')
+                        ->orWhere('libelle_type_intervention', 'ILIKE', '%contrôle technique%')
+                        ->orWhere('libelle_type_intervention', 'ILIKE', '%inspection%');
+                    })
+                    ->where('isdeleted', false); // s'assurer que le type n'est pas supprimé
+                })
+                ->whereNotNull('date_expiration')
+                ->get()
+                ->filter(function ($intervention) use ($today) {
+                    $expiration = Carbon::parse($intervention->date_expiration);
+                    return $expiration->isAfter($today) && $today->diffInDays($expiration, false) < 20;
+                })
+                ->map(function ($intervention) use ($today) {
+                    $expiration = Carbon::parse($intervention->date_expiration);
+                    $vehicule = $intervention->vehicule;
+
+                    return [
+                        'id' => $intervention->id,
+                        'vehicule_id' => $intervention->vehicule_id,
+                        'titre' => $intervention->titre,
+                        'montant' => $intervention->montant,
+                        'observation' => $intervention->observation,
+                        'type_intervention_id' => $intervention->type_intervention_id,
+                        'date_intervention' => Carbon::parse($intervention->date_intervention)->format('Y-m-d'),
+                        'date_expiration' => $expiration->format('Y-m-d'),
+                        'created_at' => Carbon::parse($intervention->created_at)->format('Y-m-d H:i:s'),
+                        'updated_at' => Carbon::parse($intervention->updated_at)->format('Y-m-d H:i:s'),
+                        'jours_restants' => (int)$today->diffInDays($expiration, false),
+                        'type_intervention' => $intervention->typeIntervention->libelle_type_intervention ?? null,
+                        'vehicule' => [
+                            'immatriculation' => $vehicule->immatriculation ?? null,
+                            'marque' => $vehicule->marque->libelle ?? null,
+                        ],
+                    ];
+                })
+                ->sortBy('date_expiration')
+                ->values();
+
+            // 4. STATISTIQUES GLOBALES
+            $nombreVehiculesAssuranceExpirante = $assurancesExpirantes->pluck('vehicule_id')->unique()->count();
+            $nombreReparationsRecentes = $reparationsRecentes->count();
+            $nombreVehiculesReparesRecemment = $reparationsRecentes->pluck('vehicule_id')->unique()->count();
+            $nombreVehiculesVisiteTechniqueProche = $visitesTechniquesProches->pluck('vehicule_id')->unique()->count();
+
 
     return response()->json([
         'success' => true,
-        'message' => 'Véhicules avec assurance expirant dans 3 mois ou moins',
-        'data' => $interventions,
+        'message' => 'Données dashboard véhicules',
+
+        // DONNÉES ASSURANCES EXPIRANTES
+        'assurances_expirantes' => $assurancesExpirantes,
+        'nombre_vehicules_assurance_expirante' => $nombreVehiculesAssuranceExpirante,
+
+        // DONNÉES RÉPARATIONS RÉCENTES
+        'reparations_recentes' => $reparationsRecentes,
+        'nombre_reparations_recentes' => $nombreReparationsRecentes,
+        'nombre_vehicules_repares_recemment' => $nombreVehiculesReparesRecemment,
+
+        // NOUVELLES DONNÉES VISITES TECHNIQUES
+        'visites_techniques_proches' => $visitesTechniquesProches,
+        'nombre_vehicules_visite_technique_proche' => $nombreVehiculesVisiteTechniqueProche,
     ]);
+
 }
 
 
