@@ -46,7 +46,7 @@ class EmployeController extends Controller
      */
     public function index()
     {
-        $employes = Employe::latest()->paginate(500);
+        $employes = Employe::latest()->where('isdeleted', false)->paginate(500);
         return new PostResource(true, 'Liste des employés', $employes);
     }
 
@@ -193,7 +193,8 @@ class EmployeController extends Controller
 
     public function destroy(Employe $employe)
     {
-        $employe->delete();
+        $employe->isdeleted = true;
+        $employe->save();
         return new PostResource(true, 'Employe supprimé avec succès', null);
     }
 
@@ -214,7 +215,7 @@ class EmployeController extends Controller
      */
     public function imprimer()
     {
-        $employes = Employe::all();
+        $employes = Employe::all()->where('isdeleted', false);
 
         $pdf = Pdf::loadView('pdf.employes', compact('employes'));
 

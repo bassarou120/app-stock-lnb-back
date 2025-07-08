@@ -15,7 +15,7 @@ class FournisseurController extends Controller
     // Afficher la liste des fournisseurs
     public function index()
     {
-        $fournisseurs = Fournisseur::latest()->paginate(100);
+        $fournisseurs = Fournisseur::latest()->where('isdeleted', false)->paginate(100);
         return new PostResource(true, 'Liste des fournisseurs', $fournisseurs);
     }
 
@@ -66,18 +66,19 @@ class FournisseurController extends Controller
     // Supprimer un fournisseur
     public function destroy(Fournisseur $fournisseur)
     {
-        $fournisseur->delete();
+        $fournisseur->isdeleted = true;
+        $fournisseur->save();
         return new PostResource(true, 'Fournisseur supprimé avec succès', null);
     }
 
     public function imprimer()
     {
-        $fournisseurs = Fournisseur::all();
+        $fournisseurs = Fournisseur::all()->where('isdeleted', false);
 
         $pdf = Pdf::loadView('pdf.fournisseurs', compact('fournisseurs'));
 
         return $pdf->download('liste_fournisseurs.pdf');
     }
 
-    
+
 }

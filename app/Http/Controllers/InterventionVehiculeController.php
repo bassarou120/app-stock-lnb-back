@@ -39,7 +39,9 @@ class InterventionVehiculeController extends Controller
         $interventions = InterventionVehicule::with([
             'vehicule',
             'typeIntervention'
-        ])->latest()->paginate(100);
+        ])
+        ->where('isdeleted', false)
+        ->latest()->paginate(100);
 
         return new PostResource(true, 'Liste des interventions de véhicules', $interventions);
     }
@@ -48,9 +50,10 @@ class InterventionVehiculeController extends Controller
     {
         $interventions = TypeIntervention::where("applicable_seul_vehicule", true)
         ->latest()
+        ->where('isdeleted', false)
         ->paginate(100);
 
-    return new PostResource(true, 'Liste des interventions immos', $interventions);
+        return new PostResource(true, 'Liste des interventions immos', $interventions);
     }
 
     // Créer une nouvelle intervention
@@ -155,10 +158,11 @@ class InterventionVehiculeController extends Controller
         return new PostResource(true, 'intervention mise à jour avec succès', $interventionVehicule);
     }
 
-    public function Intervention_Vehicule()
+    public function InterventionVehicule()
     {
         $interventions = TypeIntervention::where("applicable_seul_vehicule", true)
         ->latest()
+        ->where('isdeleted', false)
         ->paginate(100);
 
     return new PostResource(true, 'Liste des interventions vehicules', $interventions);
@@ -189,7 +193,9 @@ class InterventionVehiculeController extends Controller
     public function destroy($id)
     {
         $intervention = InterventionVehicule::findOrFail($id);
-        $intervention->delete();
+
+        $intervention->isdeleted = true;
+        $intervention->save();
         return response()->json(['message' => 'intervention supprimé avec succès']);
     }
 
@@ -198,10 +204,12 @@ class InterventionVehiculeController extends Controller
         $interventions = InterventionVehicule::with([
             'vehicule',
             'typeIntervention'
-        ])->latest()->get();
+        ])->where('isdeleted', false)
+        ->latest()->get();
 
         $pdf = \Pdf::loadView('pdf.interventions_vehicule', compact('interventions'));
 
         return $pdf->download('liste_interventions_vehicule.pdf');
     }
 }
+

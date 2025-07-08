@@ -13,7 +13,7 @@ class UniteDeMesureController extends Controller
     // Afficher la liste des UniteDeMesures
     public function index()
     {
-        $uniteDeMesures = UniteDeMesure::latest()->paginate(100);
+        $uniteDeMesures = UniteDeMesure::latest()->where('isdeleted', false)->paginate(100);
         return new PostResource(true, 'Liste des Unites De Mesure', $uniteDeMesures);
     }
 
@@ -56,7 +56,8 @@ class UniteDeMesureController extends Controller
     // Supprimer un unite_de_mesure
     public function destroy(UniteDeMesure $unite_de_mesure)
     {
-        $unite_de_mesure->delete();
+        $unite_de_mesure->isdeleted = true;
+        $unite_de_mesure->save();
         return new PostResource(true, 'unite_de_mesure supprimé avec succès', null);
     }
 }

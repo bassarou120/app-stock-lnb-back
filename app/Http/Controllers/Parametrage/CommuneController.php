@@ -14,7 +14,7 @@ class CommuneController extends Controller
     public function index()
     {
         // Récupérer toutes les communes triées par ordre décroissant
-        $communes = Commune::latest()->paginate(1000);
+        $communes = Commune::latest()->where('isdeleted', false)->paginate(1000);
 
         // Retourner la réponse formatée avec PostResource
         return new PostResource(true, 'Liste des communes', $communes);
@@ -68,8 +68,8 @@ class CommuneController extends Controller
     public function destroy(Commune $commune)
     {
         // Supprimer la commune
-        $commune->delete();
-
+        $commune->isdeleted = true;
+        $commune->save();
         // Retourner la réponse formatée avec PostResource, indiquant que la suppression a réussi
         return new PostResource(true, 'Commune supprimée avec succès', null);
     }

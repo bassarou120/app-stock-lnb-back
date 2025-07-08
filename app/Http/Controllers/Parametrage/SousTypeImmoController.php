@@ -14,7 +14,7 @@ class SousTypeImmoController extends Controller
     // Afficher la liste des sous-types d'immo
     public function index()
     {
-        $sous_type_immos = SousTypeImmo::with('typeImmo')->latest()->paginate(100);
+        $sous_type_immos = SousTypeImmo::with('typeImmo')->where('isdeleted', false)->latest()->paginate(100);
         return new PostResource(true, 'Liste des sous-types d\'immos', $sous_type_immos);
     }
 
@@ -65,7 +65,8 @@ class SousTypeImmoController extends Controller
     // Supprimer un sous-type d'immo
     public function destroy(SousTypeImmo $sous_type_immo)
     {
-        $sous_type_immo->delete();
+        $sous_type_immo->isdeleted = true;
+        $sous_type_immo->save();
         return new PostResource(true, 'Sous-type d\'immo supprimé avec succès', null);
     }
 }

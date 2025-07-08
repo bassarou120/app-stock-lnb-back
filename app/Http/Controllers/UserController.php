@@ -19,10 +19,11 @@ class UserController extends Controller
      */
     public function index()
     {
-        
+
         $users = User::with('role')
             ->orderBy('created_at', 'desc')
-            ->paginate(10); 
+            ->where('isdeleted', false)
+            ->paginate(10);
         return response()->json($users);
     }
 
@@ -117,7 +118,8 @@ class UserController extends Controller
         }
 
         try {
-            $user->delete();
+            $user->isdeleted = true;
+            $user->save();
             return response()->json(['message' => 'Utilisateur supprimé avec succès'], 200);
         } catch (\Exception $e) {
             // Log l'erreur pour le débogage (optionnel mais recommandé)

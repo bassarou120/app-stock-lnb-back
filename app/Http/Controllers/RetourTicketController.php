@@ -23,7 +23,10 @@ class RetourTicketController extends Controller
             'mouvement.vehicule',
             'coupon',
             'compagnie'
-        ])->latest()->paginate(1000);
+        ])
+        ->latest()
+        ->where('isdeleted', false)
+        ->paginate(1000);
 
         return new PostResource(true, 'Liste des retours', $retours);
     }
@@ -55,7 +58,11 @@ class RetourTicketController extends Controller
         ]);
 
 
-        $stockTicket = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->where('compagnie_petrolier_id', $request->compagnie_petrolier_id)->latest()->first();
+        $stockTicket = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)
+        ->where('compagnie_petrolier_id', $request->compagnie_petrolier_id)
+        ->latest()
+        ->where('isdeleted', false)
+        ->first();
 
         if ($stockTicket == null) {
             $stockTicket = StockTicket::create([
@@ -85,7 +92,11 @@ class RetourTicketController extends Controller
         }
 
         // Vérifier si un stock existe pour ce ticket
-        $stock = StockTicket::where('coupon_ticket_id', $retourTicket->coupon_ticket_id)->where('compagnie_petrolier_id', $retourTicket->compagnie_petrolier_id)->latest()->first();
+        $stock = StockTicket::where('coupon_ticket_id', $retourTicket->coupon_ticket_id)
+        ->where('compagnie_petrolier_id', $retourTicket->compagnie_petrolier_id)
+        ->latest()
+        ->where('isdeleted', false)
+        ->first();
 
         if ($stock) {
             // Réduire la quantité du stock
@@ -101,7 +112,8 @@ class RetourTicketController extends Controller
 
         // Supprimer le retourTicket
 
-        $retourTicket->delete();
+        $retourTicket->isdeleted = true;
+        $retourTicket->save();
 
         return new PostResource(true, 'Retour Ticket supprimé avec succès !', null);
     }
@@ -119,6 +131,7 @@ class RetourTicketController extends Controller
             // Récupérer les mouvements "Sortie de Ticket" qui ne sont pas dans la liste des mouvements avec retour
             $mouvements = MouvementTicket::with(['employe', 'compagniePetrolier', 'vehicule', 'coupon_ticket'])
                 ->where('id_type_mouvement', $type_mouvement->id)
+                ->where('isdeleted', false)
                 ->whereNotIn('id', $mouvementsAvecRetour)
                 ->latest()
                 ->paginate(1000);
