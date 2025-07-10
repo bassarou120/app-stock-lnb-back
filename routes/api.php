@@ -214,3 +214,5 @@ Route::get('/imprimerSorties', [MouvementStockController::class, 'imprimerSortie
 
 //Route::get('/count-assurance-expiresoon', [InterventionVehiculeController::class, 'getVehiculesAssuranceExpireSoon']);
 Route::get('/assurance-expiresoon', [InterventionVehiculeController::class, 'getVehiculesAssuranceExpireSoon']);
+
+Route::get('/transferts/print/{id}', [TransfertController::class, 'printSingleTransfert']);
