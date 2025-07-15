@@ -60,7 +60,7 @@ class InterventionVehiculeController extends Controller
     public function getVehiculesAssuranceExpireSoon()
     {
         $today = Carbon::now();
-        $sevenDaysAgo = $today->copy()->subDays(7);
+        $sevenDaysAgo = $today->copy()->subDays(30);
 
         // CONVERTIR AU FORMAT Y-m-d AVANT LA REQUÊTE
         $sevenDaysAgoFormatted = $sevenDaysAgo->format('Y-m-d');
@@ -349,4 +349,3 @@ class InterventionVehiculeController extends Controller
         return $pdf->download('liste_interventions_vehicule.pdf');
     }
 }
-
