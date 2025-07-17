@@ -353,7 +353,7 @@ class MouvementTicketController extends Controller
 
         // Si le type de mouvement existe, récupérer les mouvements correspondants
         if ($type_mouvement) {
-            $mouvements = MouvementTicket::with(['employe', 'compagniePetrolier', 'vehicule', 'coupon_ticket', 'depart', 'arriver'])
+            $mouvements = MouvementTicket::with(['employe', 'compagniePetrolier', 'vehicule', 'vehicule.modele', 'vehicule.marque', 'coupon_ticket', 'depart', 'arriver'])
             ->where('id_type_mouvement', $type_mouvement->id)
             ->where('isdeleted', false)
             ->latest()->paginate(1000);

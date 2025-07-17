@@ -826,7 +826,7 @@ class MouvementStockController extends Controller
         $validator = Validator::make($request->all(), [
             "articles" => "required|array|min:1",
             "articles.*.code_article" => "required|string|exists:articles,code_article",
-            "articles.*.description" => "required|string|max:255",
+            "articles.*.description" => "nullable|string|max:255",
             "articles.*.qteDemande" => "required|integer|min:1",
             "dateDemande" => "required|date",
             "id_bureau" => "nullable|exists:bureaus,id",
