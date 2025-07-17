@@ -4,10 +4,15 @@
     <title>Rapport d'État de Stock</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <style>
+    @page {
+      size: A4 landscape;
+      margin: 5mm;
+      margin-bottom: 15mm; /* Espace pour le pied de page */
+    }
         body {
             font-family: 'DejaVu Sans', sans-serif; /* Important pour les caractères spéciaux en PDF */
             font-size: 10px;
-            margin: 20px;
+
         }
         h1, h2 {
             text-align: center;
@@ -38,8 +43,8 @@
         }
         .main-header {
             text-align: center;
-            margin-top: 50px; /* Espace pour l'en-tête "République du Bénin" */
-            margin-bottom: 20px;
+            margin-top: 15px; /* Espace pour l'en-tête "République du Bénin" */
+            margin-bottom: 15px;
         }
         .footer {
             width: 100%;
@@ -105,11 +110,53 @@
         display: block;
         }
 
-        /* Fin css pour l'entete gauche droite */
+            .header-section h2 {
+      margin: 5px 0;
+      font-size: 15pt;
+    }
+
+    .header-section td,
+    .budget-section td {
+      padding: 2px 4px;
+      vertical-align: top;
+      font-size: 11pt;
+    }
+
+    /* Styles pour le pied de page logiciel */
+    .software-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 12mm;
+      border-top: 1px solid #ccc;
+      background-color: #f9f9f9;
+      padding: 2mm 5mm;
+      font-size: 8pt;
+      color: #666;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .software-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .print-info {
+      text-align: right;
+      font-size: 7pt;
+    }
 
     </style>
 </head>
 <body>
+
+    <div class="main-content">
+
     {{-- En-tête statique du document, apparaît une seule fois sur la première page --}}
     {{-- Conditionnel pour le premier article, sinon il sera ignoré si $rapportArticles est vide --}}
     @if (!empty($rapportArticles))
@@ -122,22 +169,22 @@
                 <p style="margin: 2px 0;">LNB - Lotterie Nationale du Bénin SA</p>
                 </td>
                 <td style="width: 30%; text-align: right; vertical-align: top; border: none;">
-                <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
                 <p style="margin: 2px 0;">Rapport généré le: {{ date('d/m/Y H:i:s') }} (*)</p>
                 </td>
             </tr>
         </table>
 
-
-
-
-
-
-
         @endif
     @endif
 
-    <h1 class="main-header">Rapport d'État de Stock</h1>
+
+            <div style="text-align: center;">
+            <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
+            <h1 class="main-header">Rapport d'État de Stock</h1>
+            (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
+            </div>
+
+
 
     {{-- Conteneur pour les sections filtre et statistiques --}}
     <div class="summary-sections-container">
@@ -216,8 +263,23 @@
         <p style="text-align: center;">Aucun article ne correspond aux critères de filtre pour la période sélectionnée.</p>
     @endif
 
-    <div class="footer">
-        <p>Page <span class="page-number"></span> sur <span class="total-pages"></span></p>
+    <!-- Pied de page logiciel -->
+    <div class="software-footer">
+        <div class="software-info">
+            <div class="software-logo">LNB- Gestion De Stock & Parc</div>
+            <div class="software-details">
+                Système de Gestion de Stock - Version 1.0 |
+                Développé pour LNB-Lotterie National du Bénin SA
+            </div>
+        </div>
+        <div class="print-info" style="margin-top: -15px;">
+            Document généré le {{ date('d/m/Y à H:i:s') }}<br>
+            <!-- Utilisateur: {{ auth()->user()->name ?? 'Système' }}<br> -->
+            Page générée par LNB- Gestion De Stock & Parc
+        </div>
+    </div>
+    <!-- Fin Pied de page logiciel -->
+
     </div>
 </body>
 </html>

@@ -8,6 +8,7 @@
     @page {
       size: A4 landscape;
       margin: 5mm;
+      margin-bottom: 15mm; /* Espace pour le pied de page */
     }
 
     body {
@@ -15,6 +16,8 @@
       font-size: 11pt;
       margin: 0;
       padding: 0;
+      position: relative;
+      min-height: 100vh;
     }
 
     table {
@@ -103,13 +106,11 @@
       font-size: 7pt;
     }
 
-    //
-
     .certif-out-box,
         .diminution-prise-charge-box,
         .magasinier-fiche-box,
         .recepisse-out-box {
-            border: 1px solid black;
+
             padding: 5px 7px; /* Padding interne des boîtes */
             font-size: 8.5pt; /* Taille de police pour le contenu des boîtes */
             line-height: 1.2; /* Hauteur de ligne pour compacter le texte */
@@ -148,15 +149,58 @@
             line-height: 1; /* Compacter la ligne de signature */
         }
 
+    /* Styles pour le pied de page logiciel */
+    .software-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 12mm;
+      border-top: 1px solid #ccc;
+      background-color: #f9f9f9;
+      padding: 2mm 5mm;
+      font-size: 8pt;
+      color: #666;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .software-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .software-logo {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .software-details {
+      font-style: italic;
+    }
+
+    .print-info {
+      text-align: right;
+      font-size: 7pt;
+    }
+
+    /* Ajuster le contenu principal pour éviter le chevauchement */
+    .main-content {
+      margin-bottom: 15mm;
+    }
+
   </style>
 </head>
 <body>
 
+<div class="main-content">
   <div class="header-section">
     <table>
       <tr>
         <td style="width: 50%;">
-          <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
           République du Bénin<br/>
           LNB-Lotterie National du Bénin SA
         </td>
@@ -177,11 +221,13 @@
       <tr>
         @if($reportTypeLabel === 'd\'Entrée de Stock')
         <td colspan="2" style="text-align: center;">
+        <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
           <h2>ORDRE D'ENTRÉE</h2>
           (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
         </td>
         @elseif($reportTypeLabel === 'de Sortie de Stock')
-                <td colspan="2" style="text-align: center;">
+        <td colspan="2" style="text-align: center;">
+        <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
           <h2>ORDRE DE SORTIE</h2>
           (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
         </td>
@@ -361,6 +407,24 @@
             </table>
         </div>
     @endif
+
+</div>
+
+<!-- Pied de page logiciel -->
+<div class="software-footer">
+    <div class="software-info">
+        <div class="software-logo">LNB- Gestion De Stock & Parc</div>
+        <div class="software-details">
+            Système de Gestion de Stock - Version 1.0 |
+            Développé pour LNB-Lotterie National du Bénin SA
+        </div>
+    </div>
+    <div class="print-info">
+        Document généré le {{ date('d/m/Y à H:i:s') }}<br>
+         <!-- Utilisateur: {{ auth()->user()->name ?? 'Système' }}<br> -->
+        Page générée par LNB- Gestion De Stock & Parc
+    </div>
+</div>
 
 </body>
 </html>

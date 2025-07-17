@@ -130,20 +130,56 @@
             color: #cc0000;
         }
 
+.software-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 12mm;
+    border-top: 1px solid #ccc;
+    background-color: #f9f9f9;
+    padding: 2mm 5mm;
+    font-size: 8pt;
+    color: #666;
+    display: table;
+    width: 100%;
+    z-index: 1000;
+}
+
+.software-info {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: left;
+    width: 70%;
+}
+
+.software-logo {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.software-details {
+    font-style: italic;
+    line-height: 1.2;
+}
+
+.print-info {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: right;
+    width: 30%;
+    font-size: 7pt;
+    line-height: 1.2;
+}
+
+
     </style>
 
 </head>
 <body>
     @php use Carbon\Carbon; @endphp
 
-<!--     <div class="header">
-        <p><strong>République du Bénin</strong></p>
-        <p>LNB-Lotterie National du Bénin SA</p>
-        <p class="right">Rapport généré le: {{ Carbon::now()->format('d/m/Y H:i:s') }}</p>
-        <p class="right">Période d'Acquisition: Du {{ Carbon::parse(request()->date_debut_acquisition)->format('d/m/Y') }} au {{ Carbon::parse(request()->date_fin_acquisition)->format('d/m/Y') }}</p>
-    </div>
-
-    // -->
         <table width="100%" style="border-collapse: collapse; height: 80px; border: none;">
         <tr>
             <td style="width: 70%; text-align: left; vertical-align: middle; border: none;">
@@ -151,19 +187,21 @@
                 <p style="margin: 2px 0;">LNB - Lotterie Nationale du Bénin SA</p>
                 </td>
                 <td style="width: 30%; text-align: right; vertical-align: top; border: none;">
-                <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
                 <p style="margin: 2px 0;">Rapport généré le: {{ Carbon::now()->format('d/m/Y H:i:s') }}</p>
                 <p class="right">Période d'Acquisition: Du {{ Carbon::parse(request()->date_debut_acquisition)->format('d/m/Y') }} au {{ Carbon::parse(request()->date_fin_acquisition)->format('d/m/Y') }}</p>
             </td>
         </tr>
-    </table>
+        </table>
 
-
-
-
-
-    <h1 class="title">FICHE D'INVENTAIRE DES IMMOBILISATIONS</h1>
-    <h2 style="font-style: italic;">(LNB-Stock & Parc)</h2>
+    <div style="width: 100%; margin-bottom: 10px;text-align: center;">
+        <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;">
+        <h1 style="font-size: 20px; margin: 10px 0; font-weight: bold;">
+            FICHE D'INVENTAIRE DES IMMOBILISATIONS
+        </h1>
+        <h2 style="font-style: italic;">
+            (LNB-Stock & Parc)
+        </h2>
+    </div>
 
     @if($immobilisations->isEmpty())
         <p class="no-data">Aucune immobilisation trouvée pour les critères de recherche spécifiés.</p>
@@ -213,6 +251,24 @@
     </div>
 
     @endif
+
+<!-- Pied de page logiciel -->
+<div class="software-footer">
+    <div class="software-info">
+        <div class="software-logo">LNB- Gestion De Stock & Parc</div>
+        <div class="software-details">
+            Système de Gestion de Stock - Version 1.0 |
+            Développé pour LNB-Lotterie National du Bénin SA
+        </div>
+    </div>
+    <div class="print-info">
+        Document généré le {{ date('d/m/Y à H:i:s') }}<br>
+        <!-- Utilisateur: {{ auth()->user()->name ?? 'Système' }}<br> -->
+        Page générée par LNB- Gestion De Stock & Parc
+    </div>
+</div>
+<!-- Fin Pied de page logiciel -->
+
 
 </body>
 </html>

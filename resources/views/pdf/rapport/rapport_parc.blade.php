@@ -7,12 +7,12 @@
     <style>
         @page {
             size: landscape; /* Orientation paysage pour plus d'espace */
-            margin: 20mm;
+            margin: 5mm;
         }
         body {
             font-family: Arial, sans-serif; /* Utilisation de la police Arial comme dans le bon d'entrée */
             font-size: 10pt; /* Taille de police comme dans le bon d'entrée */
-            margin: 20px;
+            margin: 5px;
         }
         table {
             width: 100%;
@@ -20,7 +20,7 @@
         }
         /* Styles des sections comme dans le bon d'entrée */
         .header-section, .budget-section, .table-section, .footer-section {
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
         .header-section table, .budget-section table, .footer-section table {
             border: none;
@@ -90,6 +90,50 @@
         .footer-section table td {
             width: 33.33%;
         }
+
+.software-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 12mm;
+    border-top: 1px solid #ccc;
+    background-color: #f9f9f9;
+    padding: 2mm 5mm;
+    font-size: 8pt;
+    color: #666;
+    display: table;
+    width: 100%;
+    z-index: 1000;
+}
+
+.software-info {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: left;
+    width: 70%;
+}
+
+.software-logo {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.software-details {
+    font-style: italic;
+    line-height: 1.2;
+}
+
+.print-info {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: right;
+    width: 30%;
+    font-size: 7pt;
+    line-height: 1.2;
+}
+
     </style>
 </head>
 <body>
@@ -99,7 +143,7 @@
         <table>
             <tr>
                 <td style="width: 50%;">
-                    <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
+
                     République du Bénin<br><br>
                     LNB-Lotterie National du Bénin SA
                 </td>
@@ -109,7 +153,8 @@
                 </td>
             </tr>
             <tr>
-                <td colspan="2" style="text-align: center; padding-top: 20px;">
+                <td colspan="2" style="text-align: center; padding-top: 5px;">
+                    <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
                     <h2>Rapport {{ $reportTypeLabel }}</h2>
                     <h4>(Période du {{ $filterLabels['date_debut'] ?? 'Toutes les dates' }} au {{ $filterLabels['date_fin'] ?? 'Toutes les dates' }})</h5>
                 </td>
@@ -117,7 +162,7 @@
         </table>
     </div>
     <!-- Bloc d'informations sur les filtres appliqués -->
-    <div class="filters-info">
+    <div class="filters-info mt-0">
         <h3>Critères d'exportation    :</h3>
 
 
@@ -233,6 +278,23 @@
             </tr>
         </table>
     </div>
+
+    <!-- Pied de page logiciel -->
+<div class="software-footer">
+    <div class="software-info">
+        <div class="software-logo">LNB- Gestion De Stock & Parc</div>
+        <div class="software-details">
+            Système de Gestion de Stock - Version 1.0 |
+            Développé pour LNB-Lotterie National du Bénin SA
+        </div>
+    </div>
+    <div class="print-info">
+        Document généré le {{ date('d/m/Y à H:i:s') }}<br>
+        <!-- Utilisateur: {{ auth()->user()->name ?? 'Système' }}<br> -->
+        Page générée par LNB- Gestion De Stock & Parc
+    </div>
+</div>
+<!-- Fin Pied de page logiciel -->
 
 </body>
 </html>
