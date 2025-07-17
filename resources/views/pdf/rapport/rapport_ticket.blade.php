@@ -172,7 +172,7 @@
     <table>
       <tr>
         <td style="width: 50%;">
-            <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
+            <!-- <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br> -->
           République du Bénin<br/>
           LNB-Lotterie National du Bénin SA
         </td>
@@ -205,25 +205,37 @@
       <tr>
 
         @if($typeRapport === 'entree ticket')
-            <td colspan="2" style="text-align: center;">
-                <h2>TICKET D'ENTRÉE</h2>
-                (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
-            </td>
+          <td colspan="2" style="text-align: center;">
+            <div style="text-align: center;">
+              <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
+              <h2 class="main-header">TICKET D'ENTRÉE</h2>
+              (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
+            </div>
+          </td>
         @elseif($typeRapport === 'retour ticket')
-            <td colspan="2" style="text-align: center;">
-                <h2>TICKET DE RETOUR</h2>
-                (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
-            </td>
+          <td colspan="2" style="text-align: center;">
+            <div style="text-align: center;">
+              <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
+              <h2 class="main-header">TICKET DE RETOUR</h2>
+              (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
+            </div>
+          </td>
         @elseif($typeRapport === 'annulation ticket')
-            <td colspan="2" style="text-align: center;">
-                <h2>TICKET D'ANNULATION</h2>
-                (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
-            </td>
+          <td colspan="2" style="text-align: center;">
+            <div style="text-align: center;">
+              <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
+              <h2 class="main-header">TICKET D'ANNULATION</h2>
+              (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
+            </div>
+          </td>
         @else
-            <td colspan="2" style="text-align: center;">
-                <h2>TICKET DE SORTIE</h2>
-                (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
-            </td>
+          <td colspan="2" style="text-align: center;">
+            <div style="text-align: center;">
+              <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
+              <h2 class="main-header">TICKET DE SORTIE</h2>
+              (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
+            </div>
+          </td>
         @endif
       </tr>
     </table>
