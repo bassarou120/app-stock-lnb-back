@@ -161,7 +161,34 @@
         }
 
 
+        /* Styles pour le pied de page logiciel */
+    .software-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 12mm;
+      border-top: 1px solid #ccc;
+      background-color: #f9f9f9;
+      padding: 2mm 5mm;
+      font-size: 8pt;
+      color: #666;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+    }
 
+    .software-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .print-info {
+      text-align: right;
+      font-size: 7pt;
+    }
 
 
   </style>
@@ -396,6 +423,23 @@
                     </td>
                 </tr>
             </table>
+
+            <!-- Pied de page logiciel -->
+            <div class="software-footer">
+                <div class="software-info">
+                    <div class="software-logo">LNB- Gestion De Stock & Parc</div>
+                    <div class="software-details">
+                        Système de Gestion de Stock - Version 1.0 |
+                        Développé pour LNB-Lotterie National du Bénin SA
+                    </div>
+                </div>
+                <div class="print-info" style="margin-top: -15px;">
+                    Document généré le {{ date('d/m/Y à H:i:s') }}<br>
+                    <!-- Utilisateur: {{ auth()->user()->name ?? 'Système' }}<br> -->
+                    Page générée par LNB- Gestion De Stock & Parc
+                </div>
+            </div>
+            <!-- Fin Pied de page logiciel -->
         </div>
 
 </body>
