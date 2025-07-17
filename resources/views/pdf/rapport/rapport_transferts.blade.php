@@ -97,7 +97,34 @@ th, td {
         display: block;
         }
 
-        /* Fin css pour l'entete gauche droite */
+            /* Styles pour le pied de page logiciel */
+    .software-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 12mm;
+      border-top: 1px solid #ccc;
+      background-color: #f9f9f9;
+      padding: 2mm 5mm;
+      font-size: 8pt;
+      color: #666;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .software-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .print-info {
+      text-align: right;
+      font-size: 7pt;
+    }
 
   </style>
 
@@ -112,16 +139,20 @@ th, td {
       <p style="margin: 2px 0;">LNB - Lotterie Nationale du Bénin SA</p>
     </td>
     <td style="width: 30%; text-align: right; vertical-align: top; border: none;">
-      <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
       <p style="margin: 2px 0;">Rapport généré le: {{ date('d/m/Y H:i:s') }} (*)</p>
     </td>
   </tr>
 </table>
 
-
-
-  <h1 style="font-size:25px;text-align:center">Rapport des Transferts d'Immobilisations</h1>
-  <h2 style="font-size:18px;text-align:center">LNB-Stock & Parc</h2>
+    <div style="width: 100%; margin-bottom: 10px;text-align: center;">
+        <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;">
+        <h1 style="font-size: 20px; margin: 10px 0; font-weight: bold;">
+            Rapport des Transferts d'Immobilisations
+        </h1>
+        <h2 style="font-size: 16px; margin: 5px 0; font-weight: normal;">
+            LNB-Stock & Parc
+        </h2>
+    </div>
 
   @if($transferts->isEmpty())
     <p class="no-data">Aucun transfert d'immobilisation trouvé pour les critères de recherche spécifiés.</p>
@@ -168,6 +199,23 @@ th, td {
   </div>
 
   @endif
+
+      <!-- Pied de page logiciel -->
+    <div class="software-footer">
+        <div class="software-info">
+            <div class="software-logo">LNB- Gestion De Stock & Parc</div>
+            <div class="software-details">
+                Système de Gestion de Stock - Version 1.0 |
+                Développé pour LNB-Lotterie National du Bénin SA
+            </div>
+        </div>
+        <div class="print-info" style="margin-top: -15px;">
+            Document généré le {{ date('d/m/Y à H:i:s') }}<br>
+            <!-- Utilisateur: {{ auth()->user()->name ?? 'Système' }}<br> -->
+            Page générée par LNB- Gestion De Stock & Parc
+        </div>
+    </div>
+    <!-- Fin Pied de page logiciel -->
 
 </body>
 </html>
