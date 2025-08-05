@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('marque_id')->constrained('marques')->onDelete('cascade');
             $table->foreignId('modele_id')->constrained('modeles')->onDelete('cascade');
             $table->string('immatriculation');
-            $table->string('numero_chassis');
+            $table->string('numero_chassis')->nullable();
             $table->integer('kilometrage');
             $table->date('date_mise_en_service');
             $table->timestamps();

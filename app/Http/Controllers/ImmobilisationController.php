@@ -104,6 +104,7 @@ class ImmobilisationController extends Controller
             'observation' => 'nullable|string',
             'id_status_immo' => 'required|exists:status_immos,id',
             'montant_ttc' => 'nullable|integer',
+            'reference_estampillonnage' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -177,6 +178,7 @@ class ImmobilisationController extends Controller
             'observation' => 'nullable|string',
             'id_status_immo' => 'required|exists:status_immos,id',
             'montant_ttc' => 'nullable|integer',
+            'reference_estampillonnage' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
