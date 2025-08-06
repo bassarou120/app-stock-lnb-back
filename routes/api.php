@@ -216,3 +216,8 @@ Route::get('/imprimerSorties', [MouvementStockController::class, 'imprimerSortie
 Route::get('/assurance-expiresoon', [InterventionVehiculeController::class, 'getVehiculesAssuranceExpireSoon']);
 
 Route::get('/transferts/print/{id}', [TransfertController::class, 'printSingleTransfert']);
+
+Route::post('/vehicules/import', [VehiculeController::class, 'import']);
+Route::post('/immobilisations/import', [ImmobilisationController::class, 'import']);
+
+//

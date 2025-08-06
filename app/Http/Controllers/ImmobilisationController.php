@@ -7,6 +7,16 @@ use App\Http\Controllers\Controller;
 use App\Models\Immobilisation;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Parametrage\Bureau;
+use App\Models\Parametrage\Employe;
+use App\Models\Parametrage\Fournisseur;
+use App\Models\Parametrage\GroupeTypeImmo;
+use App\Models\Parametrage\SousTypeImmo;
+use App\Models\Parametrage\StatusImmo;
+use App\Models\Vehicule;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+
+
 
 class ImmobilisationController extends Controller
 {
@@ -242,4 +252,96 @@ class ImmobilisationController extends Controller
 
         return $pdf->download('liste_immobilisations.pdf');
     }
+
+    public function import(Request $request)
+    {
+        // 1️⃣ Validation
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|mimes:xlsx,xls',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // 2️⃣ Charger le fichier
+        $spreadsheet = IOFactory::load($request->file('file'));
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray();
+
+        // 3️⃣ Boucler sur les lignes (en ignorant la première ligne d'entêtes)
+        foreach ($rows as $index => $row) {
+            if ($index === 0) continue; // Ignore header
+
+            // 🛡️ Vérifie que la ligne a bien au moins 21 colonnes
+            if (count($row) < 20) {
+                // Tu peux logguer ou ignorer cette ligne
+                \Log::warning("Ligne $index ignorée : colonnes insuffisantes (" . count($row) . ")");
+                echo "Ligne $index ignorée : colonnes insuffisantes (" . count($row) . ")";
+                continue;
+            }
+
+            $bureau = $row[0];
+            $employe_id = $row[1];
+            $date_mouvement = $row[2];
+            $fournisseur = $row[3];
+            $designation = $row[4];
+            $isVehicule = $row[5];
+            $vehicule = $row[6];
+            $code = $row[7];
+            $groupe_type_immo = $row[8];
+            $sous_type_immo = $row[9];
+            $duree_amorti = $row[10];
+            $etat = $row[11];
+            $taux_ammortissement = $row[12];
+            $duree_ammortissement = $row[13];
+            $date_acquisition = $row[14];
+            $date_mise_en_service = $row[15];
+            $observation = $row[16];
+            $status_immo = $row[17];
+            $montant_ttc = $row[18];
+            $reference_estampillonnage = $row[19];
+
+
+            // 🔎 Trouver les IDs correspondants
+            $bureau_id = Bureau::firstOrCreate(['libelle_bureau' => $bureau]);
+            $fournisseur_id = Fournisseur::firstOrCreate(['nom' => $fournisseur]);
+            $vehicule_id = null;
+            $id_groupe_type_immo = GroupeTypeImmo::firstOrCreate(['libelle' => $groupe_type_immo, 'compte'=> 000000]);
+            $id_sous_type_immo = SousTypeImmo::firstOrCreate(['libelle' => $sous_type_immo]);
+            $id_status_immo = StatusImmo::firstOrCreate(['libelle_status_immo' => $status_immo]);
+
+
+            //  Créer l'immo
+            Immobilisation::create([
+                'bureau_id' => $bureau_id->id,
+                'employe_id' => $employe_id,
+                'date_mouvement' => \Carbon\Carbon::createFromFormat('m/d/Y', $date_mouvement)->format('Y-m-d'),
+                'fournisseur_id' => $fournisseur_id->id,
+                'designation' => $designation,
+                'isVehicule' => false,
+                'vehicule_id' => null,
+                'code' => $code,
+                'id_groupe_type_immo' => $id_groupe_type_immo->id,
+                'id_sous_type_immo' => $id_sous_type_immo->id,
+                'duree_amorti' => $duree_amorti,
+                'etat' => $etat,
+                'taux_ammortissement' => $taux_ammortissement,
+                'duree_ammortissement' => $duree_ammortissement,
+                'date_acquisition' => \Carbon\Carbon::createFromFormat('m/d/Y', $date_acquisition)->format('Y-m-d'),
+                'date_mise_en_service' =>  \Carbon\Carbon::createFromFormat('m/d/Y', $date_mise_en_service)->format('Y-m-d'),
+                'observation' => $observation,
+                'id_status_immo' => $id_status_immo->id,
+                'montant_ttc' => $montant_ttc,
+                'reference_estampillonnage' => $reference_estampillonnage,
+            ]);
+        }
+
+        return response()->json(['message' => 'Import réussi !']);
+    }
+
+
+
+
+
 }
