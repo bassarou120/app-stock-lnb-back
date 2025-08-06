@@ -18,6 +18,135 @@ class VoitureSeeder extends Seeder
     {
         $vehicules = [];
 
+        $vehicules =  [
+
+        [
+            'immatriculation' => 'BP 9157 RB',
+            'marque_id' => 22,
+            'puissance' => '11 CV',
+            'places_assises' => '5',
+            'energie' => 'Essence',
+            'date_mise_en_service' => '2018-12-20',
+            'kilometrage' =>   100000,
+            'numero_chassis' => '1234567890'
+
+        ],
+
+        [
+            'immatriculation' => 'BS 2905 RB',
+            'marque_id' => 21,
+            'puissance' => '26 CV',
+            'places_assises' => 2,
+            'energie' => 'Essence',
+            'date_mise_en_service' => '2019-08-12',
+            'kilometrage' =>   100000,
+            'numero_chassis' => '1234567890'
+        ],
+
+        [
+            'immatriculation' => 'BX 5898 RB',
+            'marque_id' => 24,
+            'puissance' => '12 CV',
+            'places_assises' => 5,
+            'energie' => 'Gas oil',
+            'date_mise_en_service' => '2021-05-12',
+            'kilometrage' =>   100000,
+            'numero_chassis' => '1234567890'
+        ],
+
+        [
+            'immatriculation' => 'BX 5899 RB',
+            'marque_id' => 24,
+            'puissance' => '12 CV',
+            'places_assises' => 5,
+            'energie' => 'Gas oil',
+            'date_mise_en_service' => '2021-05-13',
+            'kilometrage' =>   100000,
+            'numero_chassis' => '1234567890'
+        ],
+
+        [
+            'immatriculation' => 'BX 5903 RB',
+            'marque_id' => 24,
+            'puissance' => '12 CV',
+            'places_assises' => 5,
+            'energie' => 'Gas oil',
+            'date_mise_en_service' => '2021-05-14',
+            'kilometrage' =>   100000,
+            'numero_chassis' => '1234567890'
+        ],
+
+
+        [
+            'immatriculation' => 'BX 5904 RB',
+            'marque_id' => 24,
+            'puissance' => '12 CV',
+            'places_assises' => 5,
+            'energie' => 'Gas oil',
+            'date_mise_en_service' => '2021-05-12',
+            'kilometrage' =>   100000,
+            'numero_chassis' => '1234567890'
+        ],
+
+
+        [
+            'immatriculation' => 'BX 6153 RB',
+            'marque_id' => 24,
+            'puissance' => '12 CV',
+            'places_assises' => 5,
+            'energie' => 'Gas oil',
+            'date_mise_en_service' => '2021-05-13',
+            'kilometrage' =>   100000,
+            'numero_chassis' => '1234567890'
+        ],
+
+        [
+            'immatriculation' => 'BY 5200 RB',
+            'marque_id' => 23,
+            'puissance' => '12 CV',
+            'places_assises' => 7,
+            'energie' => 'Essence',
+            'date_mise_en_service' => '2021-09-11',
+            'kilometrage' =>   100000,
+            'numero_chassis' => '1234567890'
+        ],
+
+        [
+            'immatriculation' => 'BY 5171 RB',
+            'marque_id' => 23,
+            'puissance' => '12 CV',
+            'places_assises' => 7,
+            'energie' => 'Essence',
+            'date_mise_en_service' => '2021-09-11',
+            'kilometrage' =>   100000,
+            'numero_chassis' => '1234567890'
+        ],
+
+            [
+            'immatriculation' => 'BY 5179 RB',
+            'marque_id' => 23,
+            'puissance' => '12 CV',
+            'places_assises' => 7,
+            'energie' => 'Essence',
+            'date_mise_en_service' => '2021-09-11',
+            'kilometrage' =>   100000,
+            'numero_chassis' => '1234567890'
+        ],
+
+    ];
+
+
+
+
+
+
+
+
+
+
+
+
+
         for ($i = 0; $i < 8; $i++) {
             $immatriculation = strtoupper(Str::random(2)) . '-' . rand(1000, 9999) . '-' . 'BJ';
             $numero_chassis = 'BJ' . strtoupper(Str::random(14));

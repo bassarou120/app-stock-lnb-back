@@ -35,6 +35,11 @@ class MarqueSeeder extends Seeder
             ['libelle' => 'Suzuki'],
             ['libelle' => 'Subaru'],
             ['libelle' => 'Fiat'],
+
+            ['libelle' => 'CAMION IVECO'],
+            ['libelle' => 'HONDA CR_V'],
+            ['libelle' => 'HYUNDAI ACCENT'],
+            ['libelle' => 'TOYOTA DOUBLE CABINE'],
         ];
 
         foreach ($marques as $marque) {
