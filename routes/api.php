@@ -219,5 +219,6 @@ Route::get('/transferts/print/{id}', [TransfertController::class, 'printSingleTr
 
 Route::post('/vehicules/import', [VehiculeController::class, 'import']);
 Route::post('/immobilisations/import', [ImmobilisationController::class, 'import']);
+Route::post('/article/import', [ArticleController::class, 'import']);
 
 //

@@ -16,6 +16,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Illuminate\Support\Facades\Response;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 
 class ArticleController extends Controller
@@ -254,24 +255,85 @@ class ArticleController extends Controller
 
 
     public function exportArticlesExcel()
-{
-    $articles = Article::with(['categorie', 'stock'])->get()->map(function ($article) {
-        return [
-            'Article'           => $article->libelle ?? '-',
-            'Description'       => $article->description ?? '-',
-            'Catégorie'         => $article->categorie->libelle_categorie_article ?? '-',
-            'Quantité Actuelle' => $article->stock->Qte_actuel ?? 0,
-            'Stock d\'alerte'   => $article->stock_alerte ?? '-',
-            'Date de création'  => $article->created_at ? $article->created_at->format('Y-m-d') : '-',
-        ];
-    })->toArray();
+    {
+        $articles = Article::with(['categorie', 'stock'])->get()->map(function ($article) {
+            return [
+                'Article'           => $article->libelle ?? '-',
+                'Description'       => $article->description ?? '-',
+                'Catégorie'         => $article->categorie->libelle_categorie_article ?? '-',
+                'Quantité Actuelle' => $article->stock->Qte_actuel ?? 0,
+                'Stock d\'alerte'   => $article->stock_alerte ?? '-',
+                'Date de création'  => $article->created_at ? $article->created_at->format('Y-m-d') : '-',
+            ];
+        })->toArray();
 
-    \Excel::create('etat_du_stock', function($excel) use ($articles) {
-        $excel->sheet('Stock', function($sheet) use ($articles) {
-            // Ajoute les données avec les en-têtes automatiquement
-            $sheet->fromArray($articles);
-        });
-    })->download('xlsx');
-}
+        \Excel::create('etat_du_stock', function($excel) use ($articles) {
+            $excel->sheet('Stock', function($sheet) use ($articles) {
+                // Ajoute les données avec les en-têtes automatiquement
+                $sheet->fromArray($articles);
+            });
+        })->download('xlsx');
+    }
+
+        public function import(Request $request)
+    {
+        // 1️⃣ Validation
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|mimes:xlsx,xls',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // 2️⃣ Charger le fichier
+        $spreadsheet = IOFactory::load($request->file('file'));
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray();
+
+        // 3️⃣ Boucler sur les lignes (en ignorant la première ligne d'entêtes)
+        foreach ($rows as $index => $row) {
+            if ($index === 0) continue; // Ignore l'en-tête
+
+            // 🛡️ Vérifie que la ligne a au moins 5 colonnes
+            if (count($row) < 5) {
+                \Log::warning("Ligne $index ignorée : colonnes insuffisantes (" . count($row) . ")");
+                echo "Ligne $index ignorée : colonnes insuffisantes (" . count($row) . ")";
+                continue;
+            }
+
+            $code_article = trim($row[0]);
+            $designation_article = trim($row[1]);
+            $categorie_libelle = trim($row[2]);
+            $description = trim($row[3]);
+            $stock_alert = trim($row[4]);
+
+            // ❌ Vérifie si un article avec le même code existe déjà
+            $articleExistant = Article::where('code_article', $code_article)->first();
+
+            if ($articleExistant) {
+                \Log::info("Ligne $index ignorée : article avec code '$code_article' déjà existant.");
+                echo "Ligne $index ignorée : article avec code '$code_article' déjà existant.<br>";
+                continue;
+            }
+
+            // 🔎 Récupère ou crée la catégorie
+            $categorie = CategorieArticle::firstOrCreate([
+                'libelle_categorie_article' => $categorie_libelle
+            ]);
+
+            // ✅ Crée l’article
+            Article::create([
+                'id_cat' => $categorie->id,
+                'libelle' => $designation_article,
+                'code_article' => $code_article,
+                'description' => $description,
+                'stock_alerte' => $stock_alert,
+            ]);
+        }
+
+
+        return response()->json(['message' => 'Import réussi !']);
+    }
 
 }
