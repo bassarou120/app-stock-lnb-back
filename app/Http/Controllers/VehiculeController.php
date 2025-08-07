@@ -156,7 +156,7 @@ class VehiculeController extends Controller
         if ($index === 0) continue; // Ignore header
 
         $immatriculation = $row[0];
-        $numero_chassis = $row[1];
+        $numero_chassis = $row[1] ?? "";
         $kilometrage = $row[2];
         $date_mise_en_service = $row[3];
         $marqueNom = $row[4];
@@ -173,7 +173,7 @@ class VehiculeController extends Controller
 
         // ✅ Vérifier si la voiture existe déjà
         $vehiculeExiste = Vehicule::where('immatriculation', $immatriculation)
-            ->orWhere('numero_chassis', $numero_chassis)
+//            ->orWhere('numero_chassis', $numero_chassis)
             ->exists();
 
         if ($vehiculeExiste) {
