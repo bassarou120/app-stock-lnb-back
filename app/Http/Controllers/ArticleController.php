@@ -284,7 +284,6 @@ class ArticleController extends Controller
 
     public function import(Request $request)
     {
-        // 1️⃣ Validation
         $validator = Validator::make($request->all(), [
             'file' => 'required|mimes:xlsx,xls',
         ]);
@@ -293,54 +292,50 @@ class ArticleController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // 2️⃣ Charger le fichier
         $spreadsheet = IOFactory::load($request->file('file'));
         $sheet = $spreadsheet->getActiveSheet();
         $rows = $sheet->toArray();
 
-        // 3️⃣ Boucler sur les lignes (en ignorant la première ligne d'entêtes)
-        foreach ($rows as $index => $row) {
-            if ($index === 0) continue; // Ignore l'en-tête
+        $ignoredRows = [];
 
-            // 🛡️ Vérifie que la ligne a au moins 5 colonnes
+        foreach ($rows as $index => $row) {
+            if ($index === 0) continue;
+
             if (count($row) < 5) {
-                \Log::warning("Ligne $index ignorée : colonnes insuffisantes (" . count($row) . ")");
-                echo "Ligne $index ignorée : colonnes insuffisantes (" . count($row) . ")";
+                $ignoredRows[] = "Ligne $index ignorée : colonnes insuffisantes (" . count($row) . ")";
                 continue;
             }
 
             $code_article = trim($row[0]);
             $designation_article = trim($row[1]);
-            $categorie_libelle = trim($row[2]);
-            $description = trim($row[3]);
-            $stock_alert = trim($row[4]);
 
-            // ❌ Vérifie si un article avec le même code existe déjà
-            $articleExistant = Article::where('code_article', $code_article)->first();
+            // Vérifie si le code ou le nom existe déjà
+            $articleExistant = Article::where('code_article', $code_article)
+                ->orWhere('libelle', $designation_article)
+                ->first();
 
             if ($articleExistant) {
-                \Log::info("Ligne $index ignorée : article avec code '$code_article' déjà existant.");
-                echo "Ligne $index ignorée : article avec code '$code_article' déjà existant.<br>";
+                $ignoredRows[] = "Ligne $index ignorée : article avec code '$code_article' où le nom '$designation_article' déjà existant.";
                 continue;
             }
 
-            // 🔎 Récupère ou crée la catégorie
             $categorie = CategorieArticle::firstOrCreate([
-                'libelle_categorie_article' => $categorie_libelle
+                'libelle_categorie_article' => trim($row[2])
             ]);
 
-            // ✅ Crée l’article
             Article::create([
                 'id_cat' => $categorie->id,
                 'libelle' => $designation_article,
                 'code_article' => $code_article,
-                'description' => $description,
-                'stock_alerte' => $stock_alert,
+                'description' => trim($row[3]),
+                'stock_alerte' => trim($row[4]),
             ]);
         }
 
-
-        return response()->json(['message' => 'Import réussi !']);
+        return response()->json([
+            'message' => 'Import terminé !',
+            'ignored' => $ignoredRows
+        ]);
     }
 
 }
