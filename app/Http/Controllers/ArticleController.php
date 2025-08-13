@@ -101,6 +101,13 @@ class ArticleController extends Controller
  *     @OA\Response(response=422, description="Erreur de validation")
  * )
  */
+
+    public function show(Article $article)
+    {
+
+    }
+
+
     public function storeBatch(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -275,7 +282,7 @@ class ArticleController extends Controller
         })->download('xlsx');
     }
 
-        public function import(Request $request)
+    public function import(Request $request)
     {
         // 1️⃣ Validation
         $validator = Validator::make($request->all(), [
