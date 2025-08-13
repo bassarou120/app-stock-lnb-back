@@ -270,15 +270,18 @@ class ImmobilisationController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         $rows = $sheet->toArray();
 
+        // Tableau pour stocker les lignes ignorées
+        $ignoredRows = [];
+
         // 3️⃣ Boucler sur les lignes (en ignorant la première ligne d'entêtes)
         foreach ($rows as $index => $row) {
             if ($index === 0) continue; // Ignore header
 
-            // 🛡️ Vérifie que la ligne a bien au moins 21 colonnes
+            // 🛡️ Vérifie que la ligne a bien au moins 22 colonnes
             if (count($row) < 22) {
-                // Tu peux logguer ou ignorer cette ligne
-                \Log::warning("Ligne $index ignorée : colonnes insuffisantes (" . count($row) . ")");
-                echo "Ligne $index ignorée : colonnes insuffisantes (" . count($row) . ")";
+                $msg = "Ligne $index ignorée : colonnes insuffisantes (" . count($row) . ")";
+                \Log::warning($msg);
+                $ignoredRows[] = $msg;
                 continue;
             }
 
@@ -288,10 +291,10 @@ class ImmobilisationController extends Controller
             $fournisseur = $row[3];
             $compte = $row[4];
             $type_immo = $row[5];
-            $designation = $row[6];
+            $designation = trim($row[6]);
             $isVehicule = $row[7];
             $vehicule = $row[8];
-            $code = $row[9];
+            $code = trim($row[9]);
             $groupe_type_immo = $row[10];
             $sous_type_immo = $row[11];
             $duree_amorti = $row[12];
@@ -305,64 +308,66 @@ class ImmobilisationController extends Controller
             $montant_ttc = $row[20];
             $reference_estampillonnage = $row[21];
 
+            // 🔎 Vérification doublons EXACTEMENT comme pour les articles
+            $immobilisationExistante = Immobilisation::where('code', $code)
+                ->orWhere('designation', $designation)
+                ->first();
 
+            if ($immobilisationExistante) {
+                $msg = "Ligne $index ignorée : immobilisation avec code '$code' ou désignation '$designation' existe déjà.";
+                \Log::info($msg);
+                $ignoredRows[] = $msg;
+                continue;
+            }
 
-
-            // 🔎 Trouver les IDs correspondants
+            // 🔍 Trouver les IDs correspondants
             $bureau_id = Bureau::firstOrCreate(['libelle_bureau' => $bureau]);
             $fournisseur_id = Fournisseur::firstOrCreate(['nom' => $fournisseur]);
-            $vehicule_id = null;
             $type_immo_id = TypeImmo::firstOrCreate(['libelle_typeImmo' => $type_immo, 'compte' => $compte])->id;
 
             if (!empty($groupe_type_immo)) {
-                $id_groupe_type_immo = GroupeTypeImmo::where('libelle', $groupe_type_immo)->first();
-
-                if (!$id_groupe_type_immo) {
-                    $id_groupe_type_immo = GroupeTypeImmo::create([
-                        'libelle' => $groupe_type_immo,
-                        'compte' => $compte
-                    ]);
-                }
+                $id_groupe_type_immo = GroupeTypeImmo::firstOrCreate([
+                    'libelle' => $groupe_type_immo,
+                    'compte' => $compte
+                ]);
             } else {
-                \Log::warning("Ligne $index ignorée : groupe type immo vide.");
-                echo "Ligne $index ignorée : groupe type immo vide.<br>";
+                $msg = "Ligne $index ignorée : groupe type immo vide.";
+                \Log::warning($msg);
+                $ignoredRows[] = $msg;
                 continue;
             }
-            $id_sous_type_immo = SousTypeImmo::firstOrCreate(['libelle' => $sous_type_immo, 'compte'=> $compte, 'id_type_immo' =>  $type_immo_id]);
+
+            $id_sous_type_immo = SousTypeImmo::firstOrCreate([
+                'libelle' => $sous_type_immo,
+                'compte'=> $compte,
+                'id_type_immo' => $type_immo_id
+            ]);
+
             $id_status_immo = StatusImmo::firstOrCreate(['libelle_status_immo' => $status_immo]);
-            // Séparer le nom complet en parties
-            $parts = explode(' ', $employe_fullname);
-            $nom = array_shift($parts); // 1er mot
-            $prenom = implode(' ', $parts); // Tout le reste
 
-            // ⚠️ Tu peux ajouter une vérification pour éviter de créer un employé incomplet
+            // 👤 Découper nom et prénom
+            $parts = explode(' ', $employe_fullname);
+            $nom = array_shift($parts);
+            $prenom = implode(' ', $parts);
+
             if (empty($nom) || empty($prenom)) {
-                \Log::warning("Nom ou prénom manquant à la ligne $index : $employe_fullname");
+                $msg = "Nom ou prénom manquant à la ligne $index : $employe_fullname";
+                \Log::warning($msg);
+                $ignoredRows[] = $msg;
                 continue;
             }
 
-            // Cherche ou crée l'employé
             $employe = Employe::firstOrCreate([
                 'nom' => $nom,
                 'prenom' => $prenom
             ], [
-                'email' => null // ou d'autres champs par défaut si nécessaires
+                'email' => null
             ]);
 
-            $employe_id = $employe->id;
-
-            $existing = Immobilisation::where('code', $code)->first();
-
-            if ($existing) {
-                \Log::info("Ligne $index ignorée : immobilisation avec code '$code' existe déjà.");
-                echo "Ligne $index ignorée : immobilisation avec code '$code' existe déjà.<br>";
-                continue;
-            }
-
-            //  Créer l'immo
+            // ✅ Créer l'immo
             Immobilisation::create([
                 'bureau_id' => $bureau_id->id,
-                'employe_id' => $employe_id,
+                'employe_id' => $employe->id,
                 'date_mouvement' => \Carbon\Carbon::createFromFormat('m/d/Y', $date_mouvement)->format('Y-m-d'),
                 'fournisseur_id' => $fournisseur_id->id,
                 'designation' => $designation,
@@ -376,7 +381,7 @@ class ImmobilisationController extends Controller
                 'taux_ammortissement' => $taux_ammortissement,
                 'duree_ammortissement' => $duree_ammortissement,
                 'date_acquisition' => \Carbon\Carbon::createFromFormat('m/d/Y', $date_acquisition)->format('Y-m-d'),
-                'date_mise_en_service' =>  \Carbon\Carbon::createFromFormat('m/d/Y', $date_mise_en_service)->format('Y-m-d'),
+                'date_mise_en_service' => \Carbon\Carbon::createFromFormat('m/d/Y', $date_mise_en_service)->format('Y-m-d'),
                 'observation' => $observation,
                 'id_status_immo' => $id_status_immo->id,
                 'montant_ttc' => $montant_ttc,
@@ -384,11 +389,10 @@ class ImmobilisationController extends Controller
             ]);
         }
 
-        return response()->json(['message' => 'Import réussi !']);
+        return response()->json([
+            'message' => 'Import terminé !',
+            'ignored' => $ignoredRows
+        ]);
     }
-
-
-
-
 
 }
