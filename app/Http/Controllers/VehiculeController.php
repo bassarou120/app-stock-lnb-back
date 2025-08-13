@@ -134,56 +134,71 @@ class VehiculeController extends Controller
     }
 
     public function import(Request $request)
-    {
-        // 1️⃣ Validation
-        $validator = Validator::make($request->all(), [
-            'file' => 'required|mimes:xlsx,xls',
+{
+    // 1️⃣ Validation
+    $validator = Validator::make($request->all(), [
+        'file' => 'required|mimes:xlsx,xls',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
+    }
+
+    // 2️⃣ Charger le fichier
+    $spreadsheet = IOFactory::load($request->file('file'));
+    $sheet = $spreadsheet->getActiveSheet();
+    $rows = $sheet->toArray();
+
+    $nbIgnored = 0; // Compter les véhicules ignorés
+
+    // 3️⃣ Boucler sur les lignes (en ignorant la première ligne d'entêtes)
+    foreach ($rows as $index => $row) {
+        if ($index === 0) continue; // Ignore header
+
+        $immatriculation = $row[0];
+        $numero_chassis = $row[1];
+        $kilometrage = $row[2];
+        $date_mise_en_service = $row[3];
+        $marqueNom = $row[4];
+        $modeleNom = $row[5];
+        $puissance = $row[6];
+        $places_assises = $row[7];
+        $energie = $row[8];
+
+        // 🔎 Trouver les IDs correspondants
+        $marque = Marque::firstOrCreate(['libelle' => $marqueNom]);
+        $modele = Modele::firstOrCreate([
+            'libelle_modele' => $modeleNom,
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        // ✅ Vérifier si la voiture existe déjà
+        $vehiculeExiste = Vehicule::where('immatriculation', $immatriculation)
+            ->orWhere('numero_chassis', $numero_chassis)
+            ->exists();
+
+        if ($vehiculeExiste) {
+            $nbIgnored++;
+            continue; // Ignore cette ligne si déjà existante
         }
 
-        // 2️⃣ Charger le fichier
-        $spreadsheet = IOFactory::load($request->file('file'));
-        $sheet = $spreadsheet->getActiveSheet();
-        $rows = $sheet->toArray();
-
-        // 3️⃣ Boucler sur les lignes (en ignorant la première ligne d'entêtes)
-        foreach ($rows as $index => $row) {
-            if ($index === 0) continue; // Ignore header
-
-            $immatriculation = $row[0];
-            $numero_chassis = $row[1] ?? '';
-            $kilometrage = $row[2];
-            $date_mise_en_service = $row[3];
-            $marqueNom = $row[4];
-            $modeleNom = $row[5];
-            $puissance = $row[6];
-            $places_assises = $row[7];
-            $energie = $row[8];
-
-            // 🔎 Trouver les IDs correspondants
-            $marque = Marque::firstOrCreate(['libelle' => $marqueNom]);
-            $modele = Modele::firstOrCreate([
-                'libelle_modele' => $modeleNom,
-            ]);
-
-            //  Créer le véhicule
-            Vehicule::create([
-                'immatriculation' => $immatriculation,
-                'numero_chassis' => $numero_chassis,
-                'kilometrage' => $kilometrage,
-                'date_mise_en_service' => $date_mise_en_service,
-                'puissance' => $puissance, 
-                'places_assises' => $places_assises,
-                'energie' => $energie,
-                'marque_id' => $marque->id,
-                'modele_id' => $modele->id,
-            ]);
-        }
-
-        return response()->json(['message' => 'Import réussi !']);
+        // 🚗 Créer le véhicule
+        Vehicule::create([
+            'immatriculation' => $immatriculation,
+            'numero_chassis' => $numero_chassis,
+            'kilometrage' => $kilometrage,
+            'date_mise_en_service' => $date_mise_en_service,
+            'puissance' => $puissance,
+            'places_assises' => $places_assises,
+            'energie' => $energie,
+            'marque_id' => $marque->id,
+            'modele_id' => $modele->id,
+        ]);
     }
+
+    return response()->json([
+        'message' => 'Import terminé',
+        'vehicules_ignores' => $nbIgnored
+    ]);
+}
 
 }
