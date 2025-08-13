@@ -154,7 +154,7 @@ class VehiculeController extends Controller
             if ($index === 0) continue; // Ignore header
 
             $immatriculation = $row[0];
-            $numero_chassis = $row[1];
+            $numero_chassis = $row[1] ?? '';
             $kilometrage = $row[2];
             $date_mise_en_service = $row[3];
             $marqueNom = $row[4];
