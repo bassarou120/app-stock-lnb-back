@@ -114,7 +114,7 @@ class ArticleController extends Controller
             'articles' => 'required|array',
             'articles.*.id_cat' => 'required|exists:categorie_articles,id',
             'articles.*.libelle' => 'required|string|max:255',
-            'articles.*.code_article' => 'required|string|max:255|unique:articles,code_article',
+            // 'articles.*.code_article' => 'required|string|max:255|unique:articles,code_article',
             'articles.*.description' => 'string|max:255',
             'articles.*.stock_alerte' => 'required|integer|min:0',
         ]);
@@ -129,10 +129,24 @@ class ArticleController extends Controller
         DB::beginTransaction();
         try {
             foreach ($request->articles as $articleData) {
+
+                // Récupérer le dernier article créé
+            $lastArticle = Article::orderBy('id', 'desc')->first();
+            $lastNumber = $lastArticle ? (int) substr($lastArticle->code_article, 4, 5) : 0;
+
+            // Incrémenter
+            $newNumber = str_pad($lastNumber + 1, 5, '0', STR_PAD_LEFT);
+
+            // Année (2 derniers chiffres)
+            $year = date('y');
+
+            // Générer code article
+            $codeArticle = "ART-{$newNumber}-{$year}";
+
                 $article = Article::create([
                     'id_cat' => $articleData['id_cat'],
                     'libelle' => $articleData['libelle'],
-                    'code_article' => $articleData['code_article'],
+                    'code_article' => $codeArticle,
                     'description' => $articleData['description'],
                     'stock_alerte' => $articleData['stock_alerte'],
                 ]);
@@ -192,7 +206,7 @@ class ArticleController extends Controller
         $validator = Validator::make($request->all(), [
             'id_cat' => 'required|exists:categorie_articles,id',
             'libelle' => 'required|string|max:255',
-            'code_article' => 'required|string|max:255',
+            // 'code_article' => 'required|string|max:255',
             'description' => 'string|max:255',
             'stock_alerte' => 'required|integer|min:0',
         ]);
@@ -208,7 +222,7 @@ class ArticleController extends Controller
             'id_cat' => $request->id_cat,
             'libelle' => $request->libelle,
             'description' => $request->description,
-            'code_article' => $request->code_article,
+            // 'code_article' => $request->code_article,
             'stock_alerte' => $request->stock_alerte,
         ]);
 
