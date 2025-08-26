@@ -22,6 +22,7 @@ class Vehicule extends Model
         'puissance',
         'places_assises',
         'energie',
+        'carte_grise'
     ];
 
     public function marque()
