@@ -221,3 +221,9 @@ Route::post('/vehicules/import', [VehiculeController::class, 'import']);
 
 Route::post('/articles/import', [ArticleController::class, 'import']);
 Route::post('/immobilisations/import', [ImmobilisationController::class, 'import']);
+
+Route::get('/generer-fiche-demande/{code_mouvement}', [MouvementStockController::class, 'genererFicheDemande']);
+
+Route::get('/mouvements/fiche/{id}', [MouvementStockController::class, 'genererFicheIndividuelle']);
+
+Route::post('/demande/valid-upload-signe', [MouvementStockController::class, 'validAndUploadSigne']);
