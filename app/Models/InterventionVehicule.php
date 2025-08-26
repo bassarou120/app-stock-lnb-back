@@ -41,6 +41,7 @@ class InterventionVehicule extends Model
         'date_intervention',
         'type_intervention_id', // Ajout de la clé étrangère
         'date_expiration',
+        'piece_jointe'
     ];
 
     // AJOUTÉ: Gérer date_expiration comme une date Carbon
