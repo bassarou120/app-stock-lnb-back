@@ -288,8 +288,8 @@
       <table>
         <thead>
             <tr>
-                <th>Article</th>
                 <th>Code</th>
+                <th>Article</th>
                 <th>Description</th>
                 <th>Quantité Demandée</th>
                 <th>Quantité Accordée</th>
@@ -299,8 +299,8 @@
         <tbody>
             @foreach ($details as $detail)
             <tr>
-                <td>{{ $detail->article->libelle ?? 'N/A' }}</td>
                 <td>{{ $detail->article->code_article ?? 'N/A' }}</td>
+                <td>{{ $detail->article->libelle ?? 'N/A' }}</td>
                 <td>{{ $detail->description ?? 'N/A' }}</td>
                 <td>{{ $detail->qteDemande }}</td>
                 <td>{{ $detail->qte }}</td>

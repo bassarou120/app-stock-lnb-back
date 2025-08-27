@@ -17,6 +17,8 @@ use Illuminate\Support\Str;
 use PDF;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Response;
+
 
 
 /**
@@ -1384,7 +1386,7 @@ class MouvementStockController extends Controller
     }
 
 
-    public function validAndUploadSigne(Request $request)
+    public function validAndUploadSigne_bon(Request $request)
     {
         // 1. Validation de la requête
         $validator = Validator::make($request->all(), [
@@ -1447,8 +1449,102 @@ class MouvementStockController extends Controller
         }
     }
 
+    public function validAndUploadSigne(Request $request)
+    {
+        // 1. Validation de la requête
+        $validator = Validator::make($request->all(), [
+            'demandevalidesigne' => 'required|file|mimes:pdf|max:2048',
+            'statut' => 'required|string',
+            'id' => 'sometimes|required_without:code_mouvement|integer|exists:mouvement_stocks,id',
+            'code_mouvement' => 'sometimes|required_without:id|string|exists:mouvement_stocks,code_mouvement',
+        ]);
 
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
 
+        // 2. Trouver l'enregistrement à mettre à jour
+        $itemToUpdate = null;
+        if ($request->has('id')) {
+            $itemToUpdate = MouvementStock::find($request->input('id'));
+        } elseif ($request->has('code_mouvement')) {
+            $itemToUpdate = MouvementStock::where('code_mouvement', $request->input('code_mouvement'))->first();
+        }
 
+        if (!$itemToUpdate) {
+            return response()->json(['message' => 'Demande non trouvée.'], 404);
+        }
+
+        // 3. Vérification du statut
+        if ($itemToUpdate->statut !== 'Accordé') {
+            return response()->json([
+                'message' => 'La demande doit d\'abord être "Accordé" avant de pouvoir être validée.'
+            ], 403);
+        }
+
+        // 4. Stockage du fichier et mise à jour
+        try {
+            $path = 'demandes_signees';
+            $fileName = time() . '_' . $request->file('demandevalidesigne')->getClientOriginalName();
+
+            // Stocke le fichier et met à jour la colonne en une seule ligne
+            $filePath = $request->file('demandevalidesigne')->storeAs($path, $fileName, 'public');
+
+            $itemToUpdate->demandevalidesigne = $filePath;
+            $itemToUpdate->statut = $request->input('statut');
+            $itemToUpdate->save();
+
+            return response()->json([
+                'message' => 'Demande validée et fichier signé téléchargé avec succès.',
+                'file_path' => Storage::url($itemToUpdate->demandevalidesigne),
+                'new_statut' => $itemToUpdate->statut
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erreur lors du téléchargement du fichier.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function viewFile(Request $request)
+    {
+        $idfichier = $request->query('idfichier');
+
+        // Décode l'URL
+        $decodedPath = urldecode($idfichier);
+
+        // Sécurise le chemin
+        $sanitizedPath = str_replace(['../', './'], '', $decodedPath);
+
+        // Vérifie si le fichier existe
+        if (!Storage::disk('public')->exists($sanitizedPath)) {
+            return response()->json(['error' => 'File not found.'], 404);
+        }
+
+        // Retourne le fichier
+        return Response::file(
+            Storage::disk('public')->path($sanitizedPath),
+            ['Content-Type' => Storage::disk('public')->mimeType($sanitizedPath)]
+        );
+    }
+
+    public function downloadGroupedFile($code_mouvement)
+    {
+        // 1. Logique pour trouver et/ou générer le fichier groupé.
+        // C'est ici que vous devrez implémenter la logique pour combiner
+        // les documents ou trouver le fichier PDF récapitulatif du groupe.
+        // Exemple de chemin de fichier, remplacez-le par votre propre logique.
+        $filePath = "demandes_signees/{$code_mouvement}_synthese.pdf";
+
+        // 2. Vérifie si le fichier existe
+        if (!Storage::disk('public')->exists($filePath)) {
+            return response()->json(['error' => 'File not found.'], 404);
+        }
+
+        // 3. Renvoie le fichier en tant que téléchargement
+        return Storage::download($filePath);
+    }
 
 }

@@ -229,3 +229,7 @@ Route::get('/generer-fiche-demande/{code_mouvement}', [MouvementStockController:
 Route::get('/mouvements/fiche/{id}', [MouvementStockController::class, 'genererFicheIndividuelle']);
 
 Route::post('/demande/valid-upload-signe', [MouvementStockController::class, 'validAndUploadSigne']);
+
+Route::get('/view-file', [MouvementStockController::class, 'viewFile']);
+Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController::class, 'downloadGroupedFile']);
+
