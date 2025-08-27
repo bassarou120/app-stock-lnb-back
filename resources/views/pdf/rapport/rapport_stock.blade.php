@@ -207,13 +207,13 @@
         @if($reportTypeLabel === 'd\'Entrée de Stock')
             <td style="width: 50%; text-align: right;">
                 Modèle n°1<br/>
-                Ordre d'Entrée N° ...........<br/>
+                Ordre d'Entrée N° {{ date('YmdHis') }}<br/>
                 <small>Rapport généré le: {{ date('d/m/Y H:i:s') }}</small>
             </td>
         @elseif($reportTypeLabel === 'de Sortie de Stock')
             <td style="width: 50%; text-align: right;">
                 Modèle n°1<br/>
-                Ordre de Sortie N° ...........<br/>
+                Ordre de Sortie N° {{ date('YmdHis') }}<br/>
                 <small>Rapport généré le: {{ date('d/m/Y H:i:s') }}</small>
             </td>
         @endif
