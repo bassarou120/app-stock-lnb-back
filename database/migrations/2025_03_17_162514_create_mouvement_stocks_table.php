@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreignId('id_Article')->constrained('articles')->onDelete('cascade');
             $table->foreignId('id_type_mouvement')->constrained('type_mouvements')->onDelete('cascade');
             $table->string('demandevalidesigne')->nullable();
+            $table->string('numero_fiche_demande')->nullable();
             $table->timestamps();
         });
     }
