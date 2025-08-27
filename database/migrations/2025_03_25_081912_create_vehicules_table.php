@@ -19,6 +19,9 @@ return new class extends Migration
             $table->string('numero_chassis')->nullable();
             $table->integer('kilometrage');
             $table->date('date_mise_en_service');
+            $table->integer('nbreannee_amortissement')->nullable()->default(5);
+            $table->string('date_amortissement')->nullable();
+
             $table->timestamps();
         });
     }

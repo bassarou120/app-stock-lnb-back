@@ -232,14 +232,25 @@ class InterventionVehiculeController extends Controller
             'date_intervention' => 'required|date',
             'type_intervention_id' => 'required|exists:type_interventions,id',
             'date_expiration' => 'nullable|date', // AJOUTÉ: Rendre date_expiration nullable et de type date
+            'piece_jointe' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:5120',
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
+        $data = $request->all();
+
+        // Si une pièce jointe est envoyée
+        if ($request->hasFile('piece_jointe')) {
+            $file = $request->file('piece_jointe');
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            $file->storeAs('piece_jointe_intervention', $fileName, 'public');
+            $data['piece_jointe']= 'storage/piece_jointe_intervention/' . $fileName;
+        }
+
         // Crée l'intervention avec toutes les données validées
-        $interventionVehicule = InterventionVehicule::create($request->all());
+        $interventionVehicule = InterventionVehicule::create($data);
 
         return new PostResource(true, 'intervention créée avec succès', $interventionVehicule);
    }

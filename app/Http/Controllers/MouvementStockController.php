@@ -14,6 +14,11 @@ use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use PDF;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Response;
+
 
 
 /**
@@ -237,6 +242,73 @@ class MouvementStockController extends Controller
 
         return new PostResource(true, 'Le mouvement d\'entrée de stock a été mis à jour avec succès !', $mouvement);
     }
+
+
+
+    public function genererFicheDemande($codeMouvement)
+    {
+        // Récupérer le groupe de mouvements de stock avec les relations nécessaires.
+        $mouvements = MouvementStock::with('article', 'employe', 'bureau')
+            ->where('code_mouvement', $codeMouvement)
+            ->get();
+
+        // Si aucun mouvement n'est trouvé, renvoyer une erreur 404
+        if ($mouvements->isEmpty()) {
+            abort(404, 'La demande de mouvement de stock spécifiée n\'existe pas.');
+        }
+
+        // Le demandeur et le responsable sont les mêmes pour tous les mouvements du groupe.
+        // Nous pouvons donc prendre le premier élément pour récupérer ces infos.
+        $mouvementPrincipal = $mouvements->first();
+
+        // Récupérer l'utilisateur actuellement connecté
+        $authUser = Auth::user();
+
+        // Créer les données à passer à la vue PDF
+        $data = [
+            'mouvement' => $mouvementPrincipal, // Informations générales de la demande
+            'details' => $mouvements, // Le tableau complet des articles de la demande
+            'authUser' => $authUser, // L'utilisateur connecté pour la signature
+        ];
+
+
+
+        // Charger la vue Blade pour le PDF et y passer les données
+        $pdf = PDF::loadView('pdf.demande_sortie', $data);
+
+        // Retourner le PDF en téléchargement
+        return $pdf->download('Fiche_Demande_Sortie_' . $codeMouvement . '.pdf');
+    }
+
+    public function genererFicheIndividuelle($id)
+    {
+        // Récupérer le mouvement de stock individuel avec les relations nécessaires.
+        $mouvement = MouvementStock::with('article', 'employe', 'bureau')
+            ->find($id);
+
+        // Si le mouvement n'est pas trouvé, renvoyer une erreur 404
+        if (!$mouvement) {
+            abort(404, 'Le mouvement de stock spécifié n\'existe pas.');
+        }
+
+        // Récupérer l'utilisateur actuellement connecté pour la section "traiteur"
+        $authUser = Auth::user();
+
+        // Créer les données à passer à la vue PDF
+        $data = [
+            'mouvement' => $mouvement, // Le mouvement de stock unique
+            'details' => collect([$mouvement]), // Mettre le mouvement dans une collection pour que la boucle HTML fonctionne
+            'authUser' => $authUser, // L'utilisateur connecté pour la signature
+        ];
+
+        // Charger la vue Blade pour le PDF et y passer les données
+        $pdf = PDF::loadView('pdf.demande_sortie', $data);
+
+        // Retourner le PDF en téléchargement
+        return $pdf->download('Fiche_Demande_Sortie_' . $mouvement->code_mouvement . '_' . $mouvement->id . '.pdf');
+    }
+
+
 
     /**
      * Recalcule le CMP pour tous les mouvements postérieurs à une date donnée
@@ -1090,6 +1162,132 @@ class MouvementStockController extends Controller
         ]);
     }
 
+    public function validerDemandeGroupee_original(Request $request)
+
+    {
+
+        $validator = Validator::make($request->all(), [
+
+            'code_mouvement' => 'required|string|exists:mouvement_stocks,code_mouvement',
+
+            'date_mouvement' => 'required|date',
+
+            'statut' => 'required|string',
+
+        ]);
+
+
+        if ($validator->fails()) {
+
+            return response()->json($validator->errors(), 422);
+
+        }
+
+
+        $code = $request->input('code_mouvement');
+
+        $dateMouvement = $request->input('date_mouvement');
+
+        $statut = $request->input('statut');
+
+
+        $mouvements = MouvementStock::where('code_mouvement', $code)->get();
+
+
+        foreach ($mouvements as $mouvement) {
+
+            $mouvement->statut = $statut;
+
+            $mouvement->date_mouvement = $dateMouvement;
+
+
+            if (strtolower($statut) === 'accordé') {
+
+                $qte = $mouvement->qteDemande;
+
+                $article = $mouvement->article;
+
+                $articleCode = $article ? $article->code_article : "inconnu";
+
+
+                // Vérifier la quantité disponible en stock
+
+                $stock = Stock::where('id_Article', $mouvement->id_Article)->latest()->first();
+
+
+                if (!$stock || $stock->Qte_actuel < $qte) {
+
+                    return response()->json([
+
+                        'error' => "Quantité insuffisante pour l'article {$articleCode}."
+
+                    ], 400);
+
+                }
+
+
+                // Mise à jour des quantités
+
+                $mouvement->qte = $qte;
+
+                $stock->Qte_actuel -= $qte;
+
+                $stock->save();
+
+
+                // Création de l'affectation
+
+                if (!empty($mouvement->id_employe) && !empty($mouvement->bureau_id)) {
+
+                    $type_affectation = TypeAffectation::where('libelle_type_affectation', "Affectation d'Article")->latest()->first();
+
+
+                    if ($type_affectation) {
+
+                        AffectationArticle::create([
+
+                            'description' => $mouvement->description,
+
+                            'id_article' => $mouvement->id_Article,
+
+                            'id_type_affectation' => $type_affectation->id,
+
+                            'id_bureau' => $mouvement->bureau_id,
+
+                            'id_employe' => $mouvement->id_employe,
+
+                            'id_mouvement' => $mouvement->id,
+
+                        ]);
+
+                    }
+
+                }
+
+            }
+
+
+            // Sauvegarde du mouvement (dans tous les cas)
+
+            $mouvement->save();
+
+        }
+
+
+        return response()->json([
+
+            'message' => "Toutes les demandes pour le code {$code} ont été traitées avec succès.",
+
+            'code_mouvement' => $code,
+
+            'nombre_demandes' => $mouvements->count()
+
+        ]);
+
+    }
+
+    // Fichier : app/Http/Controllers/DemandeController.php
+
     public function validerDemandeGroupee(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -1117,7 +1315,6 @@ class MouvementStockController extends Controller
                 $article = $mouvement->article;
                 $articleCode = $article ? $article->code_article : "inconnu";
 
-                // Vérifier la quantité disponible en stock
                 $stock = Stock::where('id_Article', $mouvement->id_Article)->latest()->first();
 
                 if (!$stock || $stock->Qte_actuel < $qte) {
@@ -1126,15 +1323,12 @@ class MouvementStockController extends Controller
                     ], 400);
                 }
 
-                // Mise à jour des quantités
                 $mouvement->qte = $qte;
                 $stock->Qte_actuel -= $qte;
                 $stock->save();
 
-                // Création de l'affectation
                 if (!empty($mouvement->id_employe) && !empty($mouvement->bureau_id)) {
                     $type_affectation = TypeAffectation::where('libelle_type_affectation', "Affectation d'Article")->latest()->first();
-
                     if ($type_affectation) {
                         AffectationArticle::create([
                             'description' => $mouvement->description,
@@ -1148,16 +1342,17 @@ class MouvementStockController extends Controller
                 }
             }
 
-            // Sauvegarde du mouvement (dans tous les cas)
             $mouvement->save();
         }
 
+        // Retourne une réponse JSON de succès pour Angular.
         return response()->json([
             'message' => "Toutes les demandes pour le code {$code} ont été traitées avec succès.",
-            'code_mouvement' => $code,
+            'code_mouvement' => $code, // Important: Renvoyez le code ici
             'nombre_demandes' => $mouvements->count()
         ]);
     }
+
 
 
 
@@ -1181,8 +1376,6 @@ class MouvementStockController extends Controller
     }
 
 
-
-
     // get qte disponible
     public function getQuantiteDisponible($idArticle)
     {
@@ -1193,8 +1386,165 @@ class MouvementStockController extends Controller
     }
 
 
+    public function validAndUploadSigne_bon(Request $request)
+    {
+        // 1. Validation de la requête
+        $validator = Validator::make($request->all(), [
+            'demandevalidesigne' => 'required|file|mimes:pdf|max:2048',
+            'statut' => 'required|string',
+            // Accepter soit l'ID d'une ligne, soit le code du groupe.
+            // On utilise required_without pour s'assurer qu'au moins un des deux est présent.
+            'id' => 'sometimes|required_without:code_mouvement|integer|exists:mouvement_stocks,id',
+            'code_mouvement' => 'sometimes|required_without:id|string|exists:mouvement_stocks,code_mouvement',
+        ]);
 
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
 
+        // 2. Trouver l'enregistrement à mettre à jour
+        $itemToUpdate = null;
+        if ($request->has('id')) {
+            // Si l'ID est fourni, on met à jour cette ligne précise
+            $itemToUpdate = MouvementStock::find($request->input('id'));
+        } elseif ($request->has('code_mouvement')) {
+            // Si le code de mouvement est fourni, on met à jour tous les éléments du groupe
+            // (Note: La logique de validation de groupe peut nécessiter de trouver tous les éléments
+            // et de les mettre à jour en boucle, mais pour l'instant, nous nous concentrons sur un seul élément)
+            $itemToUpdate = MouvementStock::where('code_mouvement', $request->input('code_mouvement'))->first();
+        }
 
+        if (!$itemToUpdate) {
+            return response()->json(['message' => 'Demande non trouvée.'], 404);
+        }
+
+        // 3. Vérification du statut
+        if ($itemToUpdate->statut !== 'Accordé') {
+            return response()->json([
+                'message' => 'La demande doit d\'abord être "Accordé" avant de pouvoir être validée.'
+            ], 403);
+        }
+
+        // 4. Stockage du fichier et mise à jour
+        try {
+            $path = 'demandes_signees';
+            $fileName = time() . '_' . $request->file('demandevalidesigne')->getClientOriginalName();
+            $request->file('demandevalidesigne')->storeAs($path, $fileName, 'public');
+
+            $itemToUpdate->demandevalidesigne = $path . '/' . $fileName;
+            $itemToUpdate->statut = $request->input('statut');
+            $itemToUpdate->save();
+
+            return response()->json([
+                'message' => 'Demande validée et fichier signé téléchargé avec succès.',
+                'file_path' => Storage::url($itemToUpdate->demandevalidesigne),
+                'new_statut' => $itemToUpdate->statut
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erreur lors du téléchargement du fichier.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function validAndUploadSigne(Request $request)
+    {
+        // 1. Validation de la requête
+        $validator = Validator::make($request->all(), [
+            'demandevalidesigne' => 'required|file|mimes:pdf|max:2048',
+            'statut' => 'required|string',
+            'id' => 'sometimes|required_without:code_mouvement|integer|exists:mouvement_stocks,id',
+            'code_mouvement' => 'sometimes|required_without:id|string|exists:mouvement_stocks,code_mouvement',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // 2. Trouver l'enregistrement à mettre à jour
+        $itemToUpdate = null;
+        if ($request->has('id')) {
+            $itemToUpdate = MouvementStock::find($request->input('id'));
+        } elseif ($request->has('code_mouvement')) {
+            $itemToUpdate = MouvementStock::where('code_mouvement', $request->input('code_mouvement'))->first();
+        }
+
+        if (!$itemToUpdate) {
+            return response()->json(['message' => 'Demande non trouvée.'], 404);
+        }
+
+        // 3. Vérification du statut
+        if ($itemToUpdate->statut !== 'Accordé') {
+            return response()->json([
+                'message' => 'La demande doit d\'abord être "Accordé" avant de pouvoir être validée.'
+            ], 403);
+        }
+
+        // 4. Stockage du fichier et mise à jour
+        try {
+            $path = 'demandes_signees';
+            $fileName = time() . '_' . $request->file('demandevalidesigne')->getClientOriginalName();
+
+            // Stocke le fichier et met à jour la colonne en une seule ligne
+            $filePath = $request->file('demandevalidesigne')->storeAs($path, $fileName, 'public');
+
+            $itemToUpdate->demandevalidesigne = $filePath;
+            $itemToUpdate->statut = $request->input('statut');
+            $itemToUpdate->save();
+
+            return response()->json([
+                'message' => 'Demande validée et fichier signé téléchargé avec succès.',
+                'file_path' => Storage::url($itemToUpdate->demandevalidesigne),
+                'new_statut' => $itemToUpdate->statut
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erreur lors du téléchargement du fichier.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function viewFile(Request $request)
+    {
+        $idfichier = $request->query('idfichier');
+
+        // Décode l'URL
+        $decodedPath = urldecode($idfichier);
+
+        // Sécurise le chemin
+        $sanitizedPath = str_replace(['../', './'], '', $decodedPath);
+
+        // Vérifie si le fichier existe
+        if (!Storage::disk('public')->exists($sanitizedPath)) {
+            return response()->json(['error' => 'File not found.'], 404);
+        }
+
+        // Retourne le fichier
+        return Response::file(
+            Storage::disk('public')->path($sanitizedPath),
+            ['Content-Type' => Storage::disk('public')->mimeType($sanitizedPath)]
+        );
+    }
+
+    public function downloadGroupedFile($code_mouvement)
+    {
+        // 1. Logique pour trouver et/ou générer le fichier groupé.
+        // C'est ici que vous devrez implémenter la logique pour combiner
+        // les documents ou trouver le fichier PDF récapitulatif du groupe.
+        // Exemple de chemin de fichier, remplacez-le par votre propre logique.
+        $filePath = "demandes_signees/{$code_mouvement}_synthese.pdf";
+
+        // 2. Vérifie si le fichier existe
+        if (!Storage::disk('public')->exists($filePath)) {
+            return response()->json(['error' => 'File not found.'], 404);
+        }
+
+        // 3. Renvoie le fichier en tant que téléchargement
+        return Storage::download($filePath);
+    }
 
 }

@@ -22,6 +22,9 @@ class Vehicule extends Model
         'puissance',
         'places_assises',
         'energie',
+        'nbreannee_amortissement',
+        'date_amortissement',
+        'carte_grise'
     ];
 
     public function marque()
