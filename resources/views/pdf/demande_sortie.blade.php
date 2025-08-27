@@ -222,7 +222,7 @@
 
             <td style="width: 50%; text-align: right;">
                 Modèle n°1<br/>
-                Fiche de sortie N° ...........<br/>
+                Fiche de sortie N° {{ $numeroFiche }}<br/>
                 <small>Fiche généré le: {{ date('d/m/Y H:i:s') }}</small>
             </td>
       </tr>
