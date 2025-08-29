@@ -93,7 +93,40 @@ class RapportParcController extends Controller
                 $message = 'Rapport des interventions sur véhicules généré avec succès.';
                 break;
 
-            default:
+                case 'vehicule_intervention_expirante':
+                    // Validez les champs de la requête
+                    $validator = Validator::make($request->all(), [
+                        'date_debut' => 'required|date',
+                        'date_fin' => 'required|date|after_or_equal:date_debut',
+                        'vehicule_id' => 'nullable|exists:vehicules,id',
+                        'type_intervention_id' => 'nullable|exists:type_interventions,id',
+                    ]);
+
+                    if ($validator->fails()) {
+                        return new PostResource(false, 'Validation échouée pour le rapport expiration intervention.', ['errors' => $validator->errors()]);
+                    }
+
+                    // On part des interventions, pas des véhicules
+                    $query = InterventionVehicule::with(['vehicule.modele', 'vehicule.marque', 'typeIntervention'])
+                        ->whereBetween('date_expiration', [$request->date_debut, $request->date_fin]);
+
+                    // Appliquez les filtres si l'utilisateur a sélectionné un véhicule
+                    if ($request->filled('vehicule_id')) {
+                        $query->where('vehicule_id', $request->vehicule_id);
+                    }
+
+                    // Appliquez le filtre si l'utilisateur a sélectionné un type d'intervention
+                    if ($request->filled('type_intervention_id')) {
+                        $query->where('type_intervention_id', $request->type_intervention_id);
+                    }
+
+                    $data = $query->latest('date_expiration')->paginate(1000);
+                    $message = 'Rapport des interventions expirant dans la période sélectionnée généré avec succès.';
+                    break;
+
+
+
+                default:
                 $success = false;
                 $message = 'Type de rapport non valide.';
                 $data = [];
