@@ -139,10 +139,10 @@ class MouvementTicketController extends Controller
         // Si le type de mouvement existe, récupérer les mouvements correspondants
         if ($type_mouvement) {
             $mouvements = MouvementTicket::with(['compagniePetrolier', 'coupon_ticket'])
-            ->where('id_type_mouvement', $type_mouvement->id)
-            ->where('isdeleted', false)
-            ->latest()
-            ->paginate(1000);
+                ->where('id_type_mouvement', $type_mouvement->id)
+                ->where('isdeleted', false)
+                ->latest()
+                ->paginate(1000);
 
             return new PostResource(true, 'Liste des mouvements d\'Entrée de Ticket', $mouvements);
         }
@@ -354,9 +354,9 @@ class MouvementTicketController extends Controller
         // Si le type de mouvement existe, récupérer les mouvements correspondants
         if ($type_mouvement) {
             $mouvements = MouvementTicket::with(['employe', 'compagniePetrolier', 'vehicule', 'vehicule.modele', 'vehicule.marque', 'coupon_ticket', 'depart', 'arriver'])
-            ->where('id_type_mouvement', $type_mouvement->id)
-            ->where('isdeleted', false)
-            ->latest()->paginate(1000);
+                ->where('id_type_mouvement', $type_mouvement->id)
+                ->where('isdeleted', false)
+                ->latest()->paginate(1000);
 
             return new PostResource(true, 'Liste des mouvements de sortie de Ticket', $mouvements);
         }
@@ -372,14 +372,14 @@ class MouvementTicketController extends Controller
             "vehicule_id" => 'required|exists:vehicules,id',
             "compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
             "coupon_ticket_id" => 'required|exists:coupon_tickets,id',
-            "kilometrage" => 'required|integer|min:0',
+            // "kilometrage" => 'required|integer|min:0',
             "employe_id" => 'required|exists:employes,id',
             "description" => 'nullable|string|max:255',
             "objet" => 'nullable|string|max:255',
             "qte" => 'required|integer|min:1', // Qte manuellement entrée par l'utilisateur
             "date" => 'required|date',
-            'commune_depart' => 'required|exists:communes,id',
-            'commune_arriver' => 'required|exists:communes,id',
+            // 'commune_depart' => 'required|exists:communes,id',
+            // 'commune_arriver' => 'required|exists:communes,id',
             'trajet_aller_retour' => 'required|boolean',
             // 'valeur_trajet' n'est plus envoyé par le frontend, il sera calculé
         ]);
@@ -419,13 +419,15 @@ class MouvementTicketController extends Controller
                 }
                 $valeur_nouveau_trajet = $coupon->valeur / $request->qte;
 
-                $trajet = Trajet::create([
-                    'commune_depart' => $request->commune_depart,
-                    'commune_arriver' => $request->commune_arriver,
-                    'trajet_aller_retour' => $request->trajet_aller_retour,
-                    'valeur' => $valeur_nouveau_trajet, // Valeur calculée
-                    'observation' => $request->observation ?? null, // Si vous avez un champ observation dans le formulaire principal
-                ]);
+                if ($request->commune_depart != null && $request->commune_arriver != null) {
+                    $trajet = Trajet::create([
+                        'commune_depart' => $request->commune_depart,
+                        'commune_arriver' => $request->commune_arriver,
+                        'trajet_aller_retour' => $request->trajet_aller_retour,
+                        'valeur' => $valeur_nouveau_trajet, // Valeur calculée
+                        'observation' => $request->observation ?? null, // Si vous avez un champ observation dans le formulaire principal
+                    ]);
+                }
             }
 
             // 4. Vérifier la quantité disponible en stock
@@ -448,14 +450,14 @@ class MouvementTicketController extends Controller
                 "vehicule_id" => $request->vehicule_id,
                 "compagnie_petrolier_id" => $request->compagnie_petrolier_id,
                 "coupon_ticket_id" => $request->coupon_ticket_id,
-                "kilometrage" => $request->kilometrage,
+                "kilometrage" => $request->kilometrage ?? 0,
                 "employe_id" => $request->employe_id,
                 "description" => $request->description,
                 "qte" => $request->qte,
                 "objet" => $request->objet,
                 "date" => $request->date,
-                "commune_depart" => $request->commune_depart,
-                "commune_arriver" => $request->commune_arriver,
+                "commune_depart" => $request->commune_depart ?? null,
+                "commune_arriver" => $request->commune_arriver ?? null,
                 "trajet_aller_retour" => $request->trajet_aller_retour,
                 "reference" => $reference,
             ]);
@@ -469,7 +471,6 @@ class MouvementTicketController extends Controller
 
             // Retourner la réponse
             return new PostResource(true, 'Le mouvement de sortie de ticket a été bien enregistré !', $mouvement);
-
         } catch (\Exception $e) {
             // En cas d'erreur, annuler la transaction
             DB::rollBack();
@@ -486,15 +487,15 @@ class MouvementTicketController extends Controller
             "vehicule_id" => 'required|exists:vehicules,id',
             "compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
             "coupon_ticket_id" => 'required|exists:coupon_tickets,id',
-            "kilometrage" => 'required|integer',
+            // "kilometrage" => 'required|integer',
             "employe_id" => 'required|exists:employes,id',
             "description" => 'nullable|string|max:255',
             "objet" => 'nullable|string|max:255',
             "qte" => 'required|integer',
             "date" => 'required',
             // Assurez-vous que ces champs sont également validés si vous les utilisez dans la mise à jour
-            'commune_depart' => 'required|exists:communes,id',
-            'commune_arriver' => 'required|exists:communes,id',
+            // 'commune_depart' => 'required|exists:communes,id',
+            // 'commune_arriver' => 'required|exists:communes,id',
             'trajet_aller_retour' => 'required|boolean',
         ]);
 
@@ -660,5 +661,38 @@ class MouvementTicketController extends Controller
         $qteTicket = (int) ceil($valeurTrajet / $valeurCoupon);
 
         return response()->json(['qteTicket' => $qteTicket], 200);
+    }
+
+
+
+    //pour ajouter le kilometrage de fin
+
+    public function updateKilometrageDeFin(Request $request, $id)
+    {
+        // Validation
+        $validator = Validator::make($request->all(), [
+            "kilometrage_de_fin" => "required|integer|min:0",
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        // Chercher le mouvement
+        $mouvement = MouvementTicket::find($id);
+
+        if (!$mouvement) {
+            return response()->json(['error' => "Mouvement introuvable."], 404);
+        }
+
+        // Mise à jour du kilométrage de fin
+        $mouvement->kilometrage_de_fin = $request->kilometrage_de_fin;
+        $mouvement->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Kilométrage de fin mis à jour avec succès",
+            'data' => $mouvement
+        ], 200);
     }
 }
