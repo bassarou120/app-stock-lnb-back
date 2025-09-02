@@ -271,18 +271,19 @@
             <th>Date Mouvement</th>
             <th>Article</th>
             <th>Quantité</th>
-            <th>Prix Unitaire</th>
-            <th>Unité de mesure</th>
-            <th>CMP</th>
             @if($reportTypeLabel === 'd\'Entrée de Stock')
               <th>Code Article</th>
+              <th>Prix Unitaire</th>
+              <th>Unité de mesure</th>
+              <th>CMP</th>
               <th>Fournisseur</th>
+              <th>Description</th>
             @elseif($reportTypeLabel === 'de Sortie de Stock')
               <th>Personnel</th>
               <th>Code mouvement</th>
               <th>Bureau</th>
             @endif
-            <th>Description</th>
+            
           </tr>
         </thead>
         <tbody>
@@ -292,18 +293,19 @@
             <td>{{ \Carbon\Carbon::parse($mouvement->date_mouvement)->format('d/m/Y') }}</td>
             <td>{{ $mouvement->article->libelle ?? 'N/A' }}</td>
             <td>{{ $mouvement->qte }}</td>
-            <td>{{ $mouvement->prixUnitaire }}</td>
-            <td>{{ $mouvement->unite_de_mesure->libelle ?? 'N/A' }}</td>
-            <td>{{ $mouvement->cout_moyen_pondere}}</td>
             @if($reportTypeLabel === 'd\'Entrée de Stock')
               <td>{{ $mouvement->article->code_article ?? 'N/A' }}</td>
+              <td>{{ $mouvement->prixUnitaire }}</td>
+              <td>{{ $mouvement->unite_de_mesure->libelle ?? 'N/A' }}</td>
+              <td>{{ $mouvement->cout_moyen_pondere}}</td>
               <td>{{ $mouvement->fournisseur->nom ?? 'N/A' }}</td>
+              <td>{{ $mouvement->description ?? 'N/A' }}</td>
             @elseif($reportTypeLabel === 'de Sortie de Stock')
               <td>{{ $mouvement->employe->nom ?? '' }} {{ $mouvement->employe->prenom ?? 'N/A' }}</td>
               <td>{{ $mouvement->code_mouvement ?? 'N/A' }}</td>
               <td>{{ $mouvement->bureau->libelle_bureau ?? 'N/A' }}</td>
             @endif
-            <td>{{ $mouvement->description ?? 'N/A' }}</td>
+            
           </tr>
           @endforeach
         </tbody>
@@ -400,7 +402,7 @@
                             <p>
                                 À .................................., le .....................
                             </p>
-                            <p><b>Le Réceptionnaire</b></p>
+                            <p><b>Le Demandeur</b></p>
                         </div>
                     </td>
                 </tr>
