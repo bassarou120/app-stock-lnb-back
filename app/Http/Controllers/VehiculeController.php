@@ -206,4 +206,30 @@ class VehiculeController extends Controller
     ]);
 }
 
+public function addCarteGrise(Request $request, Vehicule $vehicule)
+{
+    $validator = Validator::make($request->all(), [
+        'carte_grise' => 'required|file|mimes:pdf,jpg,jpeg,png',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
+    }
+
+    // Upload du fichier
+    if ($request->hasFile('carte_grise')) {
+        $file = $request->file('carte_grise');
+        $filename = time().'_'.$file->getClientOriginalName();
+        $path = $file->storeAs('carte_grises', $filename, 'public');
+
+        // Mise à jour du véhicule avec le chemin du fichier
+        $vehicule->update([
+            'carte_grise' => 'storage/'.$path,
+        ]);
+    }
+
+    return new PostResource(true, 'Carte grise ajoutée avec succès', $vehicule);
+}
+
+
 }

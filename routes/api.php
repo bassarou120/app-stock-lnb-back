@@ -220,4 +220,8 @@ Route::get('/transferts/print/{id}', [TransfertController::class, 'printSingleTr
 Route::post('/vehicules/import', [VehiculeController::class, 'import']);
 
 Route::post('/articles/import', [ArticleController::class, 'import']);
-Route::post('/immobilisations/import', [ImmobilisationController::class, 'import']);
+Route::post('/immobilisations/import', [ImmobilisationController::class, 'import']);Route::post('/vehicules/{vehicule}/carte-grise', [VehiculeController::class, 'addCarteGrise']);
+
+Route::post('/vehicules/{vehicule}/carte-grise', [VehiculeController::class, 'addCarteGrise']);
+
+Route::put('/mouvement-tickets/{id}/kilometrage-fin', [MouvementTicketController::class, 'updateKilometrageDeFin']);
