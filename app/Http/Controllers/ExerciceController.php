@@ -49,7 +49,7 @@ class ExerciceController extends Controller
         if ($statut === 'ouvert') {
             Exercice::where('statut', 'ouvert')->update(['statut' => 'cloture']);
         }
-        
+
         // 4. Créer le nouvel exercice avec le statut déterminé
         $exercice = Exercice::create([
             'date_debut' => $request->date_debut,
@@ -102,12 +102,12 @@ class ExerciceController extends Controller
         $request->validate([
             'statut' => 'required|in:ouvert,cloture',
         ]);
-        
+
         $nouvStatut = $request->input('statut');
 
         // Récupérer l'exercice à mettre à jour
         $exercice = Exercice::findOrFail($id);
-        
+
         // Logique pour s'assurer qu'un seul exercice est ouvert à la fois
         if ($nouvStatut === 'ouvert') {
             // Clôturer tous les autres exercices si le statut est "ouvert"
@@ -119,6 +119,24 @@ class ExerciceController extends Controller
         $exercice->save();
 
         return new PostResource(true, 'Statut de l\'exercice mis à jour avec succès', $exercice);
+    }
+
+        public function getExerciceOuvert()
+    {
+        // Récupérer l'exercice ouvert
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
+
+        if (!$exerciceOuvert) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun exercice ouvert trouvé.'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'exercice' => $exerciceOuvert,
+        ]);
     }
 
     //  Supprimer un exercice

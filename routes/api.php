@@ -229,3 +229,5 @@ Route::post('/vehicules/{vehicule}/carte-grise', [VehiculeController::class, 'ad
 Route::put('/mouvement-tickets/{id}/kilometrage-fin', [MouvementTicketController::class, 'updateKilometrageDeFin']);
 
 Route::put('/exercicestate/{id}/status', [ExerciceController::class, 'changeStatus']);
+
+Route::get('/exercice/ouvert', [ExerciceController::class, 'getExerciceOuvert']);

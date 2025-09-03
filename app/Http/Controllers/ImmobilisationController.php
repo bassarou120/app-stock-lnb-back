@@ -16,8 +16,8 @@ use App\Models\Parametrage\TypeImmo;
 use App\Models\Parametrage\StatusImmo;
 use App\Models\Vehicule;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-
-
+use Illuminate\Support\Facades\DB;
+use App\Models\Transfert;
 
 class ImmobilisationController extends Controller
 {
@@ -45,6 +45,14 @@ class ImmobilisationController extends Controller
  */
     public function index()
     {
+
+        // Récupérer l'exercice ouvert
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+
+        if (!$exerciceOuvert) {
+            return new PostResource(false, 'Aucun exercice ouvert trouvé.', []);
+        }
+
         $immos = Immobilisation::with([
             'vehicule',
             'groupeTypeImmo',
@@ -54,7 +62,9 @@ class ImmobilisationController extends Controller
             'bureau',
             'fournisseur'
         ])->where('isdeleted', false)
-        ->latest()->paginate(100);
+        ->where('id_exercice', $exerciceOuvert->id) // Filtre par exercice
+        ->latest()
+        ->paginate(100);
 
         return new PostResource(true, 'Liste des immobilisations', $immos);
     }
@@ -122,9 +132,56 @@ class ImmobilisationController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $immo = Immobilisation::create($request->all());
+        // Récupérer l'exercice ouvert
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
 
-        return new PostResource(true, 'Immobilisation créée avec succès', $immo);
+        if (!$exerciceOuvert) {
+            return response()->json(['error' => 'Aucun exercice ouvert trouvé.'], 422);
+        }
+
+        // Démarre une transaction de base de données
+        DB::beginTransaction();
+
+        try {
+            // Création de l'immobilisation
+            $immo = Immobilisation::create($request->all());
+            $immoData['id_exercice'] = $exerciceOuvert->id;
+            $immo = Immobilisation::create($immoData);
+
+            // Crée un enregistrement de transfert si le bureau ou l'employé est renseigné
+            if ($request->filled('bureau_id') || $request->filled('employe_id')) {
+                Transfert::create([
+                    'immo_id' => $immo->id, // On lie l'immobilisation au transfert
+                    'old_bureau_id' => null, // Ancien bureau est "Magasin", donc null
+                    'old_employe_id' => null, // Ancien employé est null
+                    'bureau_id' => $request->get('bureau_id'),
+                    'employe_id' => $request->get('employe_id'),
+                    'date_mouvement' => now(), // Date du jour
+                    'observation' => $request->observation,
+                ]);
+            }
+
+            // Met à jour la date de mise en service de l'immobilisation
+            $immo->date_mise_en_service = $immo->date_acquisition;
+            $immo->save();
+
+            // Si tout s'est bien passé, on valide la transaction
+            DB::commit();
+
+            return new PostResource(true, 'Immobilisation créée avec succès', $immo);
+
+        } catch (\Exception $e) {
+            // En cas d'erreur, on annule la transaction
+            DB::rollBack();
+
+            // Log l'erreur pour le débogage et retourne un message d'erreur
+            \Log::error('Erreur lors de la création de l\'immobilisation et de son transfert : ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la création de l\'immobilisation.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     // Mettre à jour une immobilisation existante
@@ -196,6 +253,19 @@ class ImmobilisationController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
+        // Vérifier l'exercice ouvert
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+        if (!$exerciceOuvert) {
+            return response()->json(['error' => 'Aucun exercice ouvert trouvé.'], 422);
+        }
+
+        if ($immobilisation->id_exercice !== $exerciceOuvert->id) {
+            return response()->json([
+                'success' => false,
+                'message' => "Impossible de modifier une immobilisation d'un exercice fermé."
+            ], 403);
+        }
+
         $immobilisation->update($request->all());
 
         return new PostResource(true, 'Immobilisation mise à jour avec succès', $immobilisation);
@@ -228,6 +298,19 @@ class ImmobilisationController extends Controller
  */
     public function destroy(Immobilisation $immobilisation)
     {
+        // Vérifier l'exercice ouvert
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+        if (!$exerciceOuvert) {
+            return response()->json(['error' => 'Aucun exercice ouvert trouvé.'], 422);
+        }
+
+        if ($immobilisation->id_exercice !== $exerciceOuvert->id) {
+            return response()->json([
+                'success' => false,
+                'message' => "Impossible de supprimer une immobilisation d'un exercice fermé."
+            ], 403);
+        }
+
         $immobilisation->isdeleted = true;
         $immobilisation->save();
 
@@ -236,6 +319,13 @@ class ImmobilisationController extends Controller
 
     public function imprimerImmos()
     {
+
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+
+        if (!$exerciceOuvert) {
+            return response()->json(['error' => 'Aucun exercice ouvert trouvé.'], 422);
+        }
+
         // Récupère toutes les immobilisations avec leurs relations nécessaires
         $immobilisations = Immobilisation::with([
             'vehicule',
@@ -247,7 +337,9 @@ class ImmobilisationController extends Controller
             'fournisseur'
         ])
         ->where('isdeleted', false)
-        ->latest()->get();
+        ->where('id_exercice', $exerciceOuvert->id)
+        ->latest()
+        ->get();
 
         $pdf = \Pdf::loadView('pdf.immobilisations', compact('immobilisations'));
 

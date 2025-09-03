@@ -18,7 +18,6 @@ return new class extends Migration
             $table->date('date_mouvement');
             $table->foreignId('id_Article')->constrained('articles')->onDelete('cascade');
             $table->foreignId('id_type_mouvement')->constrained('type_mouvements')->onDelete('cascade');
-            
             $table->timestamps();
         });
     }

@@ -17,6 +17,7 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Illuminate\Support\Facades\Response;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Models\Exercice;
 
 
 class ArticleController extends Controller
@@ -37,7 +38,18 @@ class ArticleController extends Controller
  */
     public function index()
     {
+
+        // Récupérer l'exercice ouvert
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
+        if (!$exerciceOuvert) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun exercice ouvert trouvé.'
+            ], 404);
+        }
+
         $articles = Article::with(['categorie', 'stock'])
+        ->where('id_exercice', $exerciceOuvert->id)
         ->where('isdeleted', false)
         ->latest()->paginate(1000);
         return new PostResource(true, 'Liste des articles', $articles);
@@ -125,6 +137,15 @@ class ArticleController extends Controller
 
         $articles = [];
 
+        // Récupérer l'exercice ouvert
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+        if (!$exerciceOuvert) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun exercice ouvert trouvé.'
+            ], 400);
+        }
+
         // Utilisation d'une transaction pour garantir l'intégrité des données
         DB::beginTransaction();
         try {
@@ -149,12 +170,14 @@ class ArticleController extends Controller
                     'code_article' => $codeArticle,
                     'description' => $articleData['description'],
                     'stock_alerte' => $articleData['stock_alerte'],
+                    'id_exercice' => $exerciceOuvert->id,
                 ]);
 
                 // Initialiser l'entrée de stock pour cet article
                 Stock::create([
                     'id_Article' => $article->id,
-                    'Qte_actuel' => 0
+                    'Qte_actuel' => 0,
+                    'id_exercice' => $exerciceOuvert->id, // lien stock → exercice
                 ]);
 
                 $articles[] = $article;
@@ -218,6 +241,23 @@ class ArticleController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
+        // Vérifier l'exercice ouvert
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+        if (!$exerciceOuvert) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun exercice ouvert trouvé.'
+            ], 400);
+        }
+
+            // Empêcher la modification si l'article ne correspond pas à l'exercice ouvert
+        if ($article->id_exercice !== $exerciceOuvert->id) {
+            return response()->json([
+                'success' => false,
+                'message' => "Impossible de modifier un article lié à un exercice clôturé."
+            ], 403);
+        }
+
         $article->update([
             'id_cat' => $request->id_cat,
             'libelle' => $request->libelle,
@@ -257,16 +297,39 @@ class ArticleController extends Controller
  */
     public function destroy(Article $article)
     {
+        // Vérifier l'exercice ouvert
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+        if (!$exerciceOuvert) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun exercice ouvert trouvé.'
+            ], 400);
+        }
+
+        // Empêcher la suppression si l'article n'appartient pas à l'exercice ouvert
+        if ($article->id_exercice !== $exerciceOuvert->id) {
+            return response()->json([
+                'success' => false,
+                'message' => "Impossible de supprimer un article lié à un exercice clôturé."
+            ], 403);
+        }
 
         $article->isdeleted = true;
         $article->save();
+
         return new PostResource(true, 'Article supprimé avec succès', null);
     }
 
 
+
     public function imprimer()
     {
-        $articles = Article::with(['categorie', 'stock'])->where('isdeleted', false)->get();
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+
+        $articles = Article::with(['categorie', 'stock'])
+            ->where('isdeleted', false)
+            ->where('id_exercice', $exerciceOuvert->id)
+            ->get();
 
         $pdf = Pdf::loadView('pdf.articles', compact('articles'));
 
@@ -275,26 +338,33 @@ class ArticleController extends Controller
 
 
 
-    public function exportArticlesExcel()
-    {
-        $articles = Article::with(['categorie', 'stock'])->get()->map(function ($article) {
-            return [
-                'Article'           => $article->libelle ?? '-',
-                'Description'       => $article->description ?? '-',
-                'Catégorie'         => $article->categorie->libelle_categorie_article ?? '-',
-                'Quantité Actuelle' => $article->stock->Qte_actuel ?? 0,
-                'Stock d\'alerte'   => $article->stock_alerte ?? '-',
-                'Date de création'  => $article->created_at ? $article->created_at->format('Y-m-d') : '-',
-            ];
-        })->toArray();
+public function exportArticlesExcel()
+{
+    // Récupérer l'année dont le statut est "ouvert"
+    $exercice = Exercice::where('statut', 'ouvert')->first();
+    $annee = $exercice ? $exercice->annee : date('Y');
 
-        \Excel::create('etat_du_stock', function($excel) use ($articles) {
-            $excel->sheet('Stock', function($sheet) use ($articles) {
-                // Ajoute les données avec les en-têtes automatiquement
-                $sheet->fromArray($articles);
-            });
-        })->download('xlsx');
-    }
+    // Charger les articles
+    $articles = Article::with(['categorie', 'stock'])->get()->map(function ($article) use ($annee) {
+        return [
+            'Année'             => $annee,
+            'Article'           => $article->libelle ?? '-',
+            'Description'       => $article->description ?? '-',
+            'Catégorie'         => $article->categorie->libelle_categorie_article ?? '-',
+            'Quantité Actuelle' => $article->stock->Qte_actuel ?? 0,
+            'Stock d\'alerte'   => $article->stock_alerte ?? '-',
+            'Date de création'  => $article->created_at ? $article->created_at->format('Y-m-d') : '-',
+        ];
+    })->toArray();
+
+    // Générer le fichier Excel
+    \Excel::create('etat_du_stock_' . $annee, function($excel) use ($articles, $annee) {
+        $excel->sheet('Stock_' . $annee, function($sheet) use ($articles) {
+            // Ajoute les données avec les en-têtes automatiquement
+            $sheet->fromArray($articles);
+        });
+    })->download('xlsx');
+}
 
     public function import(Request $request)
     {

@@ -15,8 +15,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('id_Article')->constrained('articles')->onDelete('cascade');
             $table->integer('Qte_actuel')->default(0);
-
-            $table->foreignId('id_exercice')->constrained('exercices')->onDelete('cascade');
             $table->integer('qte_Stock_dbExercice')->nullable();
             $table->integer('qte_Stock_fnExercice')->nullable();
             $table->timestamps();

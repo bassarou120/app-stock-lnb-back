@@ -83,30 +83,30 @@ class VehiculeController extends Controller
             'immatriculation' => 'required|string|max:255',
             'numero_chassis' => 'nullable|string|max:255',
             'kilometrage' => 'required|integer',
-            'date_mise_en_service' => 'required',
+            'date_mise_en_service' => 'required|date',
             'puissance' => 'nullable|string|max:100',
             'places_assises' => 'nullable|integer',
             'energie' => 'nullable|string|max:50',
         ]);
 
-        // Log::info($request->all());
-
-
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        $vehicule->update([
-            'marque_id' => $request->marque_id,
-            'modele_id' => $request->modele_id,
-            'immatriculation' => $request->immatriculation,
-            'numero_chassis' => $request->numero_chassis,
-            'kilometrage' => $request->kilometrage,
-            'date_mise_en_service' => $request->date_mise_en_service,
-            'puissance' => $request->puissance,
-            'places_assises' => $request->places_assises,
-            'energie' => $request->energie,
-        ]);
+        // Gérer l'upload de la nouvelle carte grise
+        $data = $request->except(['_method']);
+        if ($request->hasFile('carte_grise')) {
+            // Supprimer l'ancien fichier s'il existe
+            if ($vehicule->carte_grise && Storage::disk('public')->exists($vehicule->carte_grise)) {
+                Storage::disk('public')->delete($vehicule->carte_grise);
+            }
+
+            // Stocker le nouveau fichier
+            $path = $request->file('carte_grise')->store('cartes-grises', 'public');
+            $data['carte_grise'] = $path;
+        }
+
+        $vehicule->update($data);
 
         return new PostResource(true, 'vehicule mis à jour avec succès', $vehicule);
     }
@@ -114,6 +114,11 @@ class VehiculeController extends Controller
     // Supprimer un vehicule
     public function destroy(Vehicule $vehicule)
     {
+        // Supprimer le fichier de la carte grise associé avant de supprimer l'enregistrement
+        if ($vehicule->carte_grise && Storage::disk('public')->exists($vehicule->carte_grise)) {
+            Storage::disk('public')->delete($vehicule->carte_grise);
+        }
+
         $vehicule->isdeleted = true;
         $vehicule->save();
         return new PostResource(true, 'vehicule supprimé avec succès', null);
@@ -192,7 +197,7 @@ class VehiculeController extends Controller
             'energie' => $energie,
             'marque_id' => $marque->id,
             'modele_id' => $modele->id,
-        ]);
+        ]); 
     }
 
     return response()->json([

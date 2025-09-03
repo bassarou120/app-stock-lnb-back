@@ -18,4 +18,19 @@ class Exercice extends Model
     {
         return $this->belongsToMany(Article::class);
     }
+
+    public function mouvementsStock()
+    {
+        return $this->hasMany(MouvementStock::class, 'id_exercice');
+    }
+
+    public function immobilisations()
+    {
+        return $this->hasMany(Immobilisation::class, 'id_exercice');
+    }
+
+    public function couponTickets()
+    {
+        return $this->hasMany(CouponTicket::class, 'id_exercice');
+    }
 }
