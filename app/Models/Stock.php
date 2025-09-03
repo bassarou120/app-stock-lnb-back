@@ -18,7 +18,7 @@ class Stock extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id_Article', 'Qte_actuel'];
+    protected $fillable = ['id_Article', 'Qte_actuel', 'id_exercice', 'qte_Stock_dbExercice', 'qte_Stock_fnExercice'];
 
 
     // Relation avec le modèle Article

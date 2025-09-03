@@ -227,3 +227,5 @@ Route::post('/immobilisations/import', [ImmobilisationController::class, 'import
 Route::post('/vehicules/{vehicule}/carte-grise', [VehiculeController::class, 'addCarteGrise']);
 
 Route::put('/mouvement-tickets/{id}/kilometrage-fin', [MouvementTicketController::class, 'updateKilometrageDeFin']);
+
+Route::put('/exercicestate/{id}/status', [ExerciceController::class, 'changeStatus']);

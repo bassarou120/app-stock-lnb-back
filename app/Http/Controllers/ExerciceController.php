@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Exercice;
 use Illuminate\Http\Request;
 use App\Http\Resources\PostResource;
+use Carbon\Carbon;
 
 
 class ExerciceController extends Controller
@@ -27,7 +28,7 @@ class ExerciceController extends Controller
             'date_fin'   => 'required|date|after:date_debut',
         ]);
 
-        //  Déterminer automatiquement l'année
+        // Déterminer l'année à partir des dates
         $anneeDebut = date('Y', strtotime($request->date_debut));
         $anneeFin   = date('Y', strtotime($request->date_fin));
 
@@ -37,11 +38,24 @@ class ExerciceController extends Controller
             ], 422);
         }
 
+        // 1. Déterminer l'année en cours pour la comparaison
+        $anneeActuelle = Carbon::now()->year;
+
+        // 2. Définir le statut par défaut
+        // S'il s'agit de l'année en cours, le statut est 'ouvert', sinon il est 'cloture'.
+        $statut = ($anneeDebut == $anneeActuelle) ? 'ouvert' : 'cloture';
+
+        // 3. Si le nouvel exercice est "ouvert", fermer tous les autres exercices
+        if ($statut === 'ouvert') {
+            Exercice::where('statut', 'ouvert')->update(['statut' => 'cloture']);
+        }
+        
+        // 4. Créer le nouvel exercice avec le statut déterminé
         $exercice = Exercice::create([
             'date_debut' => $request->date_debut,
             'date_fin'   => $request->date_fin,
             'annee'      => $anneeDebut,
-            'statut'     => 'cloture' // par défaut
+            'statut'     => $statut
         ]);
 
         return new PostResource(true, 'Type exercice créé avec succès', $exercice);
@@ -80,6 +94,31 @@ class ExerciceController extends Controller
         $exercice->update($data);
 
         return new PostResource(true, 'exercice modifié avec succès', $exercice);
+    }
+
+    public function changeStatus(Request $request, $id)
+    {
+        // Valider le statut reçu
+        $request->validate([
+            'statut' => 'required|in:ouvert,cloture',
+        ]);
+        
+        $nouvStatut = $request->input('statut');
+
+        // Récupérer l'exercice à mettre à jour
+        $exercice = Exercice::findOrFail($id);
+        
+        // Logique pour s'assurer qu'un seul exercice est ouvert à la fois
+        if ($nouvStatut === 'ouvert') {
+            // Clôturer tous les autres exercices si le statut est "ouvert"
+            Exercice::where('id', '!=', $id)->update(['statut' => 'cloture']);
+        }
+
+        // Mettre à jour le statut de l'exercice sélectionné
+        $exercice->statut = $nouvStatut;
+        $exercice->save();
+
+        return new PostResource(true, 'Statut de l\'exercice mis à jour avec succès', $exercice);
     }
 
     //  Supprimer un exercice

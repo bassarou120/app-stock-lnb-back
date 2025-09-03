@@ -71,4 +71,11 @@ class Article extends Model
     {
         return $this->belongsTo(UniteDeMesure::class, 'id_unite_de_mesure');
     }
+
+    public function exercices(): BelongsToMany
+    {
+        return $this->belongsToMany(Exercice::class);
+    }
+
+
 }
