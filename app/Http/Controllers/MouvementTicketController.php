@@ -561,6 +561,7 @@ class MouvementTicketController extends Controller
                 "commune_depart" => $request->commune_depart,
                 "commune_arriver" => $request->commune_arriver,
                 "trajet_aller_retour" => $request->trajet_aller_retour,
+                "kilometrage_de_fin" => $request->kilometrage_de_fin,
             ]);
 
             // Mettre à jour le stock
