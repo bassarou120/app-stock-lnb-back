@@ -132,6 +132,7 @@ class MouvementStockController extends Controller
             ], 422);
         }
 
+
         // Création du mouvement avec le CMP calculé
         $mouvement = MouvementStock::create([
             "id_Article" => $request->id_Article,

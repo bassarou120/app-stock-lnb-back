@@ -6,16 +6,17 @@ use App\Models\Exercice;
 use Illuminate\Http\Request;
 use App\Http\Resources\PostResource;
 use Carbon\Carbon;
-
+use App\Models\Stock;
+use Illuminate\Support\Facades\DB;
+use App\Models\MouvementStock;
 
 class ExerciceController extends Controller
 {
     //  Lister tous les exercices
     public function index()
     {
-        // return Exercice::all();
-
-        $exercices = Exercice::latest()->paginate(100);
+        //$exercices = Exercice::latest()->paginate(100);
+        $exercices = Exercice::orderBy('annee', 'desc')->paginate(100);
 
         return new PostResource(true, 'Liste des exercices', $exercices);
     }
@@ -98,30 +99,96 @@ class ExerciceController extends Controller
 
     public function changeStatus(Request $request, $id)
     {
-        // Valider le statut reçu
         $request->validate([
             'statut' => 'required|in:ouvert,cloture',
         ]);
 
+        $exercice = Exercice::findOrFail($id);
         $nouvStatut = $request->input('statut');
 
-        // Récupérer l'exercice à mettre à jour
-        $exercice = Exercice::findOrFail($id);
-
-        // Logique pour s'assurer qu'un seul exercice est ouvert à la fois
         if ($nouvStatut === 'ouvert') {
-            // Clôturer tous les autres exercices si le statut est "ouvert"
             Exercice::where('id', '!=', $id)->update(['statut' => 'cloture']);
+            $exercice->statut = 'ouvert';
+            $exercice->save();
         }
 
-        // Mettre à jour le statut de l'exercice sélectionné
-        $exercice->statut = $nouvStatut;
-        $exercice->save();
+        if ($nouvStatut === 'cloture') {
+            // Clôture de l'exercice actuel
+            $exercice->statut = 'cloture';
+            $exercice->save();
 
-        return new PostResource(true, 'Statut de l\'exercice mis à jour avec succès', $exercice);
+            // Mettre à jour stock_fin_exercice et cmp_fin_exercice
+            $articles = DB::table('article_exercice')
+                ->where('id_exercice', $exercice->id)
+                ->get();
+
+            foreach ($articles as $article) {
+                $stock = Stock::where('id_Article', $article->id_article)
+                            ->where('id_exercice', $exercice->id)
+                            ->first();
+
+                $stock_fin = $stock ? $stock->Qte_actuel : 0;
+
+                $dernierMouvement = MouvementStock::where('id_Article', $article->id_article)
+                                    ->where('id_exercice', $exercice->id)
+                                    ->latest('date_mouvement')
+                                    ->first();
+
+                $cmp_fin = $dernierMouvement ? $dernierMouvement->cout_moyen_pondere : 0;
+
+                DB::table('article_exercice')
+                    ->where('id_article', $article->id_article)
+                    ->where('id_exercice', $exercice->id)
+                    ->update([
+                        'stock_fin_exercice' => $stock_fin,
+                        'cmp_fin_exercice' => $cmp_fin,
+                        'updated_at' => now(),
+                    ]);
+            }
+
+            // Créer le nouvel exercice ouvert
+            $nouvelExercice = Exercice::create([
+                'annee' => $exercice->annee + 1,
+                'statut' => 'ouvert',
+                'date_debut' => Carbon::create($exercice->annee + 1, 1, 1),
+                'date_fin' => Carbon::create($exercice->annee + 1, 12, 31),
+            ]);
+
+            // Initialiser article_exercice et stock pour le nouvel exercice
+            foreach ($articles as $article) {
+                DB::table('article_exercice')->insert([
+                    'id_article' => $article->id_article,
+                    'id_exercice' => $nouvelExercice->id,
+                    'stock_debut_exercice' => $article->stock_fin_exercice,
+                    'stock_fin_exercice' => 0,
+                    'cmp_debut_exercice' => $article->cmp_fin_exercice,
+                    'cmp_fin_exercice' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                Stock::create([
+                    'id_Article' => $article->id_article,
+                    'Qte_actuel' => $article->stock_fin_exercice,
+                    'id_exercice' => $nouvelExercice->id,
+                ]);
+            }
+
+            $exerciceOuvert = $nouvelExercice;
+        } else {
+            // Cas ouverture manuelle
+            $exerciceOuvert = $exercice;
+        }
+
+        return response()->json([
+            'success' => true,
+            'exercice' => $exerciceOuvert,
+        ]);
     }
 
-        public function getExerciceOuvert()
+
+
+    public function getExerciceOuvert()
     {
         // Récupérer l'exercice ouvert
         $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();

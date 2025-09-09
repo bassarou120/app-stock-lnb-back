@@ -47,7 +47,8 @@ class Article extends Model
         // Si 'id_unite_de_mesure' est une colonne dans la table 'articles' et doit être mass-assignable
         'id_unite_de_mesure',
         // Si 'prix_unitaire' est une colonne dans la table 'articles' et doit être mass-assignable
-        'prix_unitaire'
+        'prix_unitaire',
+        'id_exercice'
     ];
 
     public function categorie()

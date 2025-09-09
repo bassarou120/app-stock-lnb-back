@@ -14,7 +14,7 @@ class ExerciceSeeder extends Seeder
      */
     public function run(): void
     {
-        $startYear = 2020;
+        $startYear = 2023;
         $currentYear = Carbon::now()->year;
 
         for ($year = $startYear; $year <= $currentYear; $year++) {
