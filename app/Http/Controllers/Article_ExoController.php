@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\ArticleExercice;
 use App\Models\Article;
 use App\Models\Exercice;
+use App\Http\Resources\PostResource;
+
 
 class Article_ExoController extends Controller
 {
@@ -19,6 +21,16 @@ class Article_ExoController extends Controller
 
         // Retourne la vue avec les données
         return new PostResource(true, 'Liste des articles', $articleExercices);
+    }
+
+    public function articlesExercices()
+    {
+        // Eager load the 'article' and 'exercice' relationships.
+        // This fetches the related data in a single query for each relationship.
+        $articlesExercices = ArticleExercice::with(['article', 'exercice'])->get();
+
+        // Return the data as a JSON response.
+        return new PostResource(true, 'Liste complète des articles_exercices', $articlesExercices);
     }
 
     /**

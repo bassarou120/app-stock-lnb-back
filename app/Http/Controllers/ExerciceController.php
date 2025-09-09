@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use App\Models\Stock;
 use Illuminate\Support\Facades\DB;
 use App\Models\MouvementStock;
+use App\Models\ArticleExercice;
 
 class ExerciceController extends Controller
 {
@@ -20,6 +21,15 @@ class ExerciceController extends Controller
 
         return new PostResource(true, 'Liste des exercices', $exercices);
     }
+
+public function articlesExercices()
+{
+    $exercices = Exercice::with(['articles' => function ($query) {
+        $query->select('articles.id', 'libelle', 'code_article');
+    }])->get();
+
+    return new PostResource(true, 'Liste des exercices avec leurs articles', $exercices);
+}
 
     //  Créer un exercice
     public function store(Request $request)
@@ -141,6 +151,7 @@ class ExerciceController extends Controller
                     ->where('id_exercice', $exercice->id)
                     ->update([
                         'stock_fin_exercice' => $stock_fin,
+                        'stock_debut_exercice' => $stock_fin,
                         'cmp_fin_exercice' => $cmp_fin,
                         'updated_at' => now(),
                     ]);
