@@ -22,14 +22,17 @@ class ExerciceController extends Controller
         return new PostResource(true, 'Liste des exercices', $exercices);
     }
 
-public function articlesExercices()
-{
-    $exercices = Exercice::with(['articles' => function ($query) {
-        $query->select('articles.id', 'libelle', 'code_article');
-    }])->get();
+    public function articlesExercices()
+    {
+        $exercices = Exercice::with(['articles' => function ($query) {
+            $query->select('articles.id', 'libelle', 'code_article');
+        }])
+        ->orderBy('statut', 'desc') // 'ouvert' will come before 'cloture'
+        ->orderBy('annee', 'desc')
+        ->get();
 
-    return new PostResource(true, 'Liste des exercices avec leurs articles', $exercices);
-}
+        return new PostResource(true, 'Liste des exercices avec leurs articles', $exercices);
+    }
 
     //  Créer un exercice
     public function store(Request $request)
