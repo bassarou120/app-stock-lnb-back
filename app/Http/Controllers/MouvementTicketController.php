@@ -432,6 +432,8 @@ class MouvementTicketController extends Controller
         "objet" => 'nullable|string|max:255',
         "commune_depart" => 'nullable|exists:communes,id',
         "commune_arriver" => 'nullable|exists:communes,id',
+        "kilometrage" => 'required|integer|min:0', // 👈 AJOUTEZ CETTE LIGNE
+        "kilometrage_de_fin" => 'nullable|integer|min:0', // 👈 AJOUTEZ CETTE LIGNE
         "tickets" => 'required|array|min:1',
         "tickets.*.compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
         "tickets.*.coupon_ticket_id" => 'required|exists:coupon_tickets,id',
@@ -483,6 +485,8 @@ class MouvementTicketController extends Controller
                 "date" => $request->date,
                 "commune_depart" => $request->commune_depart ?? null,
                 "commune_arriver" => $request->commune_arriver ?? null,
+                "kilometrage" => $request->kilometrage,
+                "kilometrage_de_fin" => $request->kilometrage_de_fin ?? null,
                 "trajet_aller_retour" => $request->trajet_aller_retour,
                 "reference" => $reference,
             ]);
@@ -507,101 +511,57 @@ class MouvementTicketController extends Controller
 
     // update sortie
     public function updateSortieTicket(Request $request, $id)
-    {
-        // Validation des données
-        $validator = Validator::make($request->all(), [
-            "vehicule_id" => 'required|exists:vehicules,id',
-            "compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
-            "coupon_ticket_id" => 'required|exists:coupon_tickets,id',
-            // "kilometrage" => 'required|integer',
-            "employe_id" => 'required|exists:employes,id',
-            "description" => 'nullable|string|max:255',
-            "objet" => 'nullable|string|max:255',
-            "qte" => 'required|integer',
-            "date" => 'required',
-            // Assurez-vous que ces champs sont également validés si vous les utilisez dans la mise à jour
-            // 'commune_depart' => 'required|exists:communes,id',
-            // 'commune_arriver' => 'required|exists:communes,id',
-            'trajet_aller_retour' => 'required|boolean',
+{
+    // Valider les champs qui sont communs à toute la transaction
+    $validator = Validator::make($request->all(), [
+        "vehicule_id" => 'required|exists:vehicules,id',
+        "employe_id" => 'required|exists:employes,id',
+        "description" => 'nullable|string|max:255',
+        "objet" => 'nullable|string|max:255',
+        "date" => 'required',
+        'trajet_aller_retour' => 'required|boolean',
+        'kilometrage' => 'required|integer', // Valider le kilométrage de début
+        'kilometrage_de_fin' => 'nullable|integer', // Valider le kilométrage de fin
+        'commune_depart' => 'required|exists:communes,id',
+        'commune_arriver' => 'required|exists:communes,id',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
+    }
+
+    // Étape 1 : Trouver le mouvement initial pour obtenir sa référence
+    $mouvementInitial = MouvementTicket::find($id);
+    if (!$mouvementInitial) {
+        return response()->json(['error' => 'Mouvement introuvable.'], 404);
+    }
+
+    DB::beginTransaction();
+    try {
+        // Étape 2 : Mettre à jour tous les mouvements qui ont la même référence
+        $affectedRows = MouvementTicket::where('reference', $mouvementInitial->reference)->update([
+            "vehicule_id" => $request->vehicule_id,
+            "employe_id" => $request->employe_id,
+            "description" => $request->description,
+            "objet" => $request->objet,
+            "date" => $request->date,
+            "commune_depart" => $request->commune_depart,
+            "commune_arriver" => $request->commune_arriver,
+            "trajet_aller_retour" => $request->trajet_aller_retour,
+            "kilometrage" => $request->kilometrage,
+            "kilometrage_de_fin" => $request->kilometrage_de_fin,
         ]);
 
-        // Vérifier si la validation échoue
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
+        DB::commit();
 
-        // Trouver le mouvement existant
-        $mouvement = MouvementTicket::find($id);
-        if (!$mouvement) {
-            return response()->json(['error' => 'Mouvement introuvable.'], 404);
-        }
+        // Retourner le mouvement initial ou un message de succès
+        return new PostResource(true, "Les mouvements de sortie ont été mis à jour avec succès !", $mouvementInitial);
 
-        DB::beginTransaction();
-        try {
-            // Vérifier le stock actuel pour ce ticket
-            // Récupérer l'ancien stock avant modification
-            $ancien_qte = $mouvement->qte;
-            $ancien_coupon_id = $mouvement->coupon_ticket_id;
-            $ancien_compagnie_id = $mouvement->compagnie_petrolier_id;
-
-
-            $stock = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)
-                ->where('isdeleted', false)
-                ->where('compagnie_petrolier_id', $request->compagnie_petrolier_id)
-                ->first(); // Utiliser first() au lieu de latest()->first()
-
-            if (!$stock) {
-                DB::rollBack();
-                return response()->json(['error' => "Stock introuvable pour cet article."], 400);
-            }
-
-            // Calculer la différence de quantité
-            $differenceQte = $request->qte - $ancien_qte; // Utiliser l'ancienne quantité du mouvement pour calculer la différence
-
-            // Vérifier si la nouvelle quantité demandée est disponible en stock
-            // Si la différence est positive, cela signifie qu'on augmente la quantité de sortie, donc on doit vérifier le stock.
-            if ($differenceQte > 0 && $stock->qte_actuel < $differenceQte) {
-                DB::rollBack();
-                return response()->json(['error' => "Quantité insuffisante en stock pour cette modification. Disponible: " . $stock->qte_actuel . ", Supplémentaire demandé: " . $differenceQte], 400);
-            }
-
-
-            $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Sortie de Ticket")->first(); // Utiliser first()
-            if (!$type_mouvement) {
-                DB::rollBack();
-                return response()->json(['error' => "Le type de mouvement 'Sortie de Ticket' n'existe pas."], 404);
-            }
-
-            // Mise à jour du mouvement
-            $mouvement->update([
-                "id_type_mouvement" => $type_mouvement->id,
-                "vehicule_id" => $request->vehicule_id,
-                "compagnie_petrolier_id" => $request->compagnie_petrolier_id,
-                "coupon_ticket_id" => $request->coupon_ticket_id,
-                "kilometrage" => $request->kilometrage,
-                "employe_id" => $request->employe_id,
-                "description" => $request->description,
-                "qte" => $request->qte,
-                "objet" => $request->objet,
-                "date" => $request->date,
-                "commune_depart" => $request->commune_depart,
-                "commune_arriver" => $request->commune_arriver,
-                "trajet_aller_retour" => $request->trajet_aller_retour,
-                "kilometrage_de_fin" => $request->kilometrage_de_fin,
-            ]);
-
-            // Mettre à jour le stock
-            $stock->qte_actuel -= $differenceQte;
-            $stock->save();
-
-            DB::commit();
-            // Retourner la réponse
-            return new PostResource(true, 'Le mouvement de sortie de ticket a été mis à jour avec succès !', $mouvement);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['error' => 'Erreur lors de la mise à jour du mouvement de sortie: ' . $e->getMessage()], 500);
-        }
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json(['error' => 'Erreur lors de la mise à jour des mouvements de sortie: ' . $e->getMessage()], 500);
     }
+}
 
     //delete sortie
     public function deleteSortieTicket($id)
