@@ -378,6 +378,7 @@ class MouvementTicketController extends Controller
 
         // Retourner un objet unique par transaction
         return [
+            "id" => $firstMouvement->id, // ID du premier mouvement du groupe
             'reference' => $firstMouvement->reference,
             'date' => $firstMouvement->date,
             'vehicule' => $firstMouvement->vehicule,
