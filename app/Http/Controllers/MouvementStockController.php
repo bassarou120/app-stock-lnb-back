@@ -39,19 +39,13 @@ class MouvementStockController extends Controller
         // Récupérer l'ID du type de mouvement "Entrée de Stock"
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Entrée de Stock')->first();
 
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-        if (!$exerciceOuvert) {
-            return new PostResource(false, "Aucun exercice ouvert n'a été trouvé.", []);
-        }
         // Si le type de mouvement existe, récupérer les mouvements correspondants
         if ($type_mouvement) {
             $mouvements = MouvementStock::with(['article', 'fournisseur', 'piecesJointes', 'unite_de_mesure'])
             ->where('id_type_mouvement', $type_mouvement->id)
             ->where('isdeleted', false)
-            ->where('id_exercice', $exerciceOuvert->id)
             ->latest()
             ->paginate(1000);
-
 
             return new PostResource(true, 'Liste des mouvements', $mouvements);
         }
@@ -124,13 +118,6 @@ class MouvementStockController extends Controller
 
             $nouveau_cmp = ($valeur_stock_existant + $valeur_nouvelle_entree) / $quantite_totale;
         }
-        // Récupérer l'exercice ouvert
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-        if (!$exerciceOuvert) {
-            return response()->json([
-                'message' => "Aucun exercice ouvert n'a été trouvé. Veuillez créer un exercice avant d'enregistrer un mouvement."
-            ], 422);
-        }
 
 
         // Création du mouvement avec le CMP calculé
@@ -144,7 +131,6 @@ class MouvementStockController extends Controller
             "prixUnitaire" => $request->prixUnitaire,
             "cout_moyen_pondere" => round($nouveau_cmp, 2),
             "date_mouvement" => $request->date_mouvement,
-            "id_exercice" => $exerciceOuvert->id, //  liaison avec l'exercice ouvert
         ]);
 
         // Si une pièce jointe est envoyée
@@ -175,17 +161,6 @@ class MouvementStockController extends Controller
         $mouvement = MouvementStock::find($id);
         if (!$mouvement) {
             return response()->json(['message' => 'Mouvement introuvable'], 404);
-        }
-
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-        if (!$exerciceOuvert) {
-            return new PostResource(false, "Impossible de modifier un mouvement d'un exercice clôturé.", []);
-        }
-
-        if ($mouvement->id_exercice !== $exerciceOuvert->id) {
-            return response()->json([
-                'message' => "Impossible de modifier un mouvement d'un exercice clôturé."
-            ], 403);
         }
 
         // Validation des données
@@ -251,7 +226,6 @@ class MouvementStockController extends Controller
             "prixUnitaire" => $request->prixUnitaire,
             "cout_moyen_pondere" => round($nouveau_cmp, 2),
             "date_mouvement" => $request->date_mouvement,
-            "id_exercice" => $exerciceOuvert->id, //  liaison avec l'exercice ouvert
         ]);
 
         // ÉTAPE 4: Mise à jour du stock
@@ -271,12 +245,8 @@ class MouvementStockController extends Controller
      */
     private function recalculerCMPPosterieur($id_article, $date_limite)
     {
-        // Récupérer tous les mouvements d'entrée postérieurs à la date limite
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-        if (!$exerciceOuvert) return;
 
         $mouvements_posterieurs = MouvementStock::where('id_Article', $id_article)
-            ->where('id_exercice', $exerciceOuvert->id)
             ->where('date_mouvement', '>', $date_limite)
             ->whereHas('typeMouvement', function($query) {
                 $query->where('libelle_type_mouvement', 'Entrée de Stock');
@@ -325,19 +295,6 @@ class MouvementStockController extends Controller
     public function deleteEntreeStock($id)
     {
         $mouvement = MouvementStock::find($id);
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-
-        if (!$exerciceOuvert) {
-            return response()->json([
-                'message' => "Aucun exercice ouvert n'existe, suppression impossible."
-            ], 422);
-        }
-
-        if ($mouvement->id_exercice !== $exerciceOuvert->id) {
-            return response()->json([
-                'message' => "Impossible de supprimer un mouvement d'un exercice clôturé."
-            ], 403);
-        }
 
         if (!$mouvement) {
             return response()->json([
@@ -435,15 +392,8 @@ class MouvementStockController extends Controller
      */
     private function verifierCoherenceStock($id_article, $mouvement_a_supprimer)
     {
-
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-        if (!$exerciceOuvert) {
-            return ['valide' => false, 'message' => "Aucun exercice ouvert trouvé."];
-        }
-
         // Récupérer tous les mouvements chronologiquement
         $mouvements = MouvementStock::where('id_Article', $id_article)
-            ->where('id_exercice', $exerciceOuvert->id)
             ->with('typeMouvement')
             ->orderBy('date_mouvement', 'asc')
             ->get();

@@ -234,7 +234,7 @@ Route::put('/exercicestate/{id}/status', [ExerciceController::class, 'changeStat
 Route::get('/exercice/ouvert', [ExerciceController::class, 'getExerciceOuvert']);
 
 // Define the specific route first
-Route::get('/test', [Article_ExoController::class, 'articlesExercices']);
+Route::get('/articlesExercices', [Article_ExoController::class, 'articlesExercices']);
 
 // Then, define the general route
 Route::get('/articles/{id}', [ArticleController::class, 'show']);

@@ -40,16 +40,15 @@ class ArticleController extends Controller
     {
 
         // Récupérer l'exercice ouvert
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
+/*         $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
         if (!$exerciceOuvert) {
             return response()->json([
                 'success' => false,
                 'message' => 'Aucun exercice ouvert trouvé.'
             ], 404);
-        }
+        } */
 
         $articles = Article::with(['categorie', 'stock'])
-        ->where('id_exercice', $exerciceOuvert->id)
         ->where('isdeleted', false)
         ->latest()->paginate(1000);
         return new PostResource(true, 'Liste des articles', $articles);
@@ -259,23 +258,6 @@ class ArticleController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        // Vérifier l'exercice ouvert
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-        if (!$exerciceOuvert) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Aucun exercice ouvert trouvé.'
-            ], 400);
-        }
-
-        // Empêcher la modification si l'article ne correspond pas à l'exercice ouvert
-        if ($article->id_exercice !== $exerciceOuvert->id) {
-            return response()->json([
-                'success' => false,
-                'message' => "Impossible de modifier un article lié à un exercice clôturé."
-            ], 403);
-        }
-
         DB::beginTransaction();
         try {
             // Mise à jour de l'article
@@ -290,9 +272,7 @@ class ArticleController extends Controller
             // CMP début = basé sur le stock initial de l'exercice
             $stockDebut = DB::table('stocks')
                 ->where('id_article', $article->id)
-                ->where('id_exercice', $exerciceOuvert->id)
                 ->where('type', 'entrée') // uniquement les entrées (achats)
-                ->whereDate('created_at', '<=', $exerciceOuvert->date_debut)
                 ->select(DB::raw('SUM(qte * prix_unitaire) as total'), DB::raw('SUM(qte) as total_qte'))
                 ->first();
 
@@ -303,7 +283,6 @@ class ArticleController extends Controller
             // CMP fin = basé sur toutes les entrées pendant l'exercice
             $stockFin = DB::table('stocks')
                 ->where('id_article', $article->id)
-                ->where('id_exercice', $exerciceOuvert->id)
                 ->where('type', 'entrée') // uniquement les entrées
                 ->select(DB::raw('SUM(qte * prix_unitaire) as total'), DB::raw('SUM(qte) as total_qte'))
                 ->first();
@@ -315,14 +294,12 @@ class ArticleController extends Controller
             // Stock actuel
             $stockActuel = DB::table('stocks')
                 ->where('id_article', $article->id)
-                ->where('id_exercice', $exerciceOuvert->id)
                 ->orderBy('id', 'desc')
                 ->value('Qte_actuel') ?? 0;
 
             // Mise à jour de la table article_exercice
             DB::table('article_exercice')
                 ->where('id_article', $article->id)
-                ->where('id_exercice', $exerciceOuvert->id)
                 ->update([
                     'stock_debut_exercice' => $stockDebut->total_qte ?? 0,
                     'stock_fin_exercice' => $stockActuel,
@@ -402,11 +379,8 @@ class ArticleController extends Controller
 
     public function imprimer()
     {
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-
         $articles = Article::with(['categorie', 'stock'])
             ->where('isdeleted', false)
-            ->where('id_exercice', $exerciceOuvert->id)
             ->get();
 
         $pdf = Pdf::loadView('pdf.articles', compact('articles'));

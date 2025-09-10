@@ -107,57 +107,29 @@ public function articlesExercices()
         return new PostResource(true, 'exercice modifié avec succès', $exercice);
     }
 
-    public function changeStatus(Request $request, $id)
-    {
-        $request->validate([
-            'statut' => 'required|in:ouvert,cloture',
-        ]);
+public function changeStatus(Request $request, $id)
+{
+    $request->validate([
+        'statut' => 'required|in:ouvert,cloture',
+    ]);
 
-        $exercice = Exercice::findOrFail($id);
-        $nouvStatut = $request->input('statut');
+    $exercice = Exercice::findOrFail($id);
+    $nouvStatut = $request->input('statut');
 
+    // Utilisation d'une transaction pour garantir l'atomicité
+    DB::transaction(function () use ($exercice, $nouvStatut) {
         if ($nouvStatut === 'ouvert') {
-            Exercice::where('id', '!=', $id)->update(['statut' => 'cloture']);
+            Exercice::where('id', '!=', $exercice->id)->update(['statut' => 'cloture']);
             $exercice->statut = 'ouvert';
             $exercice->save();
         }
 
         if ($nouvStatut === 'cloture') {
-            // Clôture de l'exercice actuel
+            // Clôturer l'exercice actuel
             $exercice->statut = 'cloture';
             $exercice->save();
 
-            // Mettre à jour stock_fin_exercice et cmp_fin_exercice
-            $articles = DB::table('article_exercice')
-                ->where('id_exercice', $exercice->id)
-                ->get();
-
-            foreach ($articles as $article) {
-                $stock = Stock::where('id_Article', $article->id_article)
-                            ->where('id_exercice', $exercice->id)
-                            ->first();
-
-                $stock_fin = $stock ? $stock->Qte_actuel : 0;
-
-                $dernierMouvement = MouvementStock::where('id_Article', $article->id_article)
-                                    ->where('id_exercice', $exercice->id)
-                                    ->latest('date_mouvement')
-                                    ->first();
-
-                $cmp_fin = $dernierMouvement ? $dernierMouvement->cout_moyen_pondere : 0;
-
-                DB::table('article_exercice')
-                    ->where('id_article', $article->id_article)
-                    ->where('id_exercice', $exercice->id)
-                    ->update([
-                        'stock_fin_exercice' => $stock_fin,
-                        'stock_debut_exercice' => $stock_fin,
-                        'cmp_fin_exercice' => $cmp_fin,
-                        'updated_at' => now(),
-                    ]);
-            }
-
-            // Créer le nouvel exercice ouvert
+            // Créer le nouvel exercice pour l'année suivante
             $nouvelExercice = Exercice::create([
                 'annee' => $exercice->annee + 1,
                 'statut' => 'ouvert',
@@ -165,37 +137,61 @@ public function articlesExercices()
                 'date_fin' => Carbon::create($exercice->annee + 1, 12, 31),
             ]);
 
-            // Initialiser article_exercice et stock pour le nouvel exercice
-            foreach ($articles as $article) {
+            // Récupérer les articles de l'exercice en cours
+            $articlesExercice = DB::table('article_exercice')
+                ->where('id_exercice', $exercice->id)
+                ->get();
+
+            foreach ($articlesExercice as $article) {
+                // Récupérer le stock final et le CMP final de l'exercice qui se clôture
+                $stock = Stock::where('id_Article', $article->id_article)
+                    ->where('id_exercice', $exercice->id)
+                    ->first();
+                $stock_fin = $stock ? $stock->Qte_actuel : 0;
+
+                $dernierMouvement = MouvementStock::where('id_Article', $article->id_article)
+                    ->where('id_exercice', $exercice->id)
+                    ->latest('date_mouvement')
+                    ->first();
+                $cmp_fin = $dernierMouvement ? $dernierMouvement->cout_moyen_pondere : 0;
+
+                // Mettre à jour les données de fin d'exercice pour l'exercice qui se clôture
+                DB::table('article_exercice')
+                    ->where('id_article', $article->id_article)
+                    ->where('id_exercice', $exercice->id)
+                    ->update([
+                        'stock_fin_exercice' => $stock_fin,
+                        'cmp_fin_exercice' => $cmp_fin,
+                        'updated_at' => now(),
+                    ]);
+
+                // Créer l'enregistrement article_exercice pour le nouvel exercice en utilisant les valeurs de fin d'exercice
                 DB::table('article_exercice')->insert([
                     'id_article' => $article->id_article,
                     'id_exercice' => $nouvelExercice->id,
-                    'stock_debut_exercice' => $article->stock_fin_exercice,
+                    'stock_debut_exercice' => $stock_fin, // Utilisation du stock de fin
                     'stock_fin_exercice' => 0,
-                    'cmp_debut_exercice' => $article->cmp_fin_exercice,
+                    'cmp_debut_exercice' => $cmp_fin, // Utilisation du CMP de fin
                     'cmp_fin_exercice' => 0,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
 
+                // Créer l'enregistrement de stock pour le nouvel exercice
                 Stock::create([
                     'id_Article' => $article->id_article,
-                    'Qte_actuel' => $article->stock_fin_exercice,
+                    'Qte_actuel' => $stock_fin,
                     'id_exercice' => $nouvelExercice->id,
                 ]);
             }
-
-            $exerciceOuvert = $nouvelExercice;
-        } else {
-            // Cas ouverture manuelle
-            $exerciceOuvert = $exercice;
         }
+    });
 
-        return response()->json([
-            'success' => true,
-            'exercice' => $exerciceOuvert,
-        ]);
-    }
+    return response()->json([
+        'success' => true,
+        'exercice' => Exercice::find($id),
+    ]);
+}
 
 
 
