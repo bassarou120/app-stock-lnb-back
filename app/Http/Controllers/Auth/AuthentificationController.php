@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use App\Http\Resources\PostResource;
+use App\Models\Exercice;
 
 class AuthentificationController extends Controller
 {
@@ -51,6 +52,23 @@ class AuthentificationController extends Controller
         }
     }
 
+    public function getExerciceOuvert()
+    {
+        // Récupérer l'exercice ouvert
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
+
+        if (!$exerciceOuvert) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun exercice ouvert trouvé.'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'exercice' => $exerciceOuvert,
+        ]);
+    }
 
 
 

@@ -22,13 +22,14 @@ class DatabaseSeeder extends Seeder
         // ]);
         $this->call([
             RoleSeeder::class,
+            ExerciceSeeder::class,
             TypeMouvementSeeder::class,
             CategorieSeeder::class,
             FournisseurSeeder::class,
-            ArticlesSeeder::class,
+            //ArticlesSeeder::class,
             TypeAffectationSeeder::class,
-            EmployerSeeder::class,
-            BureauSeeder::class,
+            //EmployerSeeder::class,
+            //BureauSeeder::class,
             CompagniePetrolierSeeder::class,
             MarqueSeeder::class,
             StatusImmoSeeder::class,
@@ -36,15 +37,16 @@ class DatabaseSeeder extends Seeder
             SousTypeImmoSeeder::class,
             GroupeTypeImmoSeeder::class,
             ModeleSeeder::class,
-            VoitureSeeder::class,
+            //VoitureSeeder::class,
             CommuneSeeder::class,
-            CouponTicketSeeder::class,
+            //CouponTicketSeeder::class,
             UserSeeder::class,
             ModuleSeeder::class,
             FonctionnaliteSeeder::class,
             PermissionSeeder::class,
             UniteDeMesureSeeder::class,
             TypeInterventionSeeder::class,
+
         ]);
 
         // Appel de la commande artisan personnalisée
