@@ -90,7 +90,7 @@ class CouponTicketController extends Controller
         $couponTicket->isdeleted = true;
         $couponTicket->save();
         // Retourner la réponse formatée avec PostResource, indiquant que la suppression a réussi
-        return new PostResource(true, 'Coupon ticket supprimé avec succès', null);
+        return new PostResource(true, 'Coupons ticket supprimé avec succès', null);
     }
 
 }
