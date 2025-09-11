@@ -137,7 +137,6 @@ class ArticleController extends Controller
 
         // Récupérer l'exercice ouvert
         $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-        echo "voici" . $exerciceOuvert->annee;
         if (!$exerciceOuvert) {
             return response()->json([
                 'success' => false,
@@ -388,36 +387,37 @@ class ArticleController extends Controller
         return $pdf->download('etat_du_stock.pdf');
     }
 
+    public function exportArticlesExcel()
+    {
+        // Récupérer l'année dont le statut est "ouvert"
+        $exercice = Exercice::where('statut', 'ouvert')->first();
+        $annee = $exercice ? $exercice->annee : date('Y');
 
+        // Charger les articles
+        $articles = Article::with(['categorie', 'stock'])->get()->map(function ($article) use ($annee) {
+            return [
+                'Année'             => $annee,
+                'Article'           => $article->libelle ?? '-',
+                'Description'       => $article->description ?? '-',
+                'Catégorie'         => $article->categorie->libelle_categorie_article ?? '-',
+                'Quantité Actuelle' => $article->stock->Qte_actuel ?? 0,
+                'Stock d\'alerte'   => $article->stock_alerte ?? '-',
+                'Date de création'  => $article->created_at ? $article->created_at->format('Y-m-d') : '-',
+            ];
+        })->toArray();
 
-public function exportArticlesExcel()
-{
-    // Récupérer l'année dont le statut est "ouvert"
-    $exercice = Exercice::where('statut', 'ouvert')->first();
-    $annee = $exercice ? $exercice->annee : date('Y');
+        // Générer le fichier Excel
+        \Excel::create('etat_du_stock_' . $annee, function($excel) use ($articles, $annee) {
+            $excel->sheet('Stock_' . $annee, function($sheet) use ($articles) {
+                // Ajoute les données avec les en-têtes automatiquement
+                $sheet->fromArray($articles);
+            });
+        })->download('xlsx');
+    }
 
-    // Charger les articles
-    $articles = Article::with(['categorie', 'stock'])->get()->map(function ($article) use ($annee) {
-        return [
-            'Année'             => $annee,
-            'Article'           => $article->libelle ?? '-',
-            'Description'       => $article->description ?? '-',
-            'Catégorie'         => $article->categorie->libelle_categorie_article ?? '-',
-            'Quantité Actuelle' => $article->stock->Qte_actuel ?? 0,
-            'Stock d\'alerte'   => $article->stock_alerte ?? '-',
-            'Date de création'  => $article->created_at ? $article->created_at->format('Y-m-d') : '-',
-        ];
-    })->toArray();
-
-    // Générer le fichier Excel
-    \Excel::create('etat_du_stock_' . $annee, function($excel) use ($articles, $annee) {
-        $excel->sheet('Stock_' . $annee, function($sheet) use ($articles) {
-            // Ajoute les données avec les en-têtes automatiquement
-            $sheet->fromArray($articles);
-        });
-    })->download('xlsx');
-}
-
+    /**
+     * Importe les articles à partir d'un fichier Excel.
+     */
     public function import(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -434,44 +434,102 @@ public function exportArticlesExcel()
 
         $ignoredRows = [];
 
-        foreach ($rows as $index => $row) {
-            if ($index === 0) continue;
+        // Pré-charger tous les exercices pour éviter des requêtes répétées dans la boucle
+        $exercices = Exercice::all()->pluck('id', 'annee');
 
-            if (count($row) < 5) {
-                $ignoredRows[] = "Ligne $index ignorée : colonnes insuffisantes (" . count($row) . ")";
-                continue;
+        // Démarre une transaction pour garantir que toutes les opérations sont réussies ou annulées
+        DB::beginTransaction();
+
+        try {
+            foreach ($rows as $index => $row) {
+                if ($index === 0) continue; // Ignorer la ligne d'en-tête
+
+                // La nouvelle colonne 'année' est à l'index 5 (la 6ème colonne)
+                if (count($row) < 6) {
+                    $ignoredRows[] = "Ligne " . ($index + 1) . " ignorée : colonnes insuffisantes (" . count($row) . "). L'année d'exercice est manquante.";
+                    continue;
+                }
+
+                $code_article = trim($row[0]);
+                $designation_article = trim($row[1]);
+                $annee_exercice = trim($row[5]); // Récupérer l'année de l'exercice
+
+                // Vérifier si un article avec le même code ou libellé existe déjà
+                $articleExistant = Article::where('code_article', $code_article)
+                    ->orWhere('libelle', $designation_article)
+                    ->first();
+
+                if ($articleExistant) {
+                    $ignoredRows[] = "Ligne " . ($index + 1) . " ignorée : article avec code '$code_article' ou nom '$designation_article' déjà existant.";
+                    continue;
+                }
+
+                // Vérifier si l'année de l'exercice existe dans la base de données.
+                // Si elle n'existe pas, la créer.
+                if (!isset($exercices[$annee_exercice])) {
+                    // Créer un nouvel exercice pour cette année
+                    $newExercice = Exercice::create([
+                        'annee' => $annee_exercice,
+                        'date_debut' => Carbon::create($annee_exercice, 1, 1)->toDateString(),
+                        'date_fin' => Carbon::create($annee_exercice, 12, 31)->toDateString(),
+                        'statut' => 'cloture', // Les exercices importés sont considérés comme clôturés
+                    ]);
+
+                    // Mettre à jour notre collection d'exercices pour la suite de l'importation
+                    $exercices[$annee_exercice] = $newExercice->id;
+                }
+
+                $id_exercice = $exercices[$annee_exercice];
+
+                $categorie = CategorieArticle::firstOrCreate([
+                    'libelle_categorie_article' => trim($row[2])
+                ]);
+
+                // Créer l'article avec l'id_exercice récupéré
+                $article = Article::create([
+                    'id_cat' => $categorie->id,
+                    'libelle' => $designation_article,
+                    'code_article' => $code_article,
+                    'description' => trim($row[3]),
+                    'stock_alerte' => trim($row[4]),
+                    'id_exercice' => $id_exercice // Ajout de l'id de l'exercice
+                ]);
+
+                // Initialiser l'entrée de stock pour cet article
+                Stock::create([
+                    'id_Article' => $article->id,
+                    'Qte_actuel' => 0,
+                    'id_exercice' => $id_exercice,
+                ]);
+
+                // Ajouter une entrée dans la table article_exercice
+                DB::table('article_exercice')->insert([
+                    'id_article' => $article->id,
+                    'id_exercice' => $id_exercice,
+                    'stock_debut_exercice' => 0,
+                    'stock_fin_exercice' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'cmp_debut_exercice' => 0,
+                    'cmp_fin_exercice' => 0,
+                ]);
             }
 
-            $code_article = trim($row[0]);
-            $designation_article = trim($row[1]);
+            DB::commit();
 
-            // Vérifie si le code ou le nom existe déjà
-            $articleExistant = Article::where('code_article', $code_article)
-                ->orWhere('libelle', $designation_article)
-                ->first();
-
-            if ($articleExistant) {
-                $ignoredRows[] = "Ligne $index ignorée : article avec code '$code_article' où le nom '$designation_article' déjà existant.";
-                continue;
-            }
-
-            $categorie = CategorieArticle::firstOrCreate([
-                'libelle_categorie_article' => trim($row[2])
+            return response()->json([
+                'message' => 'Import terminé avec succès !',
+                'ignored' => $ignoredRows
             ]);
 
-            Article::create([
-                'id_cat' => $categorie->id,
-                'libelle' => $designation_article,
-                'code_article' => $code_article,
-                'description' => trim($row[3]),
-                'stock_alerte' => trim($row[4]),
-            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de l\'importation.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'message' => 'Import terminé !',
-            'ignored' => $ignoredRows
-        ]);
     }
 
 }
