@@ -27,6 +27,7 @@ use App\Http\Controllers\Parametrage\RoleController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\DashboardStockController;
 use App\Http\Controllers\MouvementStockController;
+use App\Http\Controllers\ExerciceController;
 use App\Http\Controllers\Parametrage\EmployeController;
 use App\Http\Controllers\Auth\AuthentificationController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
@@ -98,6 +99,7 @@ Route::apiResource('transferts', TransfertController::class);
 Route::apiResource('retour-ticket', RetourTicketController::class);
 Route::apiResource('annulation-ticket', AnnulationTicketController::class);
 Route::apiResource('trajets', TrajetController::class);
+Route::apiResource('exercices', ExerciceController::class);
 
 
 
@@ -224,12 +226,4 @@ Route::post('/immobilisations/import', [ImmobilisationController::class, 'import
 
 Route::post('/vehicules/{vehicule}/carte-grise', [VehiculeController::class, 'addCarteGrise']);
 
-Route::get('/generer-fiche-demande/{code_mouvement}', [MouvementStockController::class, 'genererFicheDemande']);
-
-Route::get('/mouvements/fiche/{id}', [MouvementStockController::class, 'genererFicheIndividuelle']);
-
-Route::post('/demande/valid-upload-signe', [MouvementStockController::class, 'validAndUploadSigne']);
-
-Route::get('/view-file', [MouvementStockController::class, 'viewFile']);
-Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController::class, 'downloadGroupedFile']);
-
+Route::put('/mouvement-tickets/{id}/kilometrage-fin', [MouvementTicketController::class, 'updateKilometrageDeFin']);

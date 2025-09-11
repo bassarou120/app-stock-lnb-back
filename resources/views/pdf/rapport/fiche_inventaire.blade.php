@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Fiche d'Inventaire des Immobilisations</title>
+    <title>Rapport des Immobilisations</title>
     <!-- Le lien vers style.css n'est pas utilisé par DomPDF pour les styles en ligne -->
     <!-- <link rel="stylesheet" href="style.css"> -->
 
@@ -196,7 +196,7 @@
     <div style="width: 100%; margin-bottom: 10px;text-align: center;">
         <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;">
         <h1 style="font-size: 20px; margin: 10px 0; font-weight: bold;">
-            FICHE D'INVENTAIRE DES IMMOBILISATIONS
+            RAPPORT DES IMMOBILISATIONS
         </h1>
         <h2 style="font-style: italic;">
             (LNB-Stock & Parc)
