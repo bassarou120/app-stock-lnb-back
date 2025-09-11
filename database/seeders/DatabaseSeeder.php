@@ -26,7 +26,7 @@ class DatabaseSeeder extends Seeder
             TypeMouvementSeeder::class,
             CategorieSeeder::class,
             FournisseurSeeder::class,
-            //ArticlesSeeder::class,
+            ArticlesSeeder::class,
             TypeAffectationSeeder::class,
             //EmployerSeeder::class,
             //BureauSeeder::class,

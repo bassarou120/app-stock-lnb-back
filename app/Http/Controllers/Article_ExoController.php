@@ -27,7 +27,9 @@ class Article_ExoController extends Controller
     {
         // Eager load the 'article' and 'exercice' relationships.
         // This fetches the related data in a single query for each relationship.
-        $articlesExercices = ArticleExercice::with(['article', 'exercice'])->get();
+        $articlesExercices = ArticleExercice::with(['article', 'exercice'])
+        ->orderBy('id_exercice', 'desc')
+        ->get();
 
         // Return the data as a JSON response.
         return new PostResource(true, 'Liste complète des articles_exercices', $articlesExercices);

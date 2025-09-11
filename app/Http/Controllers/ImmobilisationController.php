@@ -46,13 +46,6 @@ class ImmobilisationController extends Controller
     public function index()
     {
 
-        // Récupérer l'exercice ouvert
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-
-        if (!$exerciceOuvert) {
-            return new PostResource(false, 'Aucun exercice ouvert trouvé.', []);
-        }
-
         $immos = Immobilisation::with([
             'vehicule',
             'groupeTypeImmo',
@@ -62,7 +55,6 @@ class ImmobilisationController extends Controller
             'bureau',
             'fournisseur'
         ])->where('isdeleted', false)
-        ->where('id_exercice', $exerciceOuvert->id) // Filtre par exercice
         ->latest()
         ->paginate(100);
 
@@ -132,20 +124,12 @@ class ImmobilisationController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        // Récupérer l'exercice ouvert
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-
-        if (!$exerciceOuvert) {
-            return response()->json(['error' => 'Aucun exercice ouvert trouvé.'], 422);
-        }
-
         // Démarre une transaction de base de données
         DB::beginTransaction();
 
         try {
             // Création de l'immobilisation
             $immo = Immobilisation::create($request->all());
-            $immoData['id_exercice'] = $exerciceOuvert->id;
             $immo = Immobilisation::create($immoData);
 
             // Crée un enregistrement de transfert si le bureau ou l'employé est renseigné
@@ -253,19 +237,6 @@ class ImmobilisationController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        // Vérifier l'exercice ouvert
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-        if (!$exerciceOuvert) {
-            return response()->json(['error' => 'Aucun exercice ouvert trouvé.'], 422);
-        }
-
-        if ($immobilisation->id_exercice !== $exerciceOuvert->id) {
-            return response()->json([
-                'success' => false,
-                'message' => "Impossible de modifier une immobilisation d'un exercice fermé."
-            ], 403);
-        }
-
         $immobilisation->update($request->all());
 
         return new PostResource(true, 'Immobilisation mise à jour avec succès', $immobilisation);
@@ -298,19 +269,6 @@ class ImmobilisationController extends Controller
  */
     public function destroy(Immobilisation $immobilisation)
     {
-        // Vérifier l'exercice ouvert
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-        if (!$exerciceOuvert) {
-            return response()->json(['error' => 'Aucun exercice ouvert trouvé.'], 422);
-        }
-
-        if ($immobilisation->id_exercice !== $exerciceOuvert->id) {
-            return response()->json([
-                'success' => false,
-                'message' => "Impossible de supprimer une immobilisation d'un exercice fermé."
-            ], 403);
-        }
-
         $immobilisation->isdeleted = true;
         $immobilisation->save();
 
@@ -319,12 +277,6 @@ class ImmobilisationController extends Controller
 
     public function imprimerImmos()
     {
-
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-
-        if (!$exerciceOuvert) {
-            return response()->json(['error' => 'Aucun exercice ouvert trouvé.'], 422);
-        }
 
         // Récupère toutes les immobilisations avec leurs relations nécessaires
         $immobilisations = Immobilisation::with([
@@ -337,7 +289,6 @@ class ImmobilisationController extends Controller
             'fournisseur'
         ])
         ->where('isdeleted', false)
-        ->where('id_exercice', $exerciceOuvert->id)
         ->latest()
         ->get();
 
