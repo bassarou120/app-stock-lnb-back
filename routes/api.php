@@ -46,6 +46,7 @@ use App\Http\Controllers\Rapport\ImmobilisationRapportController;
 use App\Http\Controllers\Rapport\Parc\RapportParcController;
 use App\Http\Controllers\Rapport\Ticket\RapportTicketController;
 use App\Http\Controllers\Api\SiteSettingController;
+use App\Http\Controllers\Article_ExoController;
 
 
 Route::get('/user', function (Request $request) {
@@ -227,3 +228,13 @@ Route::post('/immobilisations/import', [ImmobilisationController::class, 'import
 Route::post('/vehicules/{vehicule}/carte-grise', [VehiculeController::class, 'addCarteGrise']);
 
 Route::put('/mouvement-tickets/{id}/kilometrage-fin', [MouvementTicketController::class, 'updateKilometrageDeFin']);
+
+Route::put('/exercicestate/{id}/status', [ExerciceController::class, 'changeStatus']);
+
+Route::get('/exercice/ouvert', [ExerciceController::class, 'getExerciceOuvert']);
+
+// Define the specific route first
+Route::get('/articlesExercices', [Article_ExoController::class, 'articlesExercices']);
+
+// Then, define the general route
+Route::get('/articles/{id}', [ArticleController::class, 'show']);

@@ -15,6 +15,7 @@ class CouponTicket extends Model
     protected $fillable = [
         'libelle',
         'valeur',
+        'id_exercice'
     ];
 
     // public function stock()
@@ -45,6 +46,11 @@ class CouponTicket extends Model
             ]);
         }
     });
+}
+
+public function exercice()
+{
+    return $this->belongsTo(Exercice::class, 'id_exercice');
 }
 
 }

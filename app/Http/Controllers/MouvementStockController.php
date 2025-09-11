@@ -14,6 +14,7 @@ use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Models\Exercice;
 
 
 /**
@@ -45,7 +46,6 @@ class MouvementStockController extends Controller
             ->where('isdeleted', false)
             ->latest()
             ->paginate(1000);
-
 
             return new PostResource(true, 'Liste des mouvements', $mouvements);
         }
@@ -118,6 +118,7 @@ class MouvementStockController extends Controller
 
             $nouveau_cmp = ($valeur_stock_existant + $valeur_nouvelle_entree) / $quantite_totale;
         }
+
 
         // Création du mouvement avec le CMP calculé
         $mouvement = MouvementStock::create([
@@ -244,7 +245,7 @@ class MouvementStockController extends Controller
      */
     private function recalculerCMPPosterieur($id_article, $date_limite)
     {
-        // Récupérer tous les mouvements d'entrée postérieurs à la date limite
+
         $mouvements_posterieurs = MouvementStock::where('id_Article', $id_article)
             ->where('date_mouvement', '>', $date_limite)
             ->whereHas('typeMouvement', function($query) {
@@ -294,6 +295,7 @@ class MouvementStockController extends Controller
     public function deleteEntreeStock($id)
     {
         $mouvement = MouvementStock::find($id);
+
         if (!$mouvement) {
             return response()->json([
                 'success' => false,
@@ -549,8 +551,12 @@ class MouvementStockController extends Controller
             // Traitement de chaque article
             foreach ($request->articles as $article) {
 
+                $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
                 // ÉTAPE 1: Gestion du stock et calcul du CMP AVANT la création du mouvement
-                $stock = Stock::where('id_Article', $article['id_Article'])->latest()->first();
+                $stock = Stock::where('id_Article', $article['id_Article'])
+                            ->where('id_exercice', $exerciceOuvert->id)
+                            ->latest()
+                            ->first();
 
                 // Initialisation des variables pour le calcul du CMP
                 $ancienne_quantite = 0;
@@ -562,7 +568,8 @@ class MouvementStockController extends Controller
                     $stock = Stock::create([
                         'id_Article' => $article['id_Article'],
                         'Qte_actuel' => 0,
-                        'cout_moyen_pondere' => 0
+                        'cout_moyen_pondere' => 0,
+                        'id_exercice' => $exerciceOuvert->id
                     ]);
 
                     // Variables restent à 0 pour la première entrée
@@ -600,6 +607,7 @@ class MouvementStockController extends Controller
                     "prixUnitaire" => $article['prixUnitaire'],
                     "cout_moyen_pondere" => round($nouveau_cmp, 2), // Ajout du CMP calculé
                     "date_mouvement" => $request->date_mouvement,
+                    "id_exercice" => $exerciceOuvert->id,
                 ]);
 
                 // ÉTAPE 4: Mise à jour du stock avec la nouvelle quantité et le nouveau CMP
@@ -669,11 +677,21 @@ class MouvementStockController extends Controller
     // Méthode pour l'impression des mouvements d'entrée
     public function imprimerEntrees()
     {
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+
+        if (!$exerciceOuvert) {
+            return response()->json([
+                'success' => false,
+                'message' => "Aucun exercice ouvert trouvé."
+            ], 422);
+        }
+
         $mouvements = MouvementStock::with(['article', 'fournisseur', 'piecesJointes', 'unite_de_mesure'])
-                                    ->where('id_type_mouvement', 1)
-                                    ->where('isdeleted', false)
-                                    ->latest()
-                                    ->get();
+            ->where('id_type_mouvement', 1)
+            ->where('id_exercice', $exerciceOuvert->id)
+            ->where('isdeleted', false)
+            ->latest()
+            ->get();
 
 
         $pdf = \Pdf::loadView('pdf.mouvements_entrees', compact('mouvements'));
@@ -686,17 +704,19 @@ class MouvementStockController extends Controller
     {
         // Récupérer l'ID du type de mouvement "Sortie de Stock"
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Stock')->first();
-
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
         // Si le type de mouvement existe, récupérer les mouvements correspondants
         if ($type_mouvement) {
             // Récupérer tous les codes_mouvement distincts
-            $codesMouvements = MouvementStock::where('id_type_mouvement', $type_mouvement->id)
-                ->orderBy('created_at', 'desc')
-                ->select('code_mouvement', 'created_at')
-                ->where('isdeleted', false)
-                ->distinct()
-                ->get()
-                ->pluck('code_mouvement');
+
+        $codesMouvements = MouvementStock::where('id_type_mouvement', $type_mouvement->id)
+            ->where('id_exercice', $exerciceOuvert->id)
+            ->where('isdeleted', false)
+            ->orderBy('created_at', 'desc')
+            ->select('code_mouvement', 'created_at')
+            ->distinct()
+            ->get()
+            ->pluck('code_mouvement');
 
             $result = [];
 
@@ -704,11 +724,12 @@ class MouvementStockController extends Controller
                 // Récupérer le premier mouvement pour les informations générales
                 $firstMouvement = MouvementStock::with(['bureau', 'employe'])
                     ->where('code_mouvement', $code)
+                    ->where('id_exercice', $exerciceOuvert->id) // filtrer par exercice ouvert
                     ->first();
 
-                // Récupérer tous les articles associés à ce code_mouvement avec leurs relations
                 $details = MouvementStock::with(['article', 'bureau', 'employe'])
                     ->where('code_mouvement', $code)
+                    ->where('id_exercice', $exerciceOuvert->id) // filtrer par exercice ouvert
                     ->get();
 
                 $totalArticles = $details->count();
@@ -742,17 +763,19 @@ class MouvementStockController extends Controller
         // Récupérer l'ID du type de mouvement "Sortie de Stock"
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Stock')->first();
 
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+
         // Si le type de mouvement existe, récupérer les mouvements correspondants
         if ($type_mouvement) {
             $mouvements = MouvementStock::with(['bureau', 'employe', 'article', 'affectation.bureau', 'affectation.employe' => function ($query) {
                 $query->select('id', 'nom', 'prenom')
                     ->selectRaw("CONCAT(nom, ' ', prenom) as full_name");
             }])
-                ->where('id_type_mouvement', $type_mouvement->id)
-                // ->where('statut', '!=', 'Accordé')
-                ->where('isdeleted', false)
-                ->latest()
-                ->paginate(1000);
+            ->where('id_type_mouvement', $type_mouvement->id)
+            ->where('id_exercice', $exerciceOuvert->id) // filtre par exercice
+            ->where('isdeleted', false)
+            ->latest()
+            ->paginate(1000);
 
             return new PostResource(true, 'Liste des mouvements', $mouvements);
         }
@@ -778,6 +801,14 @@ class MouvementStockController extends Controller
                     'message' => 'Type de mouvement "Sortie de Stock" non trouvé.'
                 ], 404);
             }
+            $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+
+            if (!$exerciceOuvert) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Aucun exercice ouvert trouvé."
+                ], 422);
+            }
 
             // Récupérer tous les mouvements de sortie
             $mouvements = MouvementStock::with([
@@ -793,11 +824,11 @@ class MouvementStockController extends Controller
                 }
             ])
             ->where('id_type_mouvement', 2)
+            ->where('id_exercice', $exerciceOuvert->id)
             ->where('isdeleted', false)
             ->latest()
             ->get();
 
-            echo "ici 1";
 
             // Données pour le PDF
             $data = [
@@ -805,10 +836,10 @@ class MouvementStockController extends Controller
                 'mouvements' => $mouvements,
                 'date_impression' => now()->format('d/m/Y à H:i')
             ];
-            echo "ici2";
+
             // Générer le PDF
             $pdf = \PDF::loadView('pdf.mouvement_sortie', compact('mouvements'));
-            echo "ici3";
+
             return $pdf->download('liste_mouvements_sorties.pdf');
 
         } catch (\Exception $e) {
@@ -837,6 +868,12 @@ class MouvementStockController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+
+        if (!$exerciceOuvert) {
+            return response()->json(['error' => 'Aucun exercice ouvert trouvé.'], 422);
+        }
+
         // Vérifier les doublons d'articles
         $codeArticles = array_column($request->articles, 'code_article');
         if (count($codeArticles) !== count(array_unique($codeArticles))) {
@@ -860,7 +897,11 @@ class MouvementStockController extends Controller
         foreach ($request->articles as $article) {
             $articleModel = Article::where('code_article', $article['code_article'])->first();
 
-            $stock = Stock::where('id_Article', $articleModel->id)->latest()->first();
+            $stock = Stock::where('id_Article', $articleModel->id)
+              ->where('id_exercice', $exerciceOuvert->id)
+              ->latest()
+              ->first();
+
             $qteDisponible = $stock ? $stock->Qte_actuel : 0;
 
             // Vérifier s'il y a une quantité insuffisante
@@ -885,6 +926,7 @@ class MouvementStockController extends Controller
                 "id_employe" => $request->id_personnel,
                 "statut" => 'En attente',
                 "code_mouvement" => $code_mouvement,
+                'id_exercice' => $exerciceOuvert->id
             ]);
 
             $mouvements[] = $mouvement;
@@ -937,8 +979,13 @@ class MouvementStockController extends Controller
             return response()->json(['error' => "Le type de mouvement 'Sortie de Stock' n'existe pas."], 404);
         }
 
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+
         // Vérifier la quantité disponible en stock
-        $stock = Stock::where('id_Article', $request->id_Article)->latest()->first();
+        $stock = Stock::where('id_Article', $request->id_Article)
+              ->where('id_exercice', $exerciceOuvert->id)
+              ->latest()
+              ->first();
 
         if (!$stock || $stock->Qte_actuel < $request->qteDemande) {
             return response()->json(['error' => "Quantité insuffisante en stock."], 400);
@@ -956,6 +1003,7 @@ class MouvementStockController extends Controller
             "bureau_id" => $request->id_bureau,
             "id_employe" => $request->id_personnel,
             "statut" => 'En attente',
+            "id_exercice" => $exerciceOuvert->id
         ]);
         return new PostResource(true, 'La sortie de stock a été enregistrée avec succès !', $mouvement);
     }
@@ -978,14 +1026,22 @@ class MouvementStockController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+        if (!$exerciceOuvert) {
+            return response()->json(['error' => 'Aucun exercice ouvert trouvé.'], 422);
+        }
+
+        // Vérifier la quantité disponible en stock
+        $stock = Stock::where('id_Article', $request->id_Article)
+              ->where('id_exercice', $exerciceOuvert->id)
+              ->latest()
+              ->first();
+
         // Trouver le mouvement existant
         $mouvement = MouvementStock::find($id);
         if (!$mouvement) {
             return response()->json(['error' => 'Mouvement introuvable.'], 404);
         }
-
-        // Vérifier la quantité disponible en stock
-        $stock = Stock::where('id_Article', $request->id_Article)->latest()->first();
 
         if (!$stock || $stock->Qte_actuel < $request->qteDemande) {
             return response()->json(['error' => "Quantité insuffisante en stock."], 400);
@@ -1038,9 +1094,21 @@ class MouvementStockController extends Controller
     {
         $mouvementStock = MouvementStock::findOrFail($id);
 
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+
+        if (!$exerciceOuvert) {
+            return response()->json(['error' => 'Aucun exercice ouvert trouvé.'], 422);
+        }
+
         $date_mouvement = $request->input('date_mouvement');
         $statut = $request->input('statut');
         $mouvementStock->statut = $statut;
+
+        // Vérifier la quantité disponible en stock
+        $stock = Stock::where('id_Article', $mouvementStock->id_Article)
+                    ->where('id_exercice', $exerciceOuvert->id)
+                    ->latest()
+                    ->first();
 
         // Si le statut est "Accordé"
         if (strtolower($statut) === 'accordé') {
@@ -1052,8 +1120,7 @@ class MouvementStockController extends Controller
 
             $qte = $request->input('qte');
 
-            // Vérifier la quantité disponible en stock
-            $stock = Stock::where('id_Article', $mouvementStock->id_Article)->latest()->first();
+
 
             if (!$stock || $stock->Qte_actuel < $qte) {
                 return response()->json(['error' => 'Quantité insuffisante en stock.'], 400);
@@ -1102,6 +1169,11 @@ class MouvementStockController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+        if (!$exerciceOuvert) {
+            return response()->json(['error' => 'Aucun exercice ouvert trouvé.'], 422);
+        }
+
         $code = $request->input('code_mouvement');
         $dateMouvement = $request->input('date_mouvement');
         $statut = $request->input('statut');
@@ -1118,7 +1190,10 @@ class MouvementStockController extends Controller
                 $articleCode = $article ? $article->code_article : "inconnu";
 
                 // Vérifier la quantité disponible en stock
-                $stock = Stock::where('id_Article', $mouvement->id_Article)->latest()->first();
+                $stock = Stock::where('id_Article', $mouvement->id_Article)
+                    ->where('id_exercice', $exerciceOuvert->id)
+                    ->latest()
+                    ->first();
 
                 if (!$stock || $stock->Qte_actuel < $qte) {
                     return response()->json([
@@ -1159,38 +1234,48 @@ class MouvementStockController extends Controller
         ]);
     }
 
-
-
     // ... autres méthodes ...
 
-    public function deleteSortieStock($id)
-    {
-        // Trouver le mouvement
-        $mouvement = MouvementStock::find($id);
+public function deleteSortieStock($id)
+{
+    // Trouver le mouvement
+    $mouvement = MouvementStock::find($id);
 
-        if (!$mouvement) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Mouvement introuvable.'
-            ], 404);
-        }
-        $mouvement->isdeleted = true;
-        $mouvement->save();
-
-        return new PostResource(true, 'Sortie de stock supprimée avec succès !', null);
+    if (!$mouvement) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Mouvement introuvable.'
+        ], 404);
     }
 
-
-
-
-    // get qte disponible
-    public function getQuantiteDisponible($idArticle)
-    {
-        $stock = Stock::where('id_Article', $idArticle)->first();
-        $quantite = $stock ? $stock->Qte_actuel : 0;
-
-        return new PostResource(true, 'Quantité trouvée !', $quantite);
+    $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+    if ($mouvement->id_exercice !== $exerciceOuvert->id) {
+        return response()->json([
+            'success' => false,
+            'message' => "Impossible de supprimer un mouvement d'un exercice fermé."
+        ], 403);
     }
+
+    $mouvement->isdeleted = true;
+    $mouvement->save();
+
+    return new PostResource(true, 'Sortie de stock supprimée avec succès !', null);
+}
+
+// get qte disponible
+public function getQuantiteDisponible($idArticle)
+{
+    $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+
+    $stock = Stock::where('id_Article', $idArticle)
+          ->where('id_exercice', $exerciceOuvert->id)
+          ->latest()
+          ->first();
+
+    $quantite = $stock ? $stock->Qte_actuel : 0;
+
+    return new PostResource(true, 'Quantité trouvée !', $quantite);
+}
 
 
 

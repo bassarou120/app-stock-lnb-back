@@ -45,6 +45,7 @@ class ImmobilisationController extends Controller
  */
     public function index()
     {
+
         $immos = Immobilisation::with([
             'vehicule',
             'groupeTypeImmo',
@@ -54,7 +55,8 @@ class ImmobilisationController extends Controller
             'bureau',
             'fournisseur'
         ])->where('isdeleted', false)
-        ->latest()->paginate(100);
+        ->latest()
+        ->paginate(100);
 
         return new PostResource(true, 'Liste des immobilisations', $immos);
     }
@@ -128,6 +130,7 @@ class ImmobilisationController extends Controller
         try {
             // Création de l'immobilisation
             $immo = Immobilisation::create($request->all());
+            $immo = Immobilisation::create($immoData);
 
             // Crée un enregistrement de transfert si le bureau ou l'employé est renseigné
             if ($request->filled('bureau_id') || $request->filled('employe_id')) {
@@ -274,6 +277,7 @@ class ImmobilisationController extends Controller
 
     public function imprimerImmos()
     {
+
         // Récupère toutes les immobilisations avec leurs relations nécessaires
         $immobilisations = Immobilisation::with([
             'vehicule',
@@ -285,7 +289,8 @@ class ImmobilisationController extends Controller
             'fournisseur'
         ])
         ->where('isdeleted', false)
-        ->latest()->get();
+        ->latest()
+        ->get();
 
         $pdf = \Pdf::loadView('pdf.immobilisations', compact('immobilisations'));
 
