@@ -12,6 +12,7 @@ use App\Models\Parametrage\CouponTicket;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 use PDF;
 
 
@@ -391,6 +392,7 @@ class MouvementTicketController extends Controller
             'trajet_aller_retour' => $firstMouvement->trajet_aller_retour,
             'kilometrage' => $firstMouvement->kilometrage, // Assurez-vous que ces champs existent
             'kilometrage_de_fin' => $firstMouvement->kilometrage_de_fin,
+            'bon_de_sortie_path' => $firstMouvement->bon_de_sortie_path,
             'tickets' => $ticketsDetails, // Le tableau des tickets
         ];
     })->values(); // Utiliser values() pour réindexer le tableau numériquement
@@ -685,43 +687,80 @@ class MouvementTicketController extends Controller
     }
 
     public function genererBonDeSortie(Request $request, $reference)
-{
-    // Récupérer tous les mouvements de tickets liés à cette référence
-    $mouvements = MouvementTicket::with([
-        'vehicule',
-        'employe',
-        'coupon_ticket',
-        'compagniePetrolier',
-        'depart',
-        'arriver'
-    ])
-    ->where('reference', $reference)
-    ->get();
+    {
+        // Récupérer tous les mouvements de tickets liés à cette référence
+        $mouvements = MouvementTicket::with([
+            'vehicule',
+            'employe',
+            'coupon_ticket',
+            'compagniePetrolier',
+            'depart',
+            'arriver'
+        ])
+        ->where('reference', $reference)
+        ->get();
 
-    if ($mouvements->isEmpty()) {
-        return response()->json(['error' => 'Aucun mouvement de ticket trouvé pour cette référence.'], 404);
+        if ($mouvements->isEmpty()) {
+            return response()->json(['error' => 'Aucun mouvement de ticket trouvé pour cette référence.'], 404);
+        }
+
+        // Récupérer les informations communes pour le rapport
+        $premierMouvement = $mouvements->first();
+        $data = [
+            'reference' => $premierMouvement->reference,
+            'vehicule' => $premierMouvement->vehicule,
+            'employe' => $premierMouvement->employe,
+            'date' => $premierMouvement->date,
+            'objet' => $premierMouvement->objet,
+            'communeDepart' => $premierMouvement->depart,
+            'communeArriver' => $premierMouvement->arriver,
+            'kilometrage' => $premierMouvement->kilometrage,
+            'kilometrage_de_fin' => $premierMouvement->kilometrage_de_fin,
+            'trajet_aller_retour' => $premierMouvement->trajet_aller_retour,
+            'mouvements' => $mouvements
+        ];
+
+        // Générer le PDF en utilisant la vue 'demande_sortie.blade.php'
+        $pdf = PDF::loadView('pdf.sortie_ticket', $data);
+
+        // Télécharger le PDF
+        return $pdf->download('bon_de_sortie_'. $reference . '.pdf');
     }
 
-    // Récupérer les informations communes pour le rapport
-    $premierMouvement = $mouvements->first();
-    $data = [
-        'reference' => $premierMouvement->reference,
-        'vehicule' => $premierMouvement->vehicule,
-        'employe' => $premierMouvement->employe,
-        'date' => $premierMouvement->date,
-        'objet' => $premierMouvement->objet,
-        'communeDepart' => $premierMouvement->depart,
-        'communeArriver' => $premierMouvement->arriver,
-        'kilometrage' => $premierMouvement->kilometrage,
-        'kilometrage_de_fin' => $premierMouvement->kilometrage_de_fin,
-        'trajet_aller_retour' => $premierMouvement->trajet_aller_retour,
-        'mouvements' => $mouvements
-    ];
+    // Fichier : app/Http/Controllers/MouvementTicketController.php
+    public function televerserBonDeSortie(Request $request, $id)
+    {
+        $request->validate(['bon_de_sortie' => 'required|file|mimes:pdf|max:2048']);
 
-    // Générer le PDF en utilisant la vue 'demande_sortie.blade.php'
-    $pdf = PDF::loadView('pdf.sortie_ticket', $data);
+        // 1. Trouver le mouvement initial par son ID
+        $mouvement = MouvementTicket::find($id);
 
-    // Télécharger le PDF
-    return $pdf->download('bon_de_sortie_'. $reference . '.pdf');
-}
+        if (!$mouvement) {
+            return response()->json(['message' => 'Mouvement introuvable.'], 404);
+        }
+
+        // 2. Gérer l'upload du fichier
+        $filePath = $request->file('bon_de_sortie')->store('public/bons_de_sortie');
+
+        // 3. Mettre à jour TOUS les mouvements qui partagent la même référence
+        MouvementTicket::where('reference', $mouvement->reference)->update([
+            'bon_de_sortie_path' => $filePath
+        ]);
+
+        return response()->json([
+            'message' => 'Bon de sortie téléversé avec succès !',
+            'bon_de_sortie_path' => $filePath
+        ]);
+    }
+
+    public function voirBonDeSortie($id)
+    {
+        $mouvement = MouvementTicket::find($id);
+
+        if (!$mouvement || !$mouvement->bon_de_sortie_path) {
+            return response()->json(['message' => 'Bon de sortie non trouvé.'], 404);
+        }
+
+        return Storage::response($mouvement->bon_de_sortie_path);
+    }
 }
