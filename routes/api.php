@@ -238,3 +238,5 @@ Route::get('/articlesExercices', [Article_ExoController::class, 'articlesExercic
 
 // Then, define the general route
 Route::get('/articles/{id}', [ArticleController::class, 'show']);
+
+Route::get('/mouvement-tickets/generer-bon/{reference}', [MouvementTicketController::class, 'genererBonDeSortie']);

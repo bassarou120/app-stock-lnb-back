@@ -12,6 +12,7 @@ use App\Models\Parametrage\CouponTicket;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use PDF;
 
 
 /**
@@ -682,4 +683,45 @@ class MouvementTicketController extends Controller
             'data' => $mouvement
         ], 200);
     }
+
+    public function genererBonDeSortie(Request $request, $reference)
+{
+    // Récupérer tous les mouvements de tickets liés à cette référence
+    $mouvements = MouvementTicket::with([
+        'vehicule',
+        'employe',
+        'coupon_ticket',
+        'compagniePetrolier',
+        'depart',
+        'arriver'
+    ])
+    ->where('reference', $reference)
+    ->get();
+
+    if ($mouvements->isEmpty()) {
+        return response()->json(['error' => 'Aucun mouvement de ticket trouvé pour cette référence.'], 404);
+    }
+
+    // Récupérer les informations communes pour le rapport
+    $premierMouvement = $mouvements->first();
+    $data = [
+        'reference' => $premierMouvement->reference,
+        'vehicule' => $premierMouvement->vehicule,
+        'employe' => $premierMouvement->employe,
+        'date' => $premierMouvement->date,
+        'objet' => $premierMouvement->objet,
+        'communeDepart' => $premierMouvement->depart,
+        'communeArriver' => $premierMouvement->arriver,
+        'kilometrage' => $premierMouvement->kilometrage,
+        'kilometrage_de_fin' => $premierMouvement->kilometrage_de_fin,
+        'trajet_aller_retour' => $premierMouvement->trajet_aller_retour,
+        'mouvements' => $mouvements
+    ];
+
+    // Générer le PDF en utilisant la vue 'demande_sortie.blade.php'
+    $pdf = PDF::loadView('pdf.sortie_ticket', $data);
+
+    // Télécharger le PDF
+    return $pdf->download('bon_de_sortie_'. $reference . '.pdf');
+}
 }
