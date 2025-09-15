@@ -274,7 +274,7 @@ class MouvementStockController extends Controller
         $numeroFiche = $this->generateNewFicheNumber();
         MouvementStock::where('code_mouvement', $codeMouvement)
             ->update(['numero_fiche_demande' => $numeroFiche]);
-        
+
         // Rafraîchir les modèles pour obtenir le nouveau numéro
         $mouvements = $mouvements->map(function ($m) use ($numeroFiche) {
             $m->numero_fiche_demande = $numeroFiche;
@@ -297,7 +297,7 @@ class MouvementStockController extends Controller
     }
 
 
-public function genererFicheIndividuelle($id)
+    public function genererFicheIndividuelle($id)
     {
         $mouvement = MouvementStock::with('article', 'employe', 'bureau')
             ->find($id);
@@ -309,7 +309,7 @@ public function genererFicheIndividuelle($id)
         // Génère le numéro de fiche unique et le sauvegarde
         $numeroFiche = $this->generateNewFicheNumber();
         $mouvement->update(['numero_fiche_demande' => $numeroFiche]);
-        
+
         // Rafraîchir le modèle pour obtenir le nouveau numéro
         $mouvement->refresh();
 
@@ -1531,7 +1531,7 @@ public function genererFicheIndividuelle($id)
 
         // Correction du chemin : on supprime le préfixe /storage
         $sanitizedPath = str_replace(['storage/'], '', $idfichier);
-        
+
         // Vérifie si le fichier existe
         if (!Storage::disk('public')->exists($sanitizedPath)) {
             return response()->json(['error' => 'File not found.'], 404);
@@ -1555,7 +1555,7 @@ public function genererFicheIndividuelle($id)
         if (!$mouvement || !Storage::disk('public')->exists($mouvement->demandevalidesigne)) {
             return response()->json(['error' => 'File not found.'], 404);
         }
-        
+
         // 3. Renvoie le fichier en tant que téléchargement en utilisant le chemin absolu.
         $filePath = Storage::disk('public')->path($mouvement->demandevalidesigne);
         return response()->download($filePath);
