@@ -186,7 +186,7 @@ class ImmobilisationRapportController extends Controller
                 $message = 'Rapport des immobilisations par bureau généré avec succès.';
                 break;
 
-                default:
+            default:
                 $success = false;
                 $message = 'Type de rapport non valide.';
                 $data = [];
@@ -350,6 +350,40 @@ class ImmobilisationRapportController extends Controller
                 $filename = 'fiche_inventaire_immobilisations.pdf';
                 $compactData = ['immobilisations' => $data]; // Définir les données pour la vue (ce sera une liste d'immobilisations)
                 break;
+
+            case 'bureau': // NOUVEAU: Logique pour le rapport par bureau (PDF)
+                // Validation spécifique pour l'impression du rapport par bureau
+                $validator = Validator::make($request->all(), [
+                    'date_debut_bureau' => 'required|date',
+                    'date_fin_bureau' => 'required|date|after_or_equal:date_debut_bureau',
+                    'bureau_id' => 'nullable|exists:bureaus,id',
+                ]);
+
+                if ($validator->fails()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Les dates de début et de fin sont obligatoires pour le rapport par bureau.',
+                        'errors' => $validator->errors()
+                    ], 422);
+                }
+
+                $query = Immobilisation::with([
+                    'vehicule', 'groupeTypeImmo', 'sousTypeImmo', 'statusImmo',
+                    'employe', 'bureau', 'fournisseur'
+                ])->whereBetween('date_acquisition', [$request->date_debut_bureau, $request->date_fin_bureau]);
+
+                if ($request->filled('bureau_id')) {
+                    $query->where('bureau_id', $request->bureau_id);
+                }
+
+                $data = $query->latest()->get(); // Pas de pagination pour le PDF
+                $viewName = 'pdf.rapport.rapport_bureau'; // <-- Chemin de la vue pour le rapport bureau
+                $filename = 'rapport_immobilisations_par_bureau.pdf';
+                $compactData = ['immobilisations' => $data]; // Données passées à la vue
+                break;
+
+
+
 
             default:
                 return response()->json(['success' => false, 'message' => 'Type de rapport non valide pour l\'impression.'], 400);
