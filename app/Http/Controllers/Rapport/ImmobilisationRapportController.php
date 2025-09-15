@@ -158,7 +158,35 @@ class ImmobilisationRapportController extends Controller
                 $message = 'Fiche d\'inventaire des immobilisations générée avec succès.';
                 break;
 
-            default:
+            case 'bureau':
+                // Validation spécifique pour le rapport par bureau
+                $validator = Validator::make($request->all(), [
+                    'date_debut_bureau' => 'required|date',
+                    'date_fin_bureau' => 'required|date|after_or_equal:date_debut_bureau',
+                    'bureau_id' => 'nullable|exists:bureaus,id',
+                ]);
+
+                if ($validator->fails()) {
+                    return new PostResource(false, 'Validation échouée pour le rapport par bureau. Les dates sont obligatoires.', [
+                        'errors' => $validator->errors()
+                    ]);
+                }
+
+                $query = Immobilisation::with([
+                    'vehicule', 'groupeTypeImmo', 'sousTypeImmo', 'statusImmo',
+                    'employe', 'bureau', 'fournisseur'
+                ])
+                ->whereBetween('date_acquisition', [$request->date_debut_bureau, $request->date_fin_bureau]);
+
+                if ($request->filled('bureau_id')) {
+                    $query->where('bureau_id', $request->bureau_id);
+                }
+
+                $data = $query->latest()->paginate(100);
+                $message = 'Rapport des immobilisations par bureau généré avec succès.';
+                break;
+
+                default:
                 $success = false;
                 $message = 'Type de rapport non valide.';
                 $data = [];

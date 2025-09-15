@@ -225,14 +225,27 @@ Route::post('/vehicules/import', [VehiculeController::class, 'import']);
 Route::post('/articles/import', [ArticleController::class, 'import']);
 Route::post('/immobilisations/import', [ImmobilisationController::class, 'import']);Route::post('/vehicules/{vehicule}/carte-grise', [VehiculeController::class, 'addCarteGrise']);
 
+Route::get('/generer-fiche-demande/{code_mouvement}', [MouvementStockController::class, 'genererFicheDemande']);
+
+Route::get('/mouvements/fiche/{id}', [MouvementStockController::class, 'genererFicheIndividuelle']);
+
+Route::post('/demande/valid-upload-signe', [MouvementStockController::class, 'validAndUploadSigne']);
+
+
 Route::post('/vehicules/{vehicule}/carte-grise', [VehiculeController::class, 'addCarteGrise']);
 
 Route::put('/mouvement-tickets/{id}/kilometrage-fin', [MouvementTicketController::class, 'updateKilometrageDeFin']);
 
 Route::put('/exercicestate/{id}/status', [ExerciceController::class, 'changeStatus']);
 
+
+
+Route::get('/view-file', [MouvementStockController::class, 'viewFile']);
+
+Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController::class, 'downloadGroupedFile']);
 Route::get('/exercice/ouvert', [ExerciceController::class, 'getExerciceOuvert']);
 
+Route::get('/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']);
 // Define the specific route first
 Route::get('/articlesExercices', [Article_ExoController::class, 'articlesExercices']);
 
