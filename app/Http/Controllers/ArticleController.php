@@ -50,9 +50,11 @@ class ArticleController extends Controller
 
         $articles = Article::with(['categorie', 'stock'])
         ->where('isdeleted', false)
+        ->orderBy('id_exercice', 'desc')
         ->latest()->paginate(1000);
         return new PostResource(true, 'Liste des articles', $articles);
     }
+
 
     // Créer un nouveau article
 

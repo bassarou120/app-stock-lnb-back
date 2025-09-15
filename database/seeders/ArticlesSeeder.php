@@ -7,11 +7,12 @@ use App\Models\Exercice;
 use App\Models\Stock;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
-class ArticleSeeder extends Seeder
+class ArticlesSeeder extends Seeder
 {
     /**
-     * Exécute les seeders de la base de données.
+     * Run the database seeds.
      */
     public function run(): void
     {
@@ -22,13 +23,20 @@ class ArticleSeeder extends Seeder
             // Récupérer l'exercice ouvert
             $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
             if (!$exerciceOuvert) {
-                $this->command->error('Aucun exercice ouvert trouvé. Le seeder a échoué.');
+                $this->command->error('Aucun exercice ouvert trouvé. Le seeder a échoué. Veuillez d\'abord exécuter le seeder pour les exercices.');
                 DB::rollBack();
                 return;
             }
 
             // Récupérer les ID des catégories
             $categories = DB::table('categorie_articles')->pluck('id', 'libelle_categorie_article');
+
+            // S'assurer que les catégories existent avant de continuer
+            if ($categories->isEmpty()) {
+                $this->command->error('Les catégories d\'articles n\'ont pas été trouvées. Veuillez d\'abord exécuter le seeder pour les catégories.');
+                DB::rollBack();
+                return;
+            }
 
             // Liste des articles à insérer. Notez que nous allons utiliser le code article
             // déjà défini dans le tableau pour la création.
@@ -72,28 +80,36 @@ class ArticleSeeder extends Seeder
             ];
 
             foreach ($articlesToSeed as $articleData) {
-                // Utiliser firstOrCreate pour éviter les doublons si le seeder est exécuté plusieurs fois
+                // Utiliser firstOrCreate pour créer ou récupérer l'article.
                 $article = Article::firstOrCreate(
                     ['code_article' => $articleData['code_article']],
                     [
                         'id_cat' => $articleData['id_cat'],
                         'libelle' => $articleData['libelle'],
                         'description' => $articleData['description'],
-                        'stock_alerte' => 0, // Valeur par défaut pour le seeder
-                        'id_exercice' => $exerciceOuvert->id
+                        'stock_alerte' => 0,
+                        'id_exercice' => $exerciceOuvert->id,
                     ]
                 );
 
-                // Si l'article vient d'être créé, insérer les enregistrements dans les tables liées
-                if ($article->wasRecentlyCreated) {
-                    // Initialiser l'entrée de stock pour cet article
+                // Vérifier si l'entrée de stock existe pour cet article et cet exercice.
+                $stockExists = Stock::where('id_Article', $article->id)
+                                     ->where('id_exercice', $exerciceOuvert->id)
+                                     ->exists();
+                if (!$stockExists) {
                     Stock::create([
                         'id_Article' => $article->id,
                         'Qte_actuel' => 0,
                         'id_exercice' => $exerciceOuvert->id,
                     ]);
+                }
 
-                    // Ajouter une entrée dans la table article_exercice
+                // Vérifier si l'entrée de la table pivot article_exercice existe.
+                $articleExerciceExists = DB::table('article_exercice')
+                                         ->where('id_article', $article->id)
+                                         ->where('id_exercice', $exerciceOuvert->id)
+                                         ->exists();
+                if (!$articleExerciceExists) {
                     DB::table('article_exercice')->insert([
                         'id_article' => $article->id,
                         'id_exercice' => $exerciceOuvert->id,
@@ -108,11 +124,12 @@ class ArticleSeeder extends Seeder
             }
             DB::commit();
 
-            $this->command->info('Les articles et les enregistrements liés ont été ajoutés avec succès !');
+            $this->command->info('Les articles, les stocks et les enregistrements article-exercice ont été ajoutés ou mis à jour avec succès !');
 
         } catch (\Exception $e) {
             DB::rollBack();
             $this->command->error('Une erreur est survenue lors de l\'exécution du seeder : ' . $e->getMessage());
+            Log::error($e->getMessage());
         }
     }
 }

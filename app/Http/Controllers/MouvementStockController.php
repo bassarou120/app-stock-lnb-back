@@ -9,6 +9,7 @@ use App\Models\PieceJointeMouvement;
 use App\Models\Stock;
 use App\Models\Article;
 use App\Models\Parametrage\TypeMouvement;
+use App\Models\Parametrage\Employe;
 use App\Models\Parametrage\TypeAffectation;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
@@ -430,90 +431,92 @@ class MouvementStockController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/demande-de-sortie",
-     *     summary="Créer une demande de fourniture",
-     *     description="Permet de créer une nouvelle demande de sortie avec la liste des articles demandés.",
-     *     tags={"Demande de fourniture"},
+     * path="/api/demande-de-sortie",
+     * summary="Créer une demande de fourniture",
+     * description="Permet de créer une nouvelle demande de sortie avec la liste des articles demandés.",
+     * tags={"Demande de fourniture"},
      *
-     *     @OA\RequestBody(
-     *         required=true,
-     *         description="Les données nécessaires pour créer une demande de fournitures",
-     *         @OA\JsonContent(
-     *             required={"dateDemande", "id_bureau", "id_personnel", "articles"},
+     * @OA\RequestBody(
+     * required=true,
+     * description="Les données nécessaires pour créer une demande de fournitures",
+     * @OA\JsonContent(
+     * required={"dateDemande", "articles"},
      *
-     *             @OA\Property(
-     *                 property="dateDemande",
-     *                 type="string",
-     *                 format="date",
-     *                 example="2025-05-27",
-     *                 description="Date à laquelle la demande de fourniture est effectuée"
-     *             ),
+     * @OA\Property(
+     * property="dateDemande",
+     * type="string",
+     * format="date",
+     * example="2025-05-27",
+     * description="Date à laquelle la demande de fourniture est effectuée"
+     * ),
      *
-     *             @OA\Property(
-     *                 property="id_bureau",
-     *                 type="integer",
-     *                 example=3,
-     *                 description="Identifiant du bureau effectuant la demande (référence à la table bureaux)"
-     *             ),
+     * @OA\Property(
+     * property="id_bureau",
+     * type="integer",
+     * example=3,
+     * description="Identifiant du bureau effectuant la demande (référence à la table bureaux)"
+     * ),
      *
-     *             @OA\Property(
-     *                 property="id_personnel",
-     *                 type="integer",
-     *                 example=5,
-     *                 description="Identifiant du personnel responsable de la demande (référence à la table personnels)"
-     *             ),
+     * @OA\Property(
+     * property="email_personnel",
+     * type="string",
+     * format="email",
+     * example="employe@example.com",
+     * description="Email du personnel responsable de la demande (référence à la table employes)"
+     * ),
      *
-     *             @OA\Property(
-     *                 property="articles",
-     *                 type="array",
-     *                 minItems=1,
-     *                 @OA\Items(
-     *                     type="object",
-     *                     required={"code_article", "qteDemande"},
+     * @OA\Property(
+     * property="articles",
+     * type="array",
+     * minItems=1,
+     * @OA\Items(
+     * type="object",
+     * required={"code_article", "qteDemande"},
      *
-     *                     @OA\Property(
-     *                         property="code_article",
-     *                         type="string",
-     *                         example="AAA67",
-     *                         description="Code unique de l'article concerné (référence à la table articles)"
-     *                     ),
+     * @OA\Property(
+     * property="code_article",
+     * type="string",
+     * example="ART-20240526-1",
+     * description="Code unique de l'article concerné (référence à la table articles)"
+     * ),
      *
-     *                     @OA\Property(
-     *                         property="description",
-     *                         type="string",
-     *                         example="Consommable de bureau",
-     *                         description="Description complémentaire de l'article demandé"
-     *                     ),
+     * @OA\Property(
+     * property="description",
+     * type="string",
+     * example="Consommable de bureau",
+     * description="Description complémentaire de l'article demandé"
+     * ),
      *
-     *                     @OA\Property(
-     *                         property="qteDemande",
-     *                         type="integer",
-     *                         example=10,
-     *                         description="Quantité d'article demandée pour la sortie (minimum 1)"
-     *                     )
-     *                 )
-     *             )
-     *         )
-     *     ),
+     * @OA\Property(
+     * property="qteDemande",
+     * type="integer",
+     * example=10,
+     * description="Quantité d'article demandée pour la sortie (minimum 1)"
+     * )
+     * )
+     * )
+     * )
+     * ),
      *
-     *     @OA\Response(
-     *         response=201,
-     *         description="Demande de fourniture créée avec succès",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Demande de fourniture créée avec succès"),
-     *             @OA\Property(property="demande", type="object")
-     *         )
-     *     ),
+     * @OA\Response(
+     * response=201,
+     * description="Demande de fourniture créée avec succès",
+     * @OA\JsonContent(
+     * @OA\Property(property="success", type="boolean", example=true),
+     * @OA\Property(property="message", type="string", example="Tous les articles ont été enregistrés avec succès !"),
+     * @OA\Property(property="data", type="object")
+     * )
+     * ),
      *
-     *     @OA\Response(
-     *         response=400,
-     *         description="Requête invalide - Erreur de validation"
-     *     ),
+     * @OA\Response(
+     * response=422,
+     * description="Requête invalide - Erreur de validation"
+     * ),
      *
-     *     @OA\Response(
-     *         response=500,
-     *         description="Erreur interne du serveur"
-     *     )
+     * @OA\Response(
+     * response=404,
+     * description="Ressource non trouvée"
+     * )
      * )
      */
 
@@ -861,11 +864,20 @@ class MouvementStockController extends Controller
             "articles.*.qteDemande" => "required|integer|min:1",
             "dateDemande" => "required|date",
             "id_bureau" => "nullable|exists:bureaus,id",
-            "id_personnel" => "nullable|exists:employes,id",
+            // "id_personnel" => "nullable|exists:employes,id",
+            "email_personnel" => "nullable|email|exists:employes,email",
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
+        }
+
+        // Après la validation, on récupère l'employé via son email pour obtenir son ID.
+        $employeId = null;
+        if ($request->filled('email_personnel')) {
+            $personnel = Employe::where('email', $request->email_personnel)->first();
+            // La règle 'exists' garantit que nous trouverons un personnel si l'email est fourni.
+            $employeId = $personnel->id;
         }
 
         $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
@@ -923,7 +935,7 @@ class MouvementStockController extends Controller
                 "qteDemande" => $article['qteDemande'],
                 "dateDemande" => $request->dateDemande,
                 "bureau_id" => $request->id_bureau,
-                "id_employe" => $request->id_personnel,
+                "id_employe" => $employeId,
                 "statut" => 'En attente',
                 "code_mouvement" => $code_mouvement,
                 'id_exercice' => $exerciceOuvert->id
