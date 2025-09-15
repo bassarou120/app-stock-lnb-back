@@ -251,3 +251,6 @@ Route::get('/view-file', [MouvementStockController::class, 'viewFile']);
 Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController::class, 'downloadGroupedFile']);
 
 Route::get('/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']);
+
+Route::get('/mouvements/fiche/{id}', [MouvementStockController::class, 'genererFicheIndividuelle']);
+
