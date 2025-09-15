@@ -130,7 +130,7 @@ class ImmobilisationController extends Controller
         try {
             // Création de l'immobilisation
             $immo = Immobilisation::create($request->all());
-            $immo = Immobilisation::create($immoData);
+            //$immo = Immobilisation::create($immoData);
 
             // Crée un enregistrement de transfert si le bureau ou l'employé est renseigné
             if ($request->filled('bureau_id') || $request->filled('employe_id')) {
