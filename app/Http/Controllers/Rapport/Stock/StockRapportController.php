@@ -267,7 +267,10 @@ public function imprimerRapportStock(Request $request)
         $pdf = Pdf::loadView('pdf.rapport.rapport_individuel', compact('rapportData', 'stockInitial', 'stockFinalPeriod', 'reportTypeLabel', 'filterLabels', 'article'));
 
         $filename = 'rapport_stock_individuel.pdf';
-        return $pdf->download($filename);
+
+        return response($pdf->output(), 200)
+        ->header('Content-Type', 'application/pdf')
+        ->header('Content-Disposition', 'inline; filename="'.$filename.'"');
     }
 
     // =========================

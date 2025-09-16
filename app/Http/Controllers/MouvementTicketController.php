@@ -12,6 +12,9 @@ use App\Models\Parametrage\CouponTicket;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+use App\Models\CategorieSortieTicket;
+use PDF;
 
 
 /**
@@ -343,66 +346,70 @@ class MouvementTicketController extends Controller
     }
 
 
-    public function indexSortieTicket()
-{
-    // Récupérer l'ID du type de mouvement "Sortie de Ticket"
-    $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Ticket')->first();
-
-    if (!$type_mouvement) {
-        return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Ticket".', []);
-    }
-
-    // 1. Récupérer tous les mouvements de sortie, en s'assurant de charger les relations
-    $mouvements = MouvementTicket::with(['employe', 'compagniePetrolier', 'vehicule', 'vehicule.modele', 'vehicule.marque', 'coupon_ticket', 'depart', 'arriver'])
-        ->where('id_type_mouvement', $type_mouvement->id)
-        ->where('isdeleted', false)
-        ->latest() // Il est important de trier pour que le premier élément du groupe soit cohérent
-        ->get();
-
-    // 2. Grouper les mouvements par leur référence commune
-    $groupedMouvements = $mouvements->groupBy('reference');
-
-    // 3. Transformer chaque groupe en un seul objet consolidé pour le frontend
-    $transactions = $groupedMouvements->map(function ($group) {
-        // Prendre le premier mouvement comme base pour les informations communes
-        $firstMouvement = $group->first();
-
-        // Créer un tableau contenant les détails de chaque ticket du groupe
-        $ticketsDetails = $group->map(function ($mouvement) {
-            return [
-                'coupon' => $mouvement->coupon_ticket,
-                'compagnie' => $mouvement->compagniePetrolier,
-                'qte' => $mouvement->qte,
-            ];
-        });
-
-        // Retourner un objet unique par transaction
-        return [
-            "id" => $firstMouvement->id, // ID du premier mouvement du groupe
-            'reference' => $firstMouvement->reference,
-            'date' => $firstMouvement->date,
-            'vehicule' => $firstMouvement->vehicule,
-            'employe' => $firstMouvement->employe,
-            'objet' => $firstMouvement->objet,
-            'description' => $firstMouvement->description,
-            'commune_depart' => $firstMouvement->depart,
-            'commune_arriver' => $firstMouvement->arriver,
-            'trajet_aller_retour' => $firstMouvement->trajet_aller_retour,
-            'kilometrage' => $firstMouvement->kilometrage, // Assurez-vous que ces champs existent
-            'kilometrage_de_fin' => $firstMouvement->kilometrage_de_fin,
-            'tickets' => $ticketsDetails, // Le tableau des tickets
-        ];
-    })->values(); // Utiliser values() pour réindexer le tableau numériquement
-
-    // Note : La pagination sur un résultat groupé est plus complexe.
-    // Pour l'instant, nous renvoyons la collection complète.
-    // Si la pagination est cruciale, des stratégies plus avancées sont nécessaires.
-    return new PostResource(true, 'Liste des mouvements de sortie de Ticket', $transactions);
-}
-
-
 
     //Sortie de ticket
+    // Afficher la liste des mouvements de sortie des tickets
+    public function indexSortieTicket()
+    {
+        // Récupérer l'ID du type de mouvement "Sortie de Ticket"
+        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Ticket')->first();
+
+        // Si le type de mouvement n'existe pas, retourner une réponse vide ou un message d'erreur
+        if (!$type_mouvement) {
+            return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Ticket".', []);
+        }
+
+        // 1. Récupérer tous les mouvements de sortie, en s'assurant de charger les relations
+        $mouvements = MouvementTicket::with(['employe', 'compagniePetrolier', 'vehicule', 'vehicule.modele', 'vehicule.marque', 'coupon_ticket', 'depart', 'arriver', 'categorieSortieTicket'])
+            ->where('id_type_mouvement', $type_mouvement->id)
+            ->where('isdeleted', false)
+            ->latest() // Il est important de trier pour que le premier élément du groupe soit cohérent
+            ->get();
+
+        
+        // 2. Grouper les mouvements par leur référence commune
+        $groupedMouvements = $mouvements->groupBy('reference');
+
+        
+        // 3. Transformer chaque groupe en un seul objet consolidé pour le frontend
+        $transactions = $groupedMouvements->map(function ($group) {
+            // Prendre le premier mouvement comme base pour les informations communes
+            $firstMouvement = $group->first();
+
+            // Créer un tableau contenant les détails de chaque ticket du groupe
+            $ticketsDetails = $group->map(function ($mouvement) {
+                return [
+                    'coupon' => $mouvement->coupon_ticket,
+                    'compagnie' => $mouvement->compagniePetrolier,
+                    'qte' => $mouvement->qte,
+                ];
+            });
+
+            // Retourner un objet unique par transaction
+            return [
+                "id" => $firstMouvement->id, // ID du premier mouvement du groupe
+                'reference' => $firstMouvement->reference,
+                'date' => $firstMouvement->date,
+                'vehicule' => $firstMouvement->vehicule,
+                'employe' => $firstMouvement->employe,
+                'objet' => $firstMouvement->objet,
+                'description' => $firstMouvement->description,
+                'commune_depart' => $firstMouvement->depart,
+                'commune_arriver' => $firstMouvement->arriver,
+                'trajet_aller_retour' => $firstMouvement->trajet_aller_retour,
+                'kilometrage' => $firstMouvement->kilometrage, // Assurez-vous que ces champs existent
+                'kilometrage_de_fin' => $firstMouvement->kilometrage_de_fin,
+                'bon_de_sortie_path' => $firstMouvement->bon_de_sortie_path,
+                'tickets' => $ticketsDetails, // Le tableau des tickets
+                'categorie_sortie_ticket' => $firstMouvement->categorieSortieTicket,
+            ];
+        })->values(); // Utiliser values() pour réindexer le tableau numériquement
+        // Retourner un objet unique par transaction
+        return new PostResource(true, 'Liste des mouvements de sortie de Ticket', $transactions);
+    }
+
+
+    //Sortie de ticket      
     // public function indexSortieTicket()
     // {
     //     $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Ticket')->first();
@@ -419,149 +426,152 @@ class MouvementTicketController extends Controller
     // }
 
     // store
-
     public function storeSortieTicket(Request $request)
-{
-    // Validation globale
-    $validator = Validator::make($request->all(), [
-        "vehicule_id" => 'required|exists:vehicules,id',
-        "employe_id" => 'required|exists:employes,id',
-        "date" => 'required|date',
-        "trajet_aller_retour" => 'required|boolean',
-        "description" => 'nullable|string|max:255',
-        "objet" => 'nullable|string|max:255',
-        "commune_depart" => 'nullable|exists:communes,id',
-        "commune_arriver" => 'nullable|exists:communes,id',
-        "kilometrage" => 'required|integer|min:0', // 👈 AJOUTEZ CETTE LIGNE
-        "kilometrage_de_fin" => 'nullable|integer|min:0', // 👈 AJOUTEZ CETTE LIGNE
-        "tickets" => 'required|array|min:1',
-        "tickets.*.compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
-        "tickets.*.coupon_ticket_id" => 'required|exists:coupon_tickets,id',
-        "tickets.*.qte" => 'required|integer|min:1',
-    ]);
+    {
+        // Validation globale
+        $validator = Validator::make($request->all(), [
+            "vehicule_id" => 'required|exists:vehicules,id',
+            "employe_id" => 'required|exists:employes,id',
+            "date" => 'required|date',
+            "trajet_aller_retour" => 'required|boolean',
+            "description" => 'nullable|string|max:255',
+            "objet" => 'nullable|string|max:255',
+            "commune_depart" => 'nullable|exists:communes,id',
+            "commune_arriver" => 'nullable|exists:communes,id',
+            "kilometrage" => 'required|integer|min:0', // 👈 AJOUTEZ CETTE LIGNE
+            "kilometrage_de_fin" => 'nullable|integer|min:0', // 👈 AJOUTEZ CETTE LIGNE
+            "tickets" => 'required|array|min:1',
+            "tickets.*.compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
+            "tickets.*.coupon_ticket_id" => 'required|exists:coupon_tickets,id',
+            "tickets.*.qte" => 'required|integer|min:1',
+            "id_categorie_sortie_ticket" => 'required|exists:categorie_sortie_tickets,id',
+        ]);
 
-    if ($validator->fails()) {
-        return response()->json($validator->errors(), 422);
-    }
-
-    // Type mouvement
-    $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Sortie de Ticket")->first();
-    if (!$type_mouvement) {
-        return response()->json(['error' => "Type de mouvement 'Sortie de Ticket' introuvable"], 404);
-    }
-
-    DB::beginTransaction();
-    try {
-        $mouvements = [];
-        // Générer référence
-        $reference = strtoupper(uniqid('MVT-'));
-
-        foreach ($request->tickets as $ticket) {
-            // Vérifier stock
-            $stock = StockTicket::where('coupon_ticket_id', $ticket['coupon_ticket_id'])
-                ->where('compagnie_petrolier_id', $ticket['compagnie_petrolier_id'])
-                ->where('isdeleted', false)
-                ->first();
-
-            if (!$stock || $stock->qte_actuel < $ticket['qte']) {
-                DB::rollBack();
-                return response()->json([
-                    'error' => "Quantité insuffisante pour coupon {$ticket['coupon_ticket_id']} de la compagnie {$ticket['compagnie_petrolier_id']}."
-                ], 400);
-            }
-
-
-
-            // Créer mouvement (les champs communs sont pris du root)
-            $mouvement = MouvementTicket::create([
-                "id_type_mouvement" => $type_mouvement->id,
-                "vehicule_id" => $request->vehicule_id,
-                "compagnie_petrolier_id" => $ticket['compagnie_petrolier_id'],
-                "coupon_ticket_id" => $ticket['coupon_ticket_id'],
-                "employe_id" => $request->employe_id,
-                "description" => $request->description ?? null,
-                "qte" => $ticket['qte'],
-                "objet" => $request->objet ?? null,
-                "date" => $request->date,
-                "commune_depart" => $request->commune_depart ?? null,
-                "commune_arriver" => $request->commune_arriver ?? null,
-                "kilometrage" => $request->kilometrage,
-                "kilometrage_de_fin" => $request->kilometrage_de_fin ?? null,
-                "trajet_aller_retour" => $request->trajet_aller_retour,
-                "reference" => $reference,
-            ]);
-
-            // Déduire stock
-            $stock->qte_actuel -= $ticket['qte'];
-            $stock->save();
-
-            $mouvements[] = $mouvement;
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
         }
 
-        DB::commit();
+        // Type mouvement
+        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Sortie de Ticket")->first();
+        if (!$type_mouvement) {
+            return response()->json(['error' => "Type de mouvement 'Sortie de Ticket' introuvable"], 404);
+        }
 
-        return new PostResource(true, "Sortie de tickets enregistrée avec succès !", $mouvements);
+        DB::beginTransaction();
+        try {
+            $mouvements = [];
+            // Générer référence
+            $reference = strtoupper(uniqid('MVT-'));
 
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return response()->json(['error' => 'Erreur : '.$e->getMessage()], 500);
+            foreach ($request->tickets as $ticket) {
+                // Vérifier stock
+                $stock = StockTicket::where('coupon_ticket_id', $ticket['coupon_ticket_id'])
+                    ->where('compagnie_petrolier_id', $ticket['compagnie_petrolier_id'])
+                    ->where('isdeleted', false)
+                    ->first();
+
+                if (!$stock || $stock->qte_actuel < $ticket['qte']) {
+                    DB::rollBack();
+                    return response()->json([
+                        'error' => "Quantité insuffisante pour coupon {$ticket['coupon_ticket_id']} de la compagnie {$ticket['compagnie_petrolier_id']}."
+                    ], 400);
+                }
+
+
+
+                // Créer mouvement (les champs communs sont pris du root)
+                $mouvement = MouvementTicket::create([
+                    "id_type_mouvement" => $type_mouvement->id,
+                    "vehicule_id" => $request->vehicule_id,
+                    "compagnie_petrolier_id" => $ticket['compagnie_petrolier_id'],
+                    "coupon_ticket_id" => $ticket['coupon_ticket_id'],
+                    "employe_id" => $request->employe_id,
+                    "description" => $request->description ?? null,
+                    "qte" => $ticket['qte'],
+                    "objet" => $request->objet ?? null,
+                    "date" => $request->date,
+                    "commune_depart" => $request->commune_depart ?? null,
+                    "commune_arriver" => $request->commune_arriver ?? null,
+                    "kilometrage" => $request->kilometrage,
+                    "kilometrage_de_fin" => $request->kilometrage_de_fin ?? null,
+                    "trajet_aller_retour" => $request->trajet_aller_retour,
+                    "reference" => $reference,
+                    "id_categorie_sortie_ticket" => $request->id_categorie_sortie_ticket,
+                ]);
+
+                // Déduire stock
+                $stock->qte_actuel -= $ticket['qte'];
+                $stock->save();
+
+                $mouvements[] = $mouvement;
+            }
+
+            DB::commit();
+
+            return new PostResource(true, "Sortie de tickets enregistrée avec succès !", $mouvements);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'Erreur : '.$e->getMessage()], 500);
+        }
     }
-}
 
 
     // update sortie
     public function updateSortieTicket(Request $request, $id)
-{
-    // Valider les champs qui sont communs à toute la transaction
-    $validator = Validator::make($request->all(), [
-        "vehicule_id" => 'required|exists:vehicules,id',
-        "employe_id" => 'required|exists:employes,id',
-        "description" => 'nullable|string|max:255',
-        "objet" => 'nullable|string|max:255',
-        "date" => 'required',
-        'trajet_aller_retour' => 'required|boolean',
-        'kilometrage' => 'required|integer', // Valider le kilométrage de début
-        'kilometrage_de_fin' => 'nullable|integer', // Valider le kilométrage de fin
-        'commune_depart' => 'required|exists:communes,id',
-        'commune_arriver' => 'required|exists:communes,id',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json($validator->errors(), 422);
-    }
-
-    // Étape 1 : Trouver le mouvement initial pour obtenir sa référence
-    $mouvementInitial = MouvementTicket::find($id);
-    if (!$mouvementInitial) {
-        return response()->json(['error' => 'Mouvement introuvable.'], 404);
-    }
-
-    DB::beginTransaction();
-    try {
-        // Étape 2 : Mettre à jour tous les mouvements qui ont la même référence
-        $affectedRows = MouvementTicket::where('reference', $mouvementInitial->reference)->update([
-            "vehicule_id" => $request->vehicule_id,
-            "employe_id" => $request->employe_id,
-            "description" => $request->description,
-            "objet" => $request->objet,
-            "date" => $request->date,
-            "commune_depart" => $request->commune_depart,
-            "commune_arriver" => $request->commune_arriver,
-            "trajet_aller_retour" => $request->trajet_aller_retour,
-            "kilometrage" => $request->kilometrage,
-            "kilometrage_de_fin" => $request->kilometrage_de_fin,
+    {
+        // Valider les champs qui sont communs à toute la transaction
+        $validator = Validator::make($request->all(), [
+            "vehicule_id" => 'required|exists:vehicules,id',
+            "employe_id" => 'required|exists:employes,id',
+            "description" => 'nullable|string|max:255',
+            "objet" => 'nullable|string|max:255',
+            "date" => 'required',
+            'trajet_aller_retour' => 'required|boolean',
+            'kilometrage' => 'required|integer', // Valider le kilométrage de début
+            'kilometrage_de_fin' => 'nullable|integer', // Valider le kilométrage de fin
+            'commune_depart' => 'required|exists:communes,id',
+            'commune_arriver' => 'required|exists:communes,id',
+            "id_categorie_sortie_ticket" => 'required|exists:categorie_sortie_tickets,id',
         ]);
 
-        DB::commit();
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
 
-        // Retourner le mouvement initial ou un message de succès
-        return new PostResource(true, "Les mouvements de sortie ont été mis à jour avec succès !", $mouvementInitial);
+        // Étape 1 : Trouver le mouvement initial pour obtenir sa référence
+        $mouvementInitial = MouvementTicket::find($id);
+        if (!$mouvementInitial) {
+            return response()->json(['error' => 'Mouvement introuvable.'], 404);
+        }
 
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return response()->json(['error' => 'Erreur lors de la mise à jour des mouvements de sortie: ' . $e->getMessage()], 500);
+        DB::beginTransaction();
+        try {
+            // Étape 2 : Mettre à jour tous les mouvements qui ont la même référence
+            $affectedRows = MouvementTicket::where('reference', $mouvementInitial->reference)->update([
+                "vehicule_id" => $request->vehicule_id,
+                "employe_id" => $request->employe_id,
+                "description" => $request->description,
+                "objet" => $request->objet,
+                "date" => $request->date,
+                "commune_depart" => $request->commune_depart,
+                "commune_arriver" => $request->commune_arriver,
+                "trajet_aller_retour" => $request->trajet_aller_retour,
+                "kilometrage" => $request->kilometrage,
+                "kilometrage_de_fin" => $request->kilometrage_de_fin,
+                "id_categorie_sortie_ticket" => $request->id_categorie_sortie_ticket,
+            ]);
+
+            DB::commit();
+
+            // Retourner le mouvement initial ou un message de succès
+            return new PostResource(true, "Les mouvements de sortie ont été mis à jour avec succès !", $mouvementInitial);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'Erreur lors de la mise à jour des mouvements de sortie: ' . $e->getMessage()], 500);
+        }
     }
-}
 
     //delete sortie
     public function deleteSortieTicket($id)
@@ -681,5 +691,85 @@ class MouvementTicketController extends Controller
             'message' => "Kilométrage de fin mis à jour avec succès",
             'data' => $mouvement
         ], 200);
+    }
+
+    public function genererBonDeSortie(Request $request, $reference)
+    {
+        // Récupérer tous les mouvements de tickets liés à cette référence
+        $mouvements = MouvementTicket::with([
+            'vehicule',
+            'employe',
+            'coupon_ticket',
+            'compagniePetrolier',
+            'depart',
+            'categorieSortieTicket',
+            'arriver'
+        ])
+        ->where('reference', $reference)
+        ->get();
+
+        if ($mouvements->isEmpty()) {
+            return response()->json(['error' => 'Aucun mouvement de ticket trouvé pour cette référence.'], 404);
+        }
+
+        // Récupérer les informations communes pour le rapport
+        $premierMouvement = $mouvements->first();
+        $data = [
+            'reference' => $premierMouvement->reference,
+            'vehicule' => $premierMouvement->vehicule,
+            'employe' => $premierMouvement->employe,
+            'date' => $premierMouvement->date,
+            'objet' => $premierMouvement->objet,
+            'communeDepart' => $premierMouvement->depart,
+            'communeArriver' => $premierMouvement->arriver,
+            'kilometrage' => $premierMouvement->kilometrage,
+            'kilometrage_de_fin' => $premierMouvement->kilometrage_de_fin,
+            'trajet_aller_retour' => $premierMouvement->trajet_aller_retour,
+            'categorieSortieTicket' => $premierMouvement->categorieSortieTicket,
+            'mouvements' => $mouvements
+        ];
+
+        // Générer le PDF en utilisant la vue 'demande_sortie.blade.php'
+        $pdf = PDF::loadView('pdf.sortie_ticket', $data);
+
+        // Télécharger le PDF
+        return $pdf->download('bon_de_sortie_'. $reference . '.pdf');
+    }
+
+    // Fichier : app/Http/Controllers/MouvementTicketController.php
+    public function televerserBonDeSortie(Request $request, $id)
+    {
+        $request->validate(['bon_de_sortie' => 'required|file|mimes:pdf|max:2048']);
+
+        // 1. Trouver le mouvement initial par son ID
+        $mouvement = MouvementTicket::find($id);
+
+        if (!$mouvement) {
+            return response()->json(['message' => 'Mouvement introuvable.'], 404);
+        }
+
+        // 2. Gérer l'upload du fichier
+        $filePath = $request->file('bon_de_sortie')->store('public/bons_de_sortie');
+
+        // 3. Mettre à jour TOUS les mouvements qui partagent la même référence
+        MouvementTicket::where('reference', $mouvement->reference)->update([
+            'bon_de_sortie_path' => $filePath
+        ]);
+
+        return response()->json([
+            'message' => 'Bon de sortie téléversé avec succès !',
+            'bon_de_sortie_path' => $filePath
+        ]);
+    }
+
+    public function voirBonDeSortie($id)
+    {
+        $mouvement = MouvementTicket::find($id);
+
+        if (!$mouvement || !$mouvement->bon_de_sortie_path) {
+            return response()->json(['message' => 'Bon de sortie non trouvé.'], 404);
+        }
+
+        return Storage::response($mouvement->bon_de_sortie_path);
     }
 }

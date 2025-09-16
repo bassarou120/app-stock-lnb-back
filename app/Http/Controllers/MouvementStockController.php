@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Models\Exercice;
+use App\Models\Parametrage\Employe;
 
 use PDF;
 use Illuminate\Support\Facades\Auth;
@@ -428,7 +429,7 @@ class MouvementStockController extends Controller
 
 
 
-    // Ajout multiple de mouvement de stock entree
+// Ajout multiple de mouvement de stock entree
 
 
     /**
@@ -522,6 +523,7 @@ class MouvementStockController extends Controller
      * )
      */
 
+    
     public function storeMultipleEntreeStock(Request $request)
     {
         // Validation des données communes

@@ -8,6 +8,7 @@ use App\Models\Parametrage\CompagniePetrolier;
 use App\Models\Parametrage\CouponTicket;
 use App\Models\Parametrage\Commune;
 use App\Models\Vehicule;
+use App\Models\CategorieSortieTicket;
 
 
 use Illuminate\Database\Eloquent\Model;
@@ -65,5 +66,9 @@ class MouvementTicket extends Model
     public function arriver()
     {
         return $this->belongsTo(Commune::class, 'commune_arriver');
+    }
+    public function categorieSortieTicket() // Ajoutez cette nouvelle relation
+    {
+        return $this->belongsTo(CategorieSortieTicket::class, 'id_categorie_sortie_ticket');
     }
 }
