@@ -239,6 +239,10 @@ Route::get('/articlesExercices', [Article_ExoController::class, 'articlesExercic
 // Then, define the general route
 Route::get('/articles/{id}', [ArticleController::class, 'show']);
 
+Route::get('/mouvement-tickets/generer-bon/{reference}', [MouvementTicketController::class, 'genererBonDeSortie']);
+Route::post('/mouvement-tickets/{id}/televerser-bon', [MouvementTicketController::class, 'televerserBonDeSortie']);
+Route::get('/mouvement-tickets/{id}/voir-bon', [MouvementTicketController::class, 'voirBonDeSortie']);
+
 
 Route::get('/generer-fiche-demande/{code_mouvement}', [MouvementStockController::class, 'genererFicheDemande']);
 
