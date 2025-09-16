@@ -242,3 +242,19 @@ Route::get('/articles/{id}', [ArticleController::class, 'show']);
 Route::get('/mouvement-tickets/generer-bon/{reference}', [MouvementTicketController::class, 'genererBonDeSortie']);
 Route::post('/mouvement-tickets/{id}/televerser-bon', [MouvementTicketController::class, 'televerserBonDeSortie']);
 Route::get('/mouvement-tickets/{id}/voir-bon', [MouvementTicketController::class, 'voirBonDeSortie']);
+
+
+Route::get('/generer-fiche-demande/{code_mouvement}', [MouvementStockController::class, 'genererFicheDemande']);
+
+Route::get('/mouvements/fiche/{id}', [MouvementStockController::class, 'genererFicheIndividuelle']);
+
+Route::post('/demande/valid-upload-signe', [MouvementStockController::class, 'validAndUploadSigne']);
+
+Route::get('/view-file', [MouvementStockController::class, 'viewFile']);
+
+Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController::class, 'downloadGroupedFile']);
+
+Route::get('/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']);
+
+Route::get('/mouvements/fiche/{id}', [MouvementStockController::class, 'genererFicheIndividuelle']);
+

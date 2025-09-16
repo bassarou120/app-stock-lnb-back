@@ -15,7 +15,12 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Models\Exercice;
+use App\Models\Parametrage\Employe;
 
+use PDF;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Response;
 
 /**
  * @OA\Info(
@@ -424,99 +429,102 @@ class MouvementStockController extends Controller
 
 
 
-    // Ajout multiple de mouvement de stock entree
+// Ajout multiple de mouvement de stock entree
 
 
 
     /**
      * @OA\Post(
-     *     path="/api/demande-de-sortie",
-     *     summary="Créer une demande de fourniture",
-     *     description="Permet de créer une nouvelle demande de sortie avec la liste des articles demandés.",
-     *     tags={"Demande de fourniture"},
+     * path="/api/demande-de-sortie",
+     * summary="Créer une demande de fourniture",
+     * description="Permet de créer une nouvelle demande de sortie avec la liste des articles demandés.",
+     * tags={"Demande de fourniture"},
      *
-     *     @OA\RequestBody(
-     *         required=true,
-     *         description="Les données nécessaires pour créer une demande de fournitures",
-     *         @OA\JsonContent(
-     *             required={"dateDemande", "id_bureau", "id_personnel", "articles"},
+     * @OA\RequestBody(
+     * required=true,
+     * description="Les données nécessaires pour créer une demande de fournitures",
+     * @OA\JsonContent(
+     * required={"dateDemande", "articles"},
      *
-     *             @OA\Property(
-     *                 property="dateDemande",
-     *                 type="string",
-     *                 format="date",
-     *                 example="2025-05-27",
-     *                 description="Date à laquelle la demande de fourniture est effectuée"
-     *             ),
+     * @OA\Property(
+     * property="dateDemande",
+     * type="string",
+     * format="date",
+     * example="2025-05-27",
+     * description="Date à laquelle la demande de fourniture est effectuée"
+     * ),
      *
-     *             @OA\Property(
-     *                 property="id_bureau",
-     *                 type="integer",
-     *                 example=3,
-     *                 description="Identifiant du bureau effectuant la demande (référence à la table bureaux)"
-     *             ),
+     * @OA\Property(
+     * property="id_bureau",
+     * type="integer",
+     * example=3,
+     * description="Identifiant du bureau effectuant la demande (référence à la table bureaux)"
+     * ),
      *
-     *             @OA\Property(
-     *                 property="id_personnel",
-     *                 type="integer",
-     *                 example=5,
-     *                 description="Identifiant du personnel responsable de la demande (référence à la table personnels)"
-     *             ),
+     * @OA\Property(
+     * property="email_personnel",
+     * type="string",
+     * format="email",
+     * example="employe@example.com",
+     * description="Email du personnel responsable de la demande (référence à la table employes)"
+     * ),
      *
-     *             @OA\Property(
-     *                 property="articles",
-     *                 type="array",
-     *                 minItems=1,
-     *                 @OA\Items(
-     *                     type="object",
-     *                     required={"code_article", "qteDemande"},
+     * @OA\Property(
+     * property="articles",
+     * type="array",
+     * minItems=1,
+     * @OA\Items(
+     * type="object",
+     * required={"code_article", "qteDemande"},
      *
-     *                     @OA\Property(
-     *                         property="code_article",
-     *                         type="string",
-     *                         example="AAA67",
-     *                         description="Code unique de l'article concerné (référence à la table articles)"
-     *                     ),
+     * @OA\Property(
+     * property="code_article",
+     * type="string",
+     * example="ART-20240526-1",
+     * description="Code unique de l'article concerné (référence à la table articles)"
+     * ),
      *
-     *                     @OA\Property(
-     *                         property="description",
-     *                         type="string",
-     *                         example="Consommable de bureau",
-     *                         description="Description complémentaire de l'article demandé"
-     *                     ),
+     * @OA\Property(
+     * property="description",
+     * type="string",
+     * example="Consommable de bureau",
+     * description="Description complémentaire de l'article demandé"
+     * ),
      *
-     *                     @OA\Property(
-     *                         property="qteDemande",
-     *                         type="integer",
-     *                         example=10,
-     *                         description="Quantité d'article demandée pour la sortie (minimum 1)"
-     *                     )
-     *                 )
-     *             )
-     *         )
-     *     ),
+     * @OA\Property(
+     * property="qteDemande",
+     * type="integer",
+     * example=10,
+     * description="Quantité d'article demandée pour la sortie (minimum 1)"
+     * )
+     * )
+     * )
+     * )
+     * ),
      *
-     *     @OA\Response(
-     *         response=201,
-     *         description="Demande de fourniture créée avec succès",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Demande de fourniture créée avec succès"),
-     *             @OA\Property(property="demande", type="object")
-     *         )
-     *     ),
+     * @OA\Response(
+     * response=201,
+     * description="Demande de fourniture créée avec succès",
+     * @OA\JsonContent(
+     * @OA\Property(property="success", type="boolean", example=true),
+     * @OA\Property(property="message", type="string", example="Tous les articles ont été enregistrés avec succès !"),
+     * @OA\Property(property="data", type="object")
+     * )
+     * ),
      *
-     *     @OA\Response(
-     *         response=400,
-     *         description="Requête invalide - Erreur de validation"
-     *     ),
+     * @OA\Response(
+     * response=422,
+     * description="Requête invalide - Erreur de validation"
+     * ),
      *
-     *     @OA\Response(
-     *         response=500,
-     *         description="Erreur interne du serveur"
-     *     )
+     * @OA\Response(
+     * response=404,
+     * description="Ressource non trouvée"
+     * )
      * )
      */
 
+    
     public function storeMultipleEntreeStock(Request $request)
     {
         // Validation des données communes
@@ -677,18 +685,9 @@ class MouvementStockController extends Controller
     // Méthode pour l'impression des mouvements d'entrée
     public function imprimerEntrees()
     {
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-
-        if (!$exerciceOuvert) {
-            return response()->json([
-                'success' => false,
-                'message' => "Aucun exercice ouvert trouvé."
-            ], 422);
-        }
 
         $mouvements = MouvementStock::with(['article', 'fournisseur', 'piecesJointes', 'unite_de_mesure'])
             ->where('id_type_mouvement', 1)
-            ->where('id_exercice', $exerciceOuvert->id)
             ->where('isdeleted', false)
             ->latest()
             ->get();
@@ -704,13 +703,12 @@ class MouvementStockController extends Controller
     {
         // Récupérer l'ID du type de mouvement "Sortie de Stock"
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Stock')->first();
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+        
         // Si le type de mouvement existe, récupérer les mouvements correspondants
         if ($type_mouvement) {
             // Récupérer tous les codes_mouvement distincts
 
         $codesMouvements = MouvementStock::where('id_type_mouvement', $type_mouvement->id)
-            ->where('id_exercice', $exerciceOuvert->id)
             ->where('isdeleted', false)
             ->orderBy('created_at', 'desc')
             ->select('code_mouvement', 'created_at')
@@ -724,12 +722,10 @@ class MouvementStockController extends Controller
                 // Récupérer le premier mouvement pour les informations générales
                 $firstMouvement = MouvementStock::with(['bureau', 'employe'])
                     ->where('code_mouvement', $code)
-                    ->where('id_exercice', $exerciceOuvert->id) // filtrer par exercice ouvert
                     ->first();
 
                 $details = MouvementStock::with(['article', 'bureau', 'employe'])
                     ->where('code_mouvement', $code)
-                    ->where('id_exercice', $exerciceOuvert->id) // filtrer par exercice ouvert
                     ->get();
 
                 $totalArticles = $details->count();
@@ -763,8 +759,6 @@ class MouvementStockController extends Controller
         // Récupérer l'ID du type de mouvement "Sortie de Stock"
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Stock')->first();
 
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-
         // Si le type de mouvement existe, récupérer les mouvements correspondants
         if ($type_mouvement) {
             $mouvements = MouvementStock::with(['bureau', 'employe', 'article', 'affectation.bureau', 'affectation.employe' => function ($query) {
@@ -772,7 +766,6 @@ class MouvementStockController extends Controller
                     ->selectRaw("CONCAT(nom, ' ', prenom) as full_name");
             }])
             ->where('id_type_mouvement', $type_mouvement->id)
-            ->where('id_exercice', $exerciceOuvert->id) // filtre par exercice
             ->where('isdeleted', false)
             ->latest()
             ->paginate(1000);
@@ -801,14 +794,6 @@ class MouvementStockController extends Controller
                     'message' => 'Type de mouvement "Sortie de Stock" non trouvé.'
                 ], 404);
             }
-            $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-
-            if (!$exerciceOuvert) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Aucun exercice ouvert trouvé."
-                ], 422);
-            }
 
             // Récupérer tous les mouvements de sortie
             $mouvements = MouvementStock::with([
@@ -824,7 +809,6 @@ class MouvementStockController extends Controller
                 }
             ])
             ->where('id_type_mouvement', 2)
-            ->where('id_exercice', $exerciceOuvert->id)
             ->where('isdeleted', false)
             ->latest()
             ->get();
@@ -861,11 +845,20 @@ class MouvementStockController extends Controller
             "articles.*.qteDemande" => "required|integer|min:1",
             "dateDemande" => "required|date",
             "id_bureau" => "nullable|exists:bureaus,id",
-            "id_personnel" => "nullable|exists:employes,id",
+            // "id_personnel" => "nullable|exists:employes,id",
+            "email_personnel" => "nullable|email|exists:employes,email",
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
+        }
+
+        // Après la validation, on récupère l'employé via son email pour obtenir son ID.
+        $employeId = null;
+        if ($request->filled('email_personnel')) {
+            $personnel = Employe::where('email', $request->email_personnel)->first();
+            // La règle 'exists' garantit que nous trouverons un personnel si l'email est fourni.
+            $employeId = $personnel->id;
         }
 
         $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
@@ -923,7 +916,7 @@ class MouvementStockController extends Controller
                 "qteDemande" => $article['qteDemande'],
                 "dateDemande" => $request->dateDemande,
                 "bureau_id" => $request->id_bureau,
-                "id_employe" => $request->id_personnel,
+                "id_employe" => $employeId,
                 "statut" => 'En attente',
                 "code_mouvement" => $code_mouvement,
                 'id_exercice' => $exerciceOuvert->id
@@ -979,8 +972,7 @@ class MouvementStockController extends Controller
             return response()->json(['error' => "Le type de mouvement 'Sortie de Stock' n'existe pas."], 404);
         }
 
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-
+    $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
         // Vérifier la quantité disponible en stock
         $stock = Stock::where('id_Article', $request->id_Article)
               ->where('id_exercice', $exerciceOuvert->id)
@@ -1026,14 +1018,8 @@ class MouvementStockController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-        if (!$exerciceOuvert) {
-            return response()->json(['error' => 'Aucun exercice ouvert trouvé.'], 422);
-        }
-
         // Vérifier la quantité disponible en stock
         $stock = Stock::where('id_Article', $request->id_Article)
-              ->where('id_exercice', $exerciceOuvert->id)
               ->latest()
               ->first();
 
@@ -1094,19 +1080,12 @@ class MouvementStockController extends Controller
     {
         $mouvementStock = MouvementStock::findOrFail($id);
 
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-
-        if (!$exerciceOuvert) {
-            return response()->json(['error' => 'Aucun exercice ouvert trouvé.'], 422);
-        }
-
         $date_mouvement = $request->input('date_mouvement');
         $statut = $request->input('statut');
         $mouvementStock->statut = $statut;
 
         // Vérifier la quantité disponible en stock
         $stock = Stock::where('id_Article', $mouvementStock->id_Article)
-                    ->where('id_exercice', $exerciceOuvert->id)
                     ->latest()
                     ->first();
 
@@ -1169,11 +1148,6 @@ class MouvementStockController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-        if (!$exerciceOuvert) {
-            return response()->json(['error' => 'Aucun exercice ouvert trouvé.'], 422);
-        }
-
         $code = $request->input('code_mouvement');
         $dateMouvement = $request->input('date_mouvement');
         $statut = $request->input('statut');
@@ -1191,7 +1165,6 @@ class MouvementStockController extends Controller
 
                 // Vérifier la quantité disponible en stock
                 $stock = Stock::where('id_Article', $mouvement->id_Article)
-                    ->where('id_exercice', $exerciceOuvert->id)
                     ->latest()
                     ->first();
 
@@ -1236,50 +1209,219 @@ class MouvementStockController extends Controller
 
     // ... autres méthodes ...
 
-public function deleteSortieStock($id)
-{
-    // Trouver le mouvement
-    $mouvement = MouvementStock::find($id);
+    public function deleteSortieStock($id)
+    {
+        // Trouver le mouvement
+        $mouvement = MouvementStock::find($id);
 
-    if (!$mouvement) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Mouvement introuvable.'
-        ], 404);
+        if (!$mouvement) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Mouvement introuvable.'
+            ], 404);
+        }
+
+        $mouvement->isdeleted = true;
+        $mouvement->save();
+
+        return new PostResource(true, 'Sortie de stock supprimée avec succès !', null);
     }
 
-    $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-    if ($mouvement->id_exercice !== $exerciceOuvert->id) {
-        return response()->json([
-            'success' => false,
-            'message' => "Impossible de supprimer un mouvement d'un exercice fermé."
-        ], 403);
+    // get qte disponible
+    public function getQuantiteDisponible($idArticle)
+    {
+
+        $stock = Stock::where('id_Article', $idArticle)
+            ->latest()
+            ->first();
+
+        $quantite = $stock ? $stock->Qte_actuel : 0;
+
+        return new PostResource(true, 'Quantité trouvée !', $quantite);
     }
 
-    $mouvement->isdeleted = true;
-    $mouvement->save();
+    private function generateNewFicheNumber()
+    {
+        $lastFiche = MouvementStock::whereNotNull('numero_fiche_demande')
+            ->orderBy('id', 'desc')
+            ->first();
 
-    return new PostResource(true, 'Sortie de stock supprimée avec succès !', null);
-}
+        $lastNumber = 0;
+        if ($lastFiche && $lastFiche->numero_fiche_demande) {
+            // Extrait le numéro après "FD-"
+            $lastNumber = (int) substr($lastFiche->numero_fiche_demande, 3);
+        }
 
-// get qte disponible
-public function getQuantiteDisponible($idArticle)
-{
-    $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+        $newNumber = $lastNumber + 1;
+        // Formatage en "FD-0001", "FD-0002", etc.
+        return 'FD-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+    }
 
-    $stock = Stock::where('id_Article', $idArticle)
-          ->where('id_exercice', $exerciceOuvert->id)
-          ->latest()
-          ->first();
+    public function genererFicheDemande($codeMouvement)
+    {
+        $mouvements = MouvementStock::with('article', 'employe', 'bureau')
+            ->where('code_mouvement', $codeMouvement)
+            ->get();
 
-    $quantite = $stock ? $stock->Qte_actuel : 0;
+        if ($mouvements->isEmpty()) {
+            abort(404, 'La demande de mouvement de stock spécifiée n\'existe pas.');
+        }
 
-    return new PostResource(true, 'Quantité trouvée !', $quantite);
-}
+        // Génère le numéro de fiche unique et le sauvegarde
+        $numeroFiche = $this->generateNewFicheNumber();
+        MouvementStock::where('code_mouvement', $codeMouvement)
+            ->update(['numero_fiche_demande' => $numeroFiche]);
+
+        // Rafraîchir les modèles pour obtenir le nouveau numéro
+        $mouvements = $mouvements->map(function ($m) use ($numeroFiche) {
+            $m->numero_fiche_demande = $numeroFiche;
+            return $m;
+        });
+
+        $mouvementPrincipal = $mouvements->first();
+        $authUser = Auth::user();
+
+        $data = [
+            'mouvement' => $mouvementPrincipal,
+            'details' => $mouvements,
+            'authUser' => $authUser,
+            'numeroFiche' => $numeroFiche // Ajout du numéro à passer à la vue
+        ];
+
+        $pdf = PDF::loadView('pdf.demande_sortie', $data);
+
+        return $pdf->download('Fiche_Demande_Sortie_' . $codeMouvement . '_' . $numeroFiche . '.pdf');
+    }
 
 
+    public function genererFicheIndividuelle($id)
+    {
+        $mouvement = MouvementStock::with('article', 'employe', 'bureau')
+            ->find($id);
 
+        if (!$mouvement) {
+            abort(404, 'Le mouvement de stock spécifié n\'existe pas.');
+        }
 
+        // Génère le numéro de fiche unique et le sauvegarde
+        $numeroFiche = $this->generateNewFicheNumber();
+        $mouvement->update(['numero_fiche_demande' => $numeroFiche]);
+
+        // Rafraîchir le modèle pour obtenir le nouveau numéro
+        $mouvement->refresh();
+
+        $authUser = Auth::user();
+
+        $data = [
+            'mouvement' => $mouvement,
+            'details' => collect([$mouvement]),
+            'authUser' => $authUser,
+            'numeroFiche' => $numeroFiche // Ajout du numéro à passer à la vue
+        ];
+
+        $pdf = PDF::loadView('pdf.demande_sortie', $data);
+
+        return $pdf->download('Fiche_Demande_Sortie_' . $mouvement->code_mouvement . '_' . $mouvement->id . '_' . $numeroFiche . '.pdf');
+    }
+
+    public function validAndUploadSigne(Request $request)
+    {
+        // 1. Validation de la requête
+        $validator = Validator::make($request->all(), [
+            'demandevalidesigne' => 'required|file|mimes:pdf|max:2048',
+            'statut' => 'required|string',
+            'id' => 'sometimes|required_without:code_mouvement|integer|exists:mouvement_stocks,id',
+            'code_mouvement' => 'sometimes|required_without:id|string|exists:mouvement_stocks,code_mouvement',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // 2. Trouver l'enregistrement à mettre à jour
+        $itemsToUpdate = null;
+        if ($request->has('id')) {
+            $itemsToUpdate = MouvementStock::where('id', $request->input('id'))->get();
+        } elseif ($request->has('code_mouvement')) {
+            $itemsToUpdate = MouvementStock::where('code_mouvement', $request->input('code_mouvement'))->get();
+        }
+
+        if (!$itemsToUpdate || $itemsToUpdate->isEmpty()) {
+            return response()->json(['message' => 'Demande non trouvée.'], 404);
+        }
+
+        // 3. Vérification du statut (autoriser "Accordé" ou "Validé")
+        foreach ($itemsToUpdate as $item) {
+            if ($item->statut !== 'Accordé' && $item->statut !== 'Validé') {
+                return response()->json([
+                    'message' => 'Toutes les lignes de la demande groupée doivent être "Accordé" ou "Validé" pour pouvoir télécharger un document groupé.'
+                ], 403);
+            }
+        }
+
+        // 4. Stockage du fichier et mise à jour
+        try {
+            $path = 'demandes_signees';
+            $fileName = time() . '_' . $request->file('demandevalidesigne')->getClientOriginalName();
+            $request->file('demandevalidesigne')->storeAs($path, $fileName, 'public');
+            $fullFilePath = $path . '/' . $fileName;
+
+            // Mise à jour de tous les éléments du groupe ou de l'élément unique
+            foreach ($itemsToUpdate as $item) {
+                $item->demandevalidesigne = $fullFilePath;
+                $item->statut = $request->input('statut');
+                $item->save();
+            }
+
+            return response()->json([
+                'message' => 'Demande validée et fichier signé téléchargé avec succès.',
+                'file_path' => Storage::url($fullFilePath),
+                'new_statut' => $request->input('statut')
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erreur lors du téléchargement du fichier.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function viewFile(Request $request)
+    {
+        $idfichier = $request->query('idfichier');
+
+        // Correction du chemin : on supprime le préfixe /storage
+        $sanitizedPath = str_replace(['storage/'], '', $idfichier);
+
+        // Vérifie si le fichier existe
+        if (!Storage::disk('public')->exists($sanitizedPath)) {
+            return response()->json(['error' => 'File not found.'], 404);
+        }
+
+        // Retourne le fichier
+        return Response::file(
+            Storage::disk('public')->path($sanitizedPath),
+            ['Content-Type' => Storage::disk('public')->mimeType($sanitizedPath)]
+        );
+    }
+
+    public function downloadGroupedFile($code_mouvement)
+    {
+        // 1. Trouver une ligne avec ce code de mouvement pour obtenir le chemin du fichier.
+        $mouvement = MouvementStock::where('code_mouvement', $code_mouvement)
+                                   ->whereNotNull('demandevalidesigne') // S'assurer qu'un fichier a été téléchargé
+                                   ->first();
+
+        // 2. Vérifier si un mouvement a été trouvé et si le chemin du fichier existe.
+        if (!$mouvement || !Storage::disk('public')->exists($mouvement->demandevalidesigne)) {
+            return response()->json(['error' => 'File not found.'], 404);
+        }
+
+        // 3. Renvoie le fichier en tant que téléchargement en utilisant le chemin absolu.
+        $filePath = Storage::disk('public')->path($mouvement->demandevalidesigne);
+        return response()->download($filePath);
+    }
 
 
 }
