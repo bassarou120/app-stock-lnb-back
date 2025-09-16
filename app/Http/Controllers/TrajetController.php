@@ -51,7 +51,7 @@ class TrajetController extends Controller
     {
         $trajet = Trajet::findOrFail($id);
 
-        $validated = $request->validate([
+        $validated = $request->validate([ 
             'commune_depart' => 'sometimes|required|exists:communes,id',
             'commune_arriver' => 'sometimes|required|exists:communes,id',
             'trajet_aller_retour' => 'sometimes|required|boolean',

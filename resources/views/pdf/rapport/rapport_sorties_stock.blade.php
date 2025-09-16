@@ -142,6 +142,7 @@
         <table>
             <tr>
                 <td style="width: 50%;">
+                    <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
                     République du Bénin<br>
                     LNB-Lotterie National du Bénin SA
                 </td>

@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('mouvement_stocks', function (Blueprint $table) {
-            $table->string('statut')->nullable()->default('');
+        Schema::table('vehicules', function (Blueprint $table) {
+            $table->string('numero_chassis')->nullable()->change();
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('mouvement_stocks', function (Blueprint $table) {
-            $table->dropColumn('statut');
+        Schema::table('vehicules', function (Blueprint $table) {
+            $table->string('numero_chassis')->nullable(false)->change();
         });
     }
 };

@@ -667,13 +667,13 @@
         "/api/demande-de-sortie": {
             "post": {
                 "tags": [
-                    "Demande de Sortie"
+                    "Demande de fourniture"
                 ],
-                "summary": "Créer une demande de sortie",
+                "summary": "Créer une demande de fourniture",
                 "description": "Permet de créer une nouvelle demande de sortie avec la liste des articles demandés.",
                 "operationId": "829b12a87c6c053a31fbfa8e68d17fef",
                 "requestBody": {
-                    "description": "Les données nécessaires pour créer une demande de sortie",
+                    "description": "Les données nécessaires pour créer une demande de fournitures",
                     "required": true,
                     "content": {
                         "application/json": {
@@ -686,7 +686,7 @@
                                 ],
                                 "properties": {
                                     "dateDemande": {
-                                        "description": "Date à laquelle la demande de sortie est effectuée",
+                                        "description": "Date à laquelle la demande de fourniture est effectuée",
                                         "type": "string",
                                         "format": "date",
                                         "example": "2025-05-27"
@@ -737,14 +737,14 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Demande de sortie créée avec succès",
+                        "description": "Demande de fourniture créée avec succès",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Demande de sortie créée avec succès"
+                                            "example": "Demande de fourniture créée avec succès"
                                         },
                                         "demande": {
                                             "type": "object"
@@ -2215,8 +2215,8 @@
             "description": "Intervention Véhicule"
         },
         {
-            "name": "Demande de Sortie",
-            "description": "Demande de Sortie"
+            "name": "Demande de fourniture",
+            "description": "Demande de fourniture"
         },
         {
             "name": "Mouvement Ticket",

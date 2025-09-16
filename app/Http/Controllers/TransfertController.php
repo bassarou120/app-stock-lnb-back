@@ -8,6 +8,7 @@ use App\Models\Immobilisation;
 use App\Models\Parametrage\StatusImmo;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
+// use PDF; // Vous pouvez aussi ajouter ceci si vous préférez, mais \Pdf est plus robuste
 
 class TransfertController extends Controller
 {
@@ -37,7 +38,7 @@ class TransfertController extends Controller
         'etat' => 'nullable|string|max:100',
         'date_mouvement' => 'required|date',
         'observation' => 'nullable|string|max:255',
-        'date_mise_en_service' => 'nullable|date', // ✅ Champ ajouté ici
+        'date_mise_en_service' => 'nullable|date',
     ]);
 
     if ($validator->fails()) {
@@ -64,7 +65,7 @@ class TransfertController extends Controller
     $immo->bureau_id = $request->bureau_id;
     $immo->employe_id = $request->employe_id;
 
-    // ✅ Si ancienne affectation inexistante, on est dans le cas d'une première mise en service
+    // Si ancienne affectation inexistante, on est dans le cas d'une première mise en service
     if (is_null($oldBureau) && is_null($oldEmploye)) {
         $immo->date_mise_en_service = $request->date_mise_en_service;
     }
@@ -154,5 +155,22 @@ class TransfertController extends Controller
 
         // Retourne le PDF en téléchargement
         return $pdf->download('liste_transferts.pdf'); // Nom du fichier PDF à télécharger
+    }
+
+    public function printSingleTransfert($id)
+    {
+        $transfert = Transfert::with(['immobilisation', 'old_bureau', 'bureau', 'old_employe', 'employe'])
+                            ->find($id);
+        if (!$transfert) {
+            return response()->json(['message' => 'Transfert introuvable'], 404);
+        }
+
+        // Assurez-vous d'avoir une vue Blade pour le contenu du PDF.
+        // Exemple: resources/views/pdf/single_transfert.blade.php
+        $data = ['transfert' => $transfert];
+        // CORRECTION ICI : Utilisation de \Pdf::loadView au lieu de PDF::loadView
+        $pdf = \Pdf::loadView('pdf.single_transfert', $data);
+
+        return $pdf->download('transfert_' . $id . '.pdf');
     }
 }

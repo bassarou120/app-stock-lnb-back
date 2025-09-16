@@ -16,6 +16,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Illuminate\Support\Facades\Response;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 
 class ArticleController extends Controller
@@ -100,6 +101,13 @@ class ArticleController extends Controller
  *     @OA\Response(response=422, description="Erreur de validation")
  * )
  */
+
+    public function show(Article $article)
+    {
+
+    }
+
+
     public function storeBatch(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -254,24 +262,80 @@ class ArticleController extends Controller
 
 
     public function exportArticlesExcel()
-{
-    $articles = Article::with(['categorie', 'stock'])->get()->map(function ($article) {
-        return [
-            'Article'           => $article->libelle ?? '-',
-            'Description'       => $article->description ?? '-',
-            'Catégorie'         => $article->categorie->libelle_categorie_article ?? '-',
-            'Quantité Actuelle' => $article->stock->Qte_actuel ?? 0,
-            'Stock d\'alerte'   => $article->stock_alerte ?? '-',
-            'Date de création'  => $article->created_at ? $article->created_at->format('Y-m-d') : '-',
-        ];
-    })->toArray();
+    {
+        $articles = Article::with(['categorie', 'stock'])->get()->map(function ($article) {
+            return [
+                'Article'           => $article->libelle ?? '-',
+                'Description'       => $article->description ?? '-',
+                'Catégorie'         => $article->categorie->libelle_categorie_article ?? '-',
+                'Quantité Actuelle' => $article->stock->Qte_actuel ?? 0,
+                'Stock d\'alerte'   => $article->stock_alerte ?? '-',
+                'Date de création'  => $article->created_at ? $article->created_at->format('Y-m-d') : '-',
+            ];
+        })->toArray();
 
-    \Excel::create('etat_du_stock', function($excel) use ($articles) {
-        $excel->sheet('Stock', function($sheet) use ($articles) {
-            // Ajoute les données avec les en-têtes automatiquement
-            $sheet->fromArray($articles);
-        });
-    })->download('xlsx');
-}
+        \Excel::create('etat_du_stock', function($excel) use ($articles) {
+            $excel->sheet('Stock', function($sheet) use ($articles) {
+                // Ajoute les données avec les en-têtes automatiquement
+                $sheet->fromArray($articles);
+            });
+        })->download('xlsx');
+    }
+
+    public function import(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|mimes:xlsx,xls',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $spreadsheet = IOFactory::load($request->file('file'));
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray();
+
+        $ignoredRows = [];
+
+        foreach ($rows as $index => $row) {
+            if ($index === 0) continue;
+
+            if (count($row) < 5) {
+                $ignoredRows[] = "Ligne $index ignorée : colonnes insuffisantes (" . count($row) . ")";
+                continue;
+            }
+
+            $code_article = trim($row[0]);
+            $designation_article = trim($row[1]);
+
+            // Vérifie si le code ou le nom existe déjà
+            $articleExistant = Article::where('code_article', $code_article)
+                ->orWhere('libelle', $designation_article)
+                ->first();
+
+            if ($articleExistant) {
+                $ignoredRows[] = "Ligne $index ignorée : article avec code '$code_article' où le nom '$designation_article' déjà existant.";
+                continue;
+            }
+
+            $categorie = CategorieArticle::firstOrCreate([
+                'libelle_categorie_article' => trim($row[2])
+            ]);
+
+            Article::create([
+                'id_cat' => $categorie->id,
+                'libelle' => $designation_article,
+                'code_article' => $code_article,
+                'description' => trim($row[3]),
+                'stock_alerte' => trim($row[4]),
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Import terminé !',
+            'ignored' => $ignoredRows
+        ]);
+    }
 
 }

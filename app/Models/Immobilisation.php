@@ -91,6 +91,7 @@ class Immobilisation extends Model
         'observation',
         'id_status_immo',
         'montant_ttc',
+        'reference_estampillonnage',
     ];
 
     public function bureau()

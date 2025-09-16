@@ -161,7 +161,34 @@
         }
 
 
+        /* Styles pour le pied de page logiciel */
+    .software-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 12mm;
+      border-top: 1px solid #ccc;
+      background-color: #f9f9f9;
+      padding: 2mm 5mm;
+      font-size: 8pt;
+      color: #666;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+    }
 
+    .software-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .print-info {
+      text-align: right;
+      font-size: 7pt;
+    }
 
 
   </style>
@@ -172,6 +199,7 @@
     <table>
       <tr>
         <td style="width: 50%;">
+            <!-- <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br> -->
           République du Bénin<br/>
           LNB-Lotterie National du Bénin SA
         </td>
@@ -204,25 +232,37 @@
       <tr>
 
         @if($typeRapport === 'entree ticket')
-            <td colspan="2" style="text-align: center;">
-                <h2>TICKET D'ENTRÉE</h2>
-                (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
-            </td>
+          <td colspan="2" style="text-align: center;">
+            <div style="text-align: center;">
+              <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
+              <h2 class="main-header">TICKET D'ENTRÉE</h2>
+              (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
+            </div>
+          </td>
         @elseif($typeRapport === 'retour ticket')
-            <td colspan="2" style="text-align: center;">
-                <h2>TICKET DE RETOUR</h2>
-                (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
-            </td>
+          <td colspan="2" style="text-align: center;">
+            <div style="text-align: center;">
+              <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
+              <h2 class="main-header">TICKET DE RETOUR</h2>
+              (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
+            </div>
+          </td>
         @elseif($typeRapport === 'annulation ticket')
-            <td colspan="2" style="text-align: center;">
-                <h2>TICKET D'ANNULATION</h2>
-                (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
-            </td>
+          <td colspan="2" style="text-align: center;">
+            <div style="text-align: center;">
+              <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
+              <h2 class="main-header">TICKET D'ANNULATION</h2>
+              (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
+            </div>
+          </td>
         @else
-            <td colspan="2" style="text-align: center;">
-                <h2>TICKET DE SORTIE</h2>
-                (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
-            </td>
+          <td colspan="2" style="text-align: center;">
+            <div style="text-align: center;">
+              <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
+              <h2 class="main-header">TICKET DE SORTIE</h2>
+              (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
+            </div>
+          </td>
         @endif
       </tr>
     </table>
@@ -383,6 +423,23 @@
                     </td>
                 </tr>
             </table>
+
+            <!-- Pied de page logiciel -->
+            <div class="software-footer">
+                <div class="software-info">
+                    <div class="software-logo">LNB- Gestion De Stock & Parc</div>
+                    <div class="software-details">
+                        Système de Gestion de Stock - Version 1.0 |
+                        Développé pour LNB-Lotterie National du Bénin SA
+                    </div>
+                </div>
+                <div class="print-info" style="margin-top: -15px;">
+                    Document généré le {{ date('d/m/Y à H:i:s') }}<br>
+                    <!-- Utilisateur: {{ auth()->user()->name ?? 'Système' }}<br> -->
+                    Page générée par LNB- Gestion De Stock & Parc
+                </div>
+            </div>
+            <!-- Fin Pied de page logiciel -->
         </div>
 
 </body>

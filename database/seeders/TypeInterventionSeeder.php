@@ -14,9 +14,10 @@ class TypeInterventionSeeder extends Seeder
     public function run(): void
     {
         $typesintervention = [
-            ['libelle_type_intervention' => 'Visite technique'],
-            ['libelle_type_intervention' => 'Vidange'],
-            ['libelle_type_intervention' => 'Réparation'],
+            ['libelle_type_intervention' => 'Visite technique', 'applicable_seul_vehicule' => true],
+            ['libelle_type_intervention' => 'Vidange','applicable_seul_vehicule' => true],
+            ['libelle_type_intervention' => 'Réparation','applicable_seul_vehicule' => true],
+            ['libelle_type_intervention' => 'Réparation Générale des Immos','applicable_seul_vehicule' => false],
         ];
 
         foreach ($typesintervention as $type) {

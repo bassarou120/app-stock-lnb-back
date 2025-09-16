@@ -19,6 +19,9 @@ class Vehicule extends Model
         'numero_chassis',
         'kilometrage',
         'date_mise_en_service',
+        'puissance',
+        'places_assises',
+        'energie',
     ];
 
     public function marque()

@@ -212,3 +212,12 @@ Route::get('/site-settings', [SiteSettingController::class, 'index']);
 Route::post('/site-settings/store', [SiteSettingController::class, 'store']); // <-- C'EST LA ROUTE MANQUANTE
 Route::get('/imprimerSorties', [MouvementStockController::class, 'imprimerSortiesStock']);
 
+//Route::get('/count-assurance-expiresoon', [InterventionVehiculeController::class, 'getVehiculesAssuranceExpireSoon']);
+Route::get('/assurance-expiresoon', [InterventionVehiculeController::class, 'getVehiculesAssuranceExpireSoon']);
+
+Route::get('/transferts/print/{id}', [TransfertController::class, 'printSingleTransfert']);
+
+Route::post('/vehicules/import', [VehiculeController::class, 'import']);
+
+Route::post('/articles/import', [ArticleController::class, 'import']);
+Route::post('/immobilisations/import', [ImmobilisationController::class, 'import']);

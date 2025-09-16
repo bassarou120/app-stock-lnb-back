@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('mouvement_stocks', function (Blueprint $table) {
-            $table->string('statut')->nullable()->default('');
+        Schema::table('immobilisations', function (Blueprint $table) {
+            $table->string('reference_estampillonnage', 255)->nullable();
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('mouvement_stocks', function (Blueprint $table) {
-            $table->dropColumn('statut');
+        Schema::table('immobilisations', function (Blueprint $table) {
+            $table->dropColumn('reference_estampillonnage');
         });
     }
 };
