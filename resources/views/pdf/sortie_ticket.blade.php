@@ -163,6 +163,11 @@
             <tr>
                 <td><strong>Trajet A/R:</strong> {{ $trajet_aller_retour ? 'Oui' : 'Non' }}</td>
             </tr>
+            {{-- Ajoutez cette nouvelle ligne --}}
+            <tr>
+                <td><strong>Catégorie de Sortie:</strong> {{ $categorieSortieTicket?->libelle ?? 'N/A' }}</td>
+            </tr>
+            {{-- Fin de l'ajout --}}
         </table>
     </div>
 

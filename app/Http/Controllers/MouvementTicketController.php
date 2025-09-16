@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use App\Models\CategorieSortieTicket;
 use PDF;
 
 
@@ -359,7 +360,7 @@ class MouvementTicketController extends Controller
         }
 
         // 1. Récupérer tous les mouvements de sortie, en s'assurant de charger les relations
-        $mouvements = MouvementTicket::with(['employe', 'compagniePetrolier', 'vehicule', 'vehicule.modele', 'vehicule.marque', 'coupon_ticket', 'depart', 'arriver'])
+        $mouvements = MouvementTicket::with(['employe', 'compagniePetrolier', 'vehicule', 'vehicule.modele', 'vehicule.marque', 'coupon_ticket', 'depart', 'arriver', 'categorieSortieTicket'])
             ->where('id_type_mouvement', $type_mouvement->id)
             ->where('isdeleted', false)
             ->latest() // Il est important de trier pour que le premier élément du groupe soit cohérent
@@ -400,6 +401,7 @@ class MouvementTicketController extends Controller
                 'kilometrage_de_fin' => $firstMouvement->kilometrage_de_fin,
                 'bon_de_sortie_path' => $firstMouvement->bon_de_sortie_path,
                 'tickets' => $ticketsDetails, // Le tableau des tickets
+                'categorie_sortie_ticket' => $firstMouvement->categorieSortieTicket,
             ];
         })->values(); // Utiliser values() pour réindexer le tableau numériquement
         // Retourner un objet unique par transaction
@@ -442,6 +444,7 @@ class MouvementTicketController extends Controller
             "tickets.*.compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
             "tickets.*.coupon_ticket_id" => 'required|exists:coupon_tickets,id',
             "tickets.*.qte" => 'required|integer|min:1',
+            "id_categorie_sortie_ticket" => 'required|exists:categorie_sortie_tickets,id',
         ]);
 
         if ($validator->fails()) {
@@ -493,6 +496,7 @@ class MouvementTicketController extends Controller
                     "kilometrage_de_fin" => $request->kilometrage_de_fin ?? null,
                     "trajet_aller_retour" => $request->trajet_aller_retour,
                     "reference" => $reference,
+                    "id_categorie_sortie_ticket" => $request->id_categorie_sortie_ticket,
                 ]);
 
                 // Déduire stock
@@ -528,6 +532,7 @@ class MouvementTicketController extends Controller
             'kilometrage_de_fin' => 'nullable|integer', // Valider le kilométrage de fin
             'commune_depart' => 'required|exists:communes,id',
             'commune_arriver' => 'required|exists:communes,id',
+            "id_categorie_sortie_ticket" => 'required|exists:categorie_sortie_tickets,id',
         ]);
 
         if ($validator->fails()) {
@@ -554,6 +559,7 @@ class MouvementTicketController extends Controller
                 "trajet_aller_retour" => $request->trajet_aller_retour,
                 "kilometrage" => $request->kilometrage,
                 "kilometrage_de_fin" => $request->kilometrage_de_fin,
+                "id_categorie_sortie_ticket" => $request->id_categorie_sortie_ticket,
             ]);
 
             DB::commit();
@@ -696,6 +702,7 @@ class MouvementTicketController extends Controller
             'coupon_ticket',
             'compagniePetrolier',
             'depart',
+            'categorieSortieTicket',
             'arriver'
         ])
         ->where('reference', $reference)
@@ -718,6 +725,7 @@ class MouvementTicketController extends Controller
             'kilometrage' => $premierMouvement->kilometrage,
             'kilometrage_de_fin' => $premierMouvement->kilometrage_de_fin,
             'trajet_aller_retour' => $premierMouvement->trajet_aller_retour,
+            'categorieSortieTicket' => $premierMouvement->categorieSortieTicket,
             'mouvements' => $mouvements
         ];
 
