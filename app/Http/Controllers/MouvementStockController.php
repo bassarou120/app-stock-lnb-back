@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Models\Exercice;
+use App\Models\Parametrage\Bureau;
 use App\Models\Parametrage\Employe;
 
 use PDF;
@@ -699,7 +700,7 @@ class MouvementStockController extends Controller
     }
 
     // index sortieStock regroupé par code_mouvement
-    public function indexSortieStockGrouped()
+/*     public function indexSortieStockGrouped()
     {
         // Récupérer l'ID du type de mouvement "Sortie de Stock"
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Stock')->first();
@@ -750,6 +751,58 @@ class MouvementStockController extends Controller
 
         // Si le type de mouvement n'existe pas, retourner une réponse vide ou un message d'erreur
         return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Stock".', []);
+    } */
+
+    public function indexSortieStockGrouped()
+    {
+        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Stock')->first();
+
+        if (!$type_mouvement) {
+            return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Stock".', []);
+        }
+
+        // Récupérer les données agrégées pour chaque groupe.
+        $groupedMouvements = MouvementStock::select(
+            'code_mouvement',
+            DB::raw('COUNT(*) as totalArticles'),
+            DB::raw('MAX(created_at) as created_at'),
+            DB::raw('MAX("date_mouvement") as date_mouvement'),
+            DB::raw('MAX(statut) as statut'),
+            DB::raw('MAX(id_employe) as id_employe'),
+            DB::raw('MAX(bureau_id) as bureau_id'),
+            DB::raw('MAX(CASE WHEN demandevalidesigne IS NOT NULL THEN 1 ELSE 0 END) as has_file')
+        )
+            ->where('id_type_mouvement', $type_mouvement->id)
+            ->where('isdeleted', false)
+            ->groupBy('code_mouvement')
+            ->orderBy('created_at', 'desc')
+            ->get();
+            
+        // Mapper les résultats pour inclure les détails et formater la réponse.
+        $formattedResult = $groupedMouvements->map(function ($group) {
+            // Charger les relations `employe` et `bureau` manuellement à partir des IDs agrégés.
+            $employe = Employe::find($group->id_employe);
+            $bureau = Bureau::find($group->bureau_id);
+
+            // Récupérer les détails complets pour ce code_mouvement.
+            $details = MouvementStock::with(['article', 'bureau', 'employe'])
+                ->where('code_mouvement', $group->code_mouvement)
+                ->get();
+
+            return [
+                'code_mouvement' => $group->code_mouvement,
+                'personnel' => $employe ? $employe->nom . ' ' . $employe->prenom : 'Non défini',
+                'bureau' => $bureau ? $bureau->libelle_bureau : 'Non défini',
+                'dateDemande' => $group->date_mouvement,
+                'dateCreation' => $group->created_at,
+                'statut' => $group->statut,
+                'totalArticles' => $details->count(), // Calcule le total à partir du nombre de détails récupérés.
+                'has_file' => (bool) $group->has_file,
+                'details' => $details,
+            ];
+        });
+
+        return new PostResource(true, 'Liste des mouvements groupés', $formattedResult);
     }
 
 
@@ -1074,8 +1127,8 @@ class MouvementStockController extends Controller
         return new PostResource(true, 'Sortie de stock mise à jour avec succès !', $mouvement);
     }
 
-    //
 
+//1
     public function updateDemandeStock(Request $request, $id)
     {
         $mouvementStock = MouvementStock::findOrFail($id);
@@ -1136,12 +1189,13 @@ class MouvementStockController extends Controller
         ]);
     }
 
+    //2
     public function validerDemandeGroupee(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'code_mouvement' => 'required|string|exists:mouvement_stocks,code_mouvement',
             'date_mouvement' => 'required|date',
-            'statut' => 'required|string',
+            'statut' => 'required|string|in:Accordé,Refusé,Validé',
         ]);
 
         if ($validator->fails()) {
@@ -1152,37 +1206,50 @@ class MouvementStockController extends Controller
         $dateMouvement = $request->input('date_mouvement');
         $statut = $request->input('statut');
 
-        $mouvements = MouvementStock::where('code_mouvement', $code)->get();
+        // Récupérer tous les mouvements pour le code donné, y compris ceux qui ne sont pas en attente
+        $tousLesMouvements = MouvementStock::where('code_mouvement', $code)
+            ->get();
+        
+        // Filtrer les mouvements à traiter (ceux qui sont en attente)
+        $mouvementsATraiter = $tousLesMouvements->where('statut', 'En attente');
+        
+        if ($mouvementsATraiter->isEmpty()) {
+            return response()->json([
+                'message' => "Aucune demande en attente pour le code {$code} n'a pu être traitée.",
+                'code_mouvement' => $code,
+            ], 200);
+        }
+        
+        $errors = [];
+        $nombreTraites = 0;
 
-        foreach ($mouvements as $mouvement) {
+        // Boucle sur les mouvements à traiter
+        foreach ($mouvementsATraiter as $mouvement) {
+            // Appliquer le statut et la date à chaque mouvement en attente
             $mouvement->statut = $statut;
             $mouvement->date_mouvement = $dateMouvement;
 
+            // Si le statut est "Accordé", on procède à la déduction du stock et à l'affectation
             if (strtolower($statut) === 'accordé') {
                 $qte = $mouvement->qteDemande;
                 $article = $mouvement->article;
                 $articleCode = $article ? $article->code_article : "inconnu";
 
-                // Vérifier la quantité disponible en stock
-                $stock = Stock::where('id_Article', $mouvement->id_Article)
-                    ->latest()
-                    ->first();
+                $stock = Stock::where('id_Article', $mouvement->id_Article)->latest()->first();
 
                 if (!$stock || $stock->Qte_actuel < $qte) {
-                    return response()->json([
-                        'error' => "Quantité insuffisante pour l'article {$articleCode}."
-                    ], 400);
+                    $errors[] = "Quantité insuffisante en stock pour l'article {$articleCode}.";
+                    $mouvement->statut = 'Refusé';
+                    $mouvement->save();
+                    continue;
                 }
 
-                // Mise à jour des quantités
                 $mouvement->qte = $qte;
                 $stock->Qte_actuel -= $qte;
                 $stock->save();
 
-                // Création de l'affectation
                 if (!empty($mouvement->id_employe) && !empty($mouvement->bureau_id)) {
                     $type_affectation = TypeAffectation::where('libelle_type_affectation', "Affectation d'Article")->latest()->first();
-
                     if ($type_affectation) {
                         AffectationArticle::create([
                             'description' => $mouvement->description,
@@ -1195,19 +1262,44 @@ class MouvementStockController extends Controller
                     }
                 }
             }
-
-            // Sauvegarde du mouvement (dans tous les cas)
             $mouvement->save();
+            $nombreTraites++;
+        }
+
+        // On vérifie si toutes les demandes en attente ont été traitées.
+        // Si le nombre de demandes traitées (avec succès ou refusées pour manque de stock)
+        // est égal au nombre initial de demandes en attente,
+        // on met à jour les autres lignes à "Accordé".
+
+        // Récupérer le nombre total de lignes dans le groupe.
+        $nombreTotalLignes = MouvementStock::where('code_mouvement', $code)->count();
+
+        // Si le statut est "Accordé" et qu'il n'y a pas d'erreurs, on met à jour
+        // les lignes non encore traitées (celles qui ont été ignorées par la boucle `continue`).
+        if ($statut === 'Accordé' && empty($errors)) {
+            MouvementStock::where('code_mouvement', $code)
+                          ->where('statut', 'En attente') // Pour le cas où le statut serait différent de 'Accordé'
+                          ->update(['statut' => 'Accordé']);
+        }
+
+        if (!empty($errors)) {
+            return response()->json([
+                'message' => "Certaines demandes n'ont pas pu être traitées.",
+                'errors' => $errors,
+                'code_mouvement' => $code,
+                'nombre_demandes_traitees' => $nombreTraites,
+            ], 400);
         }
 
         return response()->json([
-            'message' => "Toutes les demandes pour le code {$code} ont été traitées avec succès.",
+            'message' => "Toutes les demandes en attente pour le code {$code} ont été traitées avec succès.",
             'code_mouvement' => $code,
-            'nombre_demandes' => $mouvements->count()
+            'nombre_demandes_traitees' => $nombreTraites,
+            'nombre_total_demandes' => $nombreTotalLignes,
         ]);
     }
 
-    // ... autres méthodes ...
+    
 
     public function deleteSortieStock($id)
     {
