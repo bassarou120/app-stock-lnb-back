@@ -47,6 +47,7 @@ use App\Http\Controllers\Rapport\Parc\RapportParcController;
 use App\Http\Controllers\Rapport\Ticket\RapportTicketController;
 use App\Http\Controllers\Api\SiteSettingController;
 use App\Http\Controllers\Article_ExoController;
+use App\Http\Controllers\CategorieSortieTicketController;
 
 
 Route::get('/user', function (Request $request) {
@@ -101,6 +102,7 @@ Route::apiResource('retour-ticket', RetourTicketController::class);
 Route::apiResource('annulation-ticket', AnnulationTicketController::class);
 Route::apiResource('trajets', TrajetController::class);
 Route::apiResource('exercices', ExerciceController::class);
+Route::apiResource('categorieSortieTicket', CategorieSortieTicketController::class);
 
 
 
@@ -257,4 +259,3 @@ Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController:
 Route::get('/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']);
 
 Route::get('/mouvements/fiche/{id}', [MouvementStockController::class, 'genererFicheIndividuelle']);
-
