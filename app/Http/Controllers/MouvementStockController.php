@@ -524,7 +524,7 @@ class MouvementStockController extends Controller
      * )
      */
 
-    
+
     public function storeMultipleEntreeStock(Request $request)
     {
         // Validation des données communes
@@ -769,6 +769,7 @@ class MouvementStockController extends Controller
             DB::raw('MAX(statut) as statut'),
             DB::raw('MAX(id_employe) as id_employe'),
             DB::raw('MAX(bureau_id) as bureau_id'),
+            DB::raw('MAX(demandevalidesigne) as demandevalidesigne'),
             DB::raw('MAX(CASE WHEN demandevalidesigne IS NOT NULL THEN 1 ELSE 0 END) as has_file')
         )
             ->where('id_type_mouvement', $type_mouvement->id)
@@ -776,7 +777,7 @@ class MouvementStockController extends Controller
             ->groupBy('code_mouvement')
             ->orderBy('created_at', 'desc')
             ->get();
-            
+
         // Mapper les résultats pour inclure les détails et formater la réponse.
         $formattedResult = $groupedMouvements->map(function ($group) {
             // Charger les relations `employe` et `bureau` manuellement à partir des IDs agrégés.
@@ -798,6 +799,7 @@ class MouvementStockController extends Controller
                 'totalArticles' => $details->count(), // Calcule le total à partir du nombre de détails récupérés.
                 'has_file' => (bool) $group->has_file,
                 'details' => $details,
+                'file_path' => $group->demandevalidesigne
             ];
         });
 
@@ -1208,17 +1210,17 @@ class MouvementStockController extends Controller
         // Récupérer tous les mouvements pour le code donné, y compris ceux qui ne sont pas en attente
         $tousLesMouvements = MouvementStock::where('code_mouvement', $code)
             ->get();
-        
+
         // Filtrer les mouvements à traiter (ceux qui sont en attente)
         $mouvementsATraiter = $tousLesMouvements->where('statut', 'En attente');
-        
+
         if ($mouvementsATraiter->isEmpty()) {
             return response()->json([
                 'message' => "Aucune demande en attente pour le code {$code} n'a pu être traitée.",
                 'code_mouvement' => $code,
             ], 200);
         }
-        
+
         $errors = [];
         $nombreTraites = 0;
 
@@ -1298,7 +1300,7 @@ class MouvementStockController extends Controller
         ]);
     }
 
-    
+
 
     public function deleteSortieStock($id)
     {
@@ -1348,8 +1350,40 @@ class MouvementStockController extends Controller
         return 'FD-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
     }
 
+    public function checkStatusAccorde($codeMouvement)
+    {
+        // Check if any line in the group is not 'Accordé'
+        $allAccordees = MouvementStock::where('code_mouvement', $codeMouvement)
+                                      ->where('statut', '!=', 'Accordé')
+                                      ->doesntExist();
+
+        if ($allAccordees) {
+            // All lines are 'Accordé', so we can generate the file.
+            try {
+                return $this->genererFicheDemande($codeMouvement);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'message' => 'Demandes traitées, mais une erreur est survenue lors de la génération du fichier.',
+                    'error' => $e->getMessage()
+                ], 500);
+            }
+        }
+
+        // If not all lines are 'Accordé', return a JSON error message.
+        return response()->json([
+            'message' => "La fiche de demande ne peut être générée. Certaines lignes ne sont pas encore 'Accordé'."
+        ], 400);
+    }
+
+    /**
+     * Your existing function to generate the PDF file.
+     * Note: Make sure your existing function is marked as `public` to be callable.
+     * @param string $codeMouvement
+     * @return \Illuminate\Http\Response
+     */
     public function genererFicheDemande($codeMouvement)
     {
+        // Existing logic from your request
         $mouvements = MouvementStock::with('article', 'employe', 'bureau')
             ->where('code_mouvement', $codeMouvement)
             ->get();

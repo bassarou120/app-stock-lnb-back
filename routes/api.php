@@ -259,3 +259,5 @@ Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController:
 Route::get('/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']);
 
 Route::get('/mouvements/fiche/{id}', [MouvementStockController::class, 'genererFicheIndividuelle']);
+
+Route::get('/mouvements/demande-sortie/check-status-and-generate/{codeMouvement}', [MouvementStockController::class, 'checkStatusAccorde']);
