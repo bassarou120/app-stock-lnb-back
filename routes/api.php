@@ -258,3 +258,4 @@ Route::get('/rapports/parBureau', [ImmobilisationRapportController::class, 'getR
 
 Route::get('/mouvements/fiche/{id}', [MouvementStockController::class, 'genererFicheIndividuelle']);
 
+Route::get('/mouvements/demande-sortie/check-status-and-generate/{codeMouvement}', [MouvementStockController::class, 'checkStatusAccorde']);
