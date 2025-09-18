@@ -1384,6 +1384,7 @@ class MouvementStockController extends Controller
      */
     public function genererFicheDemande($codeMouvement)
     {
+
         // Existing logic from your request
         $mouvements = MouvementStock::with('article', 'employe', 'bureau')
             ->where('code_mouvement', $codeMouvement)
@@ -1418,7 +1419,6 @@ class MouvementStockController extends Controller
 
         return $pdf->download('Fiche_Demande_Sortie_' . $codeMouvement . '_' . $numeroFiche . '.pdf');
     }
-
 
     public function genererFicheIndividuelle($id)
     {
