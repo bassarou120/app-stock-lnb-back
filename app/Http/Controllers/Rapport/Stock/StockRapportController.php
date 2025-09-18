@@ -220,6 +220,7 @@ public function imprimerRapportStock(Request $request)
 
         $rapportData = collect();
         $stockActuel = $stockInitial;
+        $currentPU = 0;
 
         foreach ($mouvements as $mouvement) {
             $entree = 0;
@@ -228,8 +229,13 @@ public function imprimerRapportStock(Request $request)
 
             if ($libelleTypeMouvement === 'Entrée de Stock') {
                 $entree = $mouvement->qte;
+                $currentPU = $mouvement->prixUnitaire;
             } elseif ($libelleTypeMouvement === 'Sortie de Stock') {
                 $sortie = $mouvement->qte;
+                // si le PU n’est pas renseigné, on reprend le dernier PU d'entrée
+                if (empty($mouvement->prixUnitaire)) {
+                    $mouvement->prixUnitaire = $currentPU;
+                }
             }
 
             $observation = ($libelleTypeMouvement === 'Entrée de Stock')
@@ -243,7 +249,7 @@ public function imprimerRapportStock(Request $request)
                 'entrees' => $entree,
                 'sorties' => $sortie,
                 'stock_final' => $stockActuel + $entree - $sortie,
-                'pu' => $mouvement->prixUnitaire,
+                'pu' => $mouvement->prixUnitaire ?? $currentPU,
                 'observations' => $observation,
                 'article' => $mouvement->article,
             ]);
