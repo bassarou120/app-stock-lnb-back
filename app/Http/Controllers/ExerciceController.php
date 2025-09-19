@@ -9,7 +9,11 @@ use Carbon\Carbon;
 use App\Models\Stock;
 use Illuminate\Support\Facades\DB;
 use App\Models\MouvementStock;
+use App\Models\MouvementTicket;
 use App\Models\ArticleExercice;
+use App\Models\Parametrage\CouponTicket;
+use App\Models\Parametrage\CompagniePetrolier;
+use App\Models\ExerciceMouvementTicket;
 
 class ExerciceController extends Controller
 {
@@ -110,93 +114,112 @@ class ExerciceController extends Controller
         return new PostResource(true, 'exercice modifié avec succès', $exercice);
     }
 
-public function changeStatus(Request $request, $id)
-{
-    $request->validate([
-        'statut' => 'required|in:ouvert,cloture',
-    ]);
+    public function changeStatus(Request $request, $id)
+    {
+        $request->validate([
+            'statut' => 'required|in:ouvert,cloture',
+        ]);
 
-    $exercice = Exercice::findOrFail($id);
-    $nouvStatut = $request->input('statut');
+        $exercice = Exercice::findOrFail($id);
+        $nouvStatut = $request->input('statut');
 
-    // Utilisation d'une transaction pour garantir l'atomicité
-    DB::transaction(function () use ($exercice, $nouvStatut) {
-        if ($nouvStatut === 'ouvert') {
-            Exercice::where('id', '!=', $exercice->id)->update(['statut' => 'cloture']);
-            $exercice->statut = 'ouvert';
-            $exercice->save();
-        }
+        DB::transaction(function () use ($exercice, $nouvStatut) {
+            if ($nouvStatut === 'ouvert') {
+                Exercice::where('id', '!=', $exercice->id)->update(['statut' => 'cloture']);
+                $exercice->statut = 'ouvert';
+                $exercice->save();
+            }
 
-        if ($nouvStatut === 'cloture') {
-            // Clôturer l'exercice actuel
-            $exercice->statut = 'cloture';
-            $exercice->save();
+            if ($nouvStatut === 'cloture') {
+                // Clôturer l'exercice actuel
+                $exercice->statut = 'cloture';
+                $exercice->save();
 
-            // Créer le nouvel exercice pour l'année suivante
-            $nouvelExercice = Exercice::create([
-                'annee' => $exercice->annee + 1,
-                'statut' => 'ouvert',
-                'date_debut' => Carbon::create($exercice->annee + 1, 1, 1),
-                'date_fin' => Carbon::create($exercice->annee + 1, 12, 31),
-            ]);
+                // Créer le nouvel exercice pour l'année suivante
+                $nouvelExercice = Exercice::create([
+                    'annee' => $exercice->annee + 1,
+                    'statut' => 'ouvert',
+                    'date_debut' => Carbon::create($exercice->annee + 1, 1, 1),
+                    'date_fin' => Carbon::create($exercice->annee + 1, 12, 31),
+                ]);
 
-            // Récupérer les articles de l'exercice en cours
-            $articlesExercice = DB::table('article_exercice')
-                ->where('id_exercice', $exercice->id)
-                ->get();
-
-            foreach ($articlesExercice as $article) {
-                // Récupérer le stock final et le CMP final de l'exercice qui se clôture
-                $stock = Stock::where('id_Article', $article->id_article)
+                // --- GESTION DES ARTICLES (inchangé) ---
+                $articlesExercice = DB::table('article_exercice')
                     ->where('id_exercice', $exercice->id)
-                    ->first();
-                $stock_fin = $stock ? $stock->Qte_actuel : 0;
+                    ->get();
 
-                $dernierMouvement = MouvementStock::where('id_Article', $article->id_article)
-                    ->where('id_exercice', $exercice->id)
-                    ->latest('date_mouvement')
-                    ->first();
-                $cmp_fin = $dernierMouvement ? $dernierMouvement->cout_moyen_pondere : 0;
+                foreach ($articlesExercice as $article) {
+                    // ... (Votre logique de clôture d'articles reste inchangée)
+                    $stock = Stock::where('id_Article', $article->id_article)
+                        ->where('id_exercice', $exercice->id)
+                        ->first();
+                    $stock_fin = $stock ? $stock->Qte_actuel : 0;
 
-                // Mettre à jour les données de fin d'exercice pour l'exercice qui se clôture
-                DB::table('article_exercice')
-                    ->where('id_article', $article->id_article)
-                    ->where('id_exercice', $exercice->id)
-                    ->update([
-                        'stock_fin_exercice' => $stock_fin,
-                        'cmp_fin_exercice' => $cmp_fin,
+                    $dernierMouvement = MouvementStock::where('id_Article', $article->id_article)
+                        ->where('id_exercice', $exercice->id)
+                        ->latest('date_mouvement')
+                        ->first();
+                    $cmp_fin = $dernierMouvement ? $dernierMouvement->cout_moyen_pondere : 0;
+
+                    DB::table('article_exercice')
+                        ->where('id_article', $article->id_article)
+                        ->where('id_exercice', $exercice->id)
+                        ->update([
+                            'stock_fin_exercice' => $stock_fin,
+                            'cmp_fin_exercice' => $cmp_fin,
+                            'updated_at' => now(),
+                        ]);
+
+                    DB::table('article_exercice')->insert([
+                        'id_article' => $article->id_article,
+                        'id_exercice' => $nouvelExercice->id,
+                        'stock_debut_exercice' => $stock_fin,
+                        'stock_fin_exercice' => 0,
+                        'cmp_debut_exercice' => $cmp_fin,
+                        'cmp_fin_exercice' => 0,
+                        'created_at' => now(),
                         'updated_at' => now(),
                     ]);
 
-                // Créer l'enregistrement article_exercice pour le nouvel exercice en utilisant les valeurs de fin d'exercice
-                DB::table('article_exercice')->insert([
-                    'id_article' => $article->id_article,
-                    'id_exercice' => $nouvelExercice->id,
-                    'stock_debut_exercice' => $stock_fin, // Utilisation du stock de fin
-                    'stock_fin_exercice' => 0,
-                    'cmp_debut_exercice' => $cmp_fin, // Utilisation du CMP de fin
-                    'cmp_fin_exercice' => 0,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+                    Stock::create([
+                        'id_Article' => $article->id_article,
+                        'Qte_actuel' => $stock_fin,
+                        'id_exercice' => $nouvelExercice->id,
+                    ]);
+                }
 
-                // Créer l'enregistrement de stock pour le nouvel exercice
-                Stock::create([
-                    'id_Article' => $article->id_article,
-                    'Qte_actuel' => $stock_fin,
-                    'id_exercice' => $nouvelExercice->id,
-                ]);
+                // --- GESTION DES MOUVEMENTS DE TICKETS (CORRIGÉE) ---
+                // 1. Récupérer tous les coupons de tickets et toutes les compagnies pétrolières
+                $allCouponTickets = CouponTicket::all();
+                $allCompagnies = CompagniePetrolier::all();
+
+                // 2. Boucler sur chaque combinaison pour créer les enregistrements
+                foreach ($allCouponTickets as $couponTicket) {
+                    foreach ($allCompagnies as $compagnie) {
+                        // Calculer le stock final pour la combinaison (coupon, compagnie) pour l'exercice qui se clôture.
+                        // Pour cela, on agrège les quantités des mouvements de tickets de cet exercice.
+                        $stockFinal = MouvementTicket::where('exercice_id', $exercice->id)
+                            ->where('coupon_ticket_id', $couponTicket->id)
+                            ->where('compagnie_petrolier_id', $compagnie->id)
+                            ->sum('qte');
+
+                        // Créer l'enregistrement dans la table de jointure pour le nouvel exercice
+                        ExerciceMouvementTicket::create([
+                            'exercice_id' => $nouvelExercice->id,
+                            'coupon_ticket_id' => $couponTicket->id,
+                            'compagnie_petrolier_id' => $compagnie->id,
+                            'qte_actuel' => $stockFinal,
+                        ]);
+                    }
+                }
             }
-        }
-    });
+        });
 
-    return response()->json([
-        'success' => true,
-        'exercice' => Exercice::find($id),
-    ]);
-}
-
-
+        return response()->json([
+            'success' => true,
+            'exercice' => Exercice::find($id),
+        ]);
+    }
 
     public function getExerciceOuvert()
     {

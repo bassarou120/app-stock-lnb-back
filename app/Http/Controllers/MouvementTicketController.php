@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use PDF;
+use App\Models\Exercice;
 
 
 /**
@@ -178,6 +179,15 @@ class MouvementTicketController extends Controller
             return response()->json(['error' => "Le type de mouvement 'Entrée de Ticket' n'existe pas."], 404);
         }
 
+        // Récupérer l'exercice ouvert
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+        if (!$exerciceOuvert) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun exercice ouvert trouvé.'
+            ], 400);
+        }
+
         // Utilisation d'une transaction pour garantir l'intégrité des données
         DB::beginTransaction();
         try {
@@ -189,6 +199,7 @@ class MouvementTicketController extends Controller
                 "qte" => $request->qte,
                 "objet" => $request->objet,
                 "date" => $request->date,
+                'exercice_id' => $exerciceOuvert->id
             ]);
 
             $stockTicket = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)
@@ -202,6 +213,7 @@ class MouvementTicketController extends Controller
                     'compagnie_petrolier_id' => $request->compagnie_petrolier_id,
                     'qte_actuel' => 0,
                     'isdeleted' => false, // Assurez-vous que le flag isdeleted est défini
+                    'exercice_id' => $exerciceOuvert->id
                 ]);
             }
 
@@ -225,6 +237,15 @@ class MouvementTicketController extends Controller
             return response()->json(['message' => 'Mouvement introuvable'], 404);
         }
 
+        // Récupérer l'exercice ouvert
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+        if (!$exerciceOuvert) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun exercice ouvert trouvé.'
+            ], 400);
+        }
+
         // Validation des données
         $validator = Validator::make($request->all(), [
             "compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
@@ -239,6 +260,8 @@ class MouvementTicketController extends Controller
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
+
+
 
         DB::beginTransaction();
         try {
@@ -261,6 +284,7 @@ class MouvementTicketController extends Controller
                 "objet" => $request->objet,
                 "date" => $request->date,
                 "id_type_mouvement" => $type_mouvement->id,
+                "exercice_id" => $exerciceOuvert->id
             ]);
 
             // Réajuster l'ancien stock
@@ -286,6 +310,7 @@ class MouvementTicketController extends Controller
                     'compagnie_petrolier_id' => $request->compagnie_petrolier_id,
                     'qte_actuel' => 0,
                     'isdeleted' => false,
+                    'exercice_id' => $exerciceOuvert->id
                 ]);
             }
             $newStock->qte_actuel += $request->qte;
@@ -365,11 +390,11 @@ class MouvementTicketController extends Controller
             ->latest() // Il est important de trier pour que le premier élément du groupe soit cohérent
             ->get();
 
-        
+
         // 2. Grouper les mouvements par leur référence commune
         $groupedMouvements = $mouvements->groupBy('reference');
 
-        
+
         // 3. Transformer chaque groupe en un seul objet consolidé pour le frontend
         $transactions = $groupedMouvements->map(function ($group) {
             // Prendre le premier mouvement comme base pour les informations communes
@@ -407,7 +432,7 @@ class MouvementTicketController extends Controller
     }
 
 
-    //Sortie de ticket      
+    //Sortie de ticket
     // public function indexSortieTicket()
     // {
     //     $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Ticket')->first();
@@ -493,6 +518,7 @@ class MouvementTicketController extends Controller
                     "kilometrage_de_fin" => $request->kilometrage_de_fin ?? null,
                     "trajet_aller_retour" => $request->trajet_aller_retour,
                     "reference" => $reference,
+                    'exercice_id' => Exercice::where('statut', 'ouvert')->latest()->first()->id
                 ]);
 
                 // Déduire stock
@@ -554,6 +580,7 @@ class MouvementTicketController extends Controller
                 "trajet_aller_retour" => $request->trajet_aller_retour,
                 "kilometrage" => $request->kilometrage,
                 "kilometrage_de_fin" => $request->kilometrage_de_fin,
+                'exercice_id' => Exercice::where('statut', 'ouvert')->latest()->first()->id
             ]);
 
             DB::commit();

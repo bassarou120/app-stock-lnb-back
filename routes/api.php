@@ -47,6 +47,7 @@ use App\Http\Controllers\Rapport\Parc\RapportParcController;
 use App\Http\Controllers\Rapport\Ticket\RapportTicketController;
 use App\Http\Controllers\Api\SiteSettingController;
 use App\Http\Controllers\Article_ExoController;
+use App\Http\Controllers\ExerciceMouvementTicketController;
 
 
 Route::get('/user', function (Request $request) {
@@ -259,3 +260,5 @@ Route::get('/rapports/parBureau', [ImmobilisationRapportController::class, 'getR
 Route::get('/mouvements/fiche/{id}', [MouvementStockController::class, 'genererFicheIndividuelle']);
 
 Route::get('/mouvements/demande-sortie/check-status-and-generate/{codeMouvement}', [MouvementStockController::class, 'checkStatusAccorde']);
+
+Route::get('/exercice-mouvement-tickets', [ExerciceMouvementTicketController::class, 'index']);
