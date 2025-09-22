@@ -14,17 +14,17 @@ class Exercice extends Model
         'date_debut', 'date_fin', 'annee', 'statut'
     ];
 
-public function articles(): BelongsToMany
-{
-    return $this->belongsToMany(
-        Article::class,             // modèle lié
-        'article_exercice',       // nom exact de la table pivot
-        'id_exercice',              // clé étrangère vers Exercice
-        'id_article'                // clé étrangère vers Article
-    )
-    ->withPivot('stock_debut_exercice', 'stock_fin_exercice', 'cmp_debut_exercice', 'cmp_fin_exercice')
-    ->withTimestamps();
-}
+    public function articles(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Article::class,             // modèle lié
+            'article_exercice',       // nom exact de la table pivot
+            'id_exercice',              // clé étrangère vers Exercice
+            'id_article'                // clé étrangère vers Article
+        )
+        ->withPivot('stock_debut_exercice', 'stock_fin_exercice', 'cmp_debut_exercice', 'cmp_fin_exercice')
+        ->withTimestamps();
+    }
 
     public function mouvementsStock()
     {
@@ -40,4 +40,15 @@ public function articles(): BelongsToMany
     {
         return $this->hasMany(CouponTicket::class, 'id_exercice');
     }
+
+    public function mouvementTickets()
+    {
+        return $this->belongsToMany(MouvementTicket::class, 'exercice_mouvement_stock', 'exercice_id', 'coupon_ticket_id');
+    }
+
+    public function exerciceMouvementTickets()
+    {
+        return $this->hasMany(ExerciceMouvementTicket::class, 'exercice_id');
+    }
+
 }

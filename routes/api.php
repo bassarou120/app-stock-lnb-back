@@ -48,6 +48,7 @@ use App\Http\Controllers\Rapport\Ticket\RapportTicketController;
 use App\Http\Controllers\Api\SiteSettingController;
 use App\Http\Controllers\Article_ExoController;
 use App\Http\Controllers\CategorieSortieTicketController;
+use App\Http\Controllers\ExerciceMouvementTicketController;
 
 
 Route::get('/user', function (Request $request) {

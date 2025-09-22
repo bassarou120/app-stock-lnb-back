@@ -19,6 +19,12 @@ class RapportParcController extends Controller
     /**
      * Récupère les données de rapport pour les véhicules ou leurs interventions.
      */
+
+    // Compteurs par type de rapport
+    private $vehiculeCounter = 0;
+    private $interventionVehiculeCounter = 0;
+    private $vehiculeInterventionExpiranteCounter = 0;
+
     public function getRapportData(Request $request)
     {
         $typeRapport = $request->input('id_type_rapport');
@@ -93,7 +99,40 @@ class RapportParcController extends Controller
                 $message = 'Rapport des interventions sur véhicules généré avec succès.';
                 break;
 
-            default:
+                case 'vehicule_intervention_expirante':
+                    // Validez les champs de la requête
+                    $validator = Validator::make($request->all(), [
+                        'date_debut' => 'required|date',
+                        'date_fin' => 'required|date|after_or_equal:date_debut',
+                        'vehicule_id' => 'nullable|exists:vehicules,id',
+                        'type_intervention_id' => 'nullable|exists:type_interventions,id',
+                    ]);
+
+                    if ($validator->fails()) {
+                        return new PostResource(false, 'Validation échouée pour le rapport expiration intervention.', ['errors' => $validator->errors()]);
+                    }
+
+                    // On part des interventions, pas des véhicules
+                    $query = InterventionVehicule::with(['vehicule.modele', 'vehicule.marque', 'typeIntervention'])
+                        ->whereBetween('date_expiration', [$request->date_debut, $request->date_fin]);
+
+                    // Appliquez les filtres si l'utilisateur a sélectionné un véhicule
+                    if ($request->filled('vehicule_id')) {
+                        $query->where('vehicule_id', $request->vehicule_id);
+                    }
+
+                    // Appliquez le filtre si l'utilisateur a sélectionné un type d'intervention
+                    if ($request->filled('type_intervention_id')) {
+                        $query->where('type_intervention_id', $request->type_intervention_id);
+                    }
+
+                    $data = $query->latest('date_expiration')->paginate(1000);
+                    $message = 'Rapport des interventions expirant dans la période sélectionnée généré avec succès.';
+                    break;
+
+
+
+                default:
                 $success = false;
                 $message = 'Type de rapport non valide.';
                 $data = [];
@@ -205,13 +244,104 @@ class RapportParcController extends Controller
                 }
                 break;
 
-            default:
-                return response()->json(['success' => false, 'message' => 'Type de rapport non valide.'], 400);
-        }
+                case 'vehicule_intervention_expirante':
+                    $validator = Validator::make($request->all(), [
+                        'date_debut' => 'required|date',
+                        'date_fin' => 'required|date|after_or_equal:date_debut',
+                        'vehicule_id' => 'nullable|exists:vehicules,id',
+                        'type_intervention_id' => 'nullable|exists:type_interventions,id',
+                    ]);
 
-        $pdf = Pdf::loadView('pdf.rapport.rapport_parc', compact('data', 'reportTypeLabel', 'filterLabels', 'typeRapport')); // data est le nom générique
+                    if ($validator->fails()) {
+                        return response()->json($validator->errors(), 422);
+                    }
+
+                    $query = InterventionVehicule::with(['vehicule.modele', 'vehicule.marque', 'typeIntervention'])
+                        ->whereBetween('date_expiration', [$request->date_debut, $request->date_fin]);
+
+                    if ($request->filled('vehicule_id')) {
+                        $query->where('vehicule_id', $request->vehicule_id);
+                    }
+
+                    if ($request->filled('type_intervention_id')) {
+                        $query->where('type_intervention_id', $request->type_intervention_id);
+                    }
+
+                    $data = $query->latest('date_expiration')->get();
+                    $reportTypeLabel = 'des Interventions arrivant à expiration';
+
+                    $filterLabels = [
+                        'date_debut' => Carbon::parse($request->date_debut)->format('d/m/Y'),
+                        'date_fin' => Carbon::parse($request->date_fin)->format('d/m/Y'),
+                        'vehicule' => 'Tous',
+                        'type_intervention' => 'Tous',
+                    ];
+                    if ($request->filled('vehicule_id')) {
+                        $vehicule = Vehicule::find($request->vehicule_id);
+                        $filterLabels['vehicule'] = $vehicule ? ($vehicule->marque->libelle . ' ' . $vehicule->modele->libelle_modele . ' (' . $vehicule->immatriculation . ')') : 'Non trouvé';
+                    }
+                    if ($request->filled('type_intervention_id')) {
+                        $typeIntervention = TypeIntervention::find($request->type_intervention_id);
+                        $filterLabels['type_intervention'] = $typeIntervention ? $typeIntervention->libelle_type_intervention : 'Non trouvé';
+                    }
+                break;
+
+
+                    default:
+                        return response()->json(['success' => false, 'message' => 'Type de rapport non valide.'], 400);
+                }
+
+        // ✅ Génération du numéro de rapport ici
+        $numeroRapport = $this->generateNewRapportNumber($typeRapport);
+
+        // Passer la variable à la vue
+        $pdf = Pdf::loadView('pdf.rapport.rapport_parc', compact(
+            'data',
+            'reportTypeLabel',
+            'filterLabels',
+            'typeRapport',
+            'numeroRapport' // ajouté
+        ));
+
         $filename = 'rapport_parc_' . $typeRapport . '.pdf';
 
         return $pdf->download($filename);
     }
+
+    private function generateNewRapportNumber(string $typeRapport)
+    {
+        $prefixes = [
+            'vehicule' => 'V-ENR',
+            'intervention_vehicule' => 'V-INTER',
+            'vehicule_intervention_expirante' => 'V-EXP',
+        ];
+
+        if (!isset($prefixes[$typeRapport])) {
+            throw new \InvalidArgumentException("Type de rapport non reconnu : $typeRapport");
+        }
+
+        $prefix = $prefixes[$typeRapport];
+
+        // Incrémenter le compteur correspondant
+        switch ($typeRapport) {
+            case 'vehicule':
+                $this->vehiculeCounter++;
+                $newNumber = $this->vehiculeCounter;
+                break;
+
+            case 'intervention_vehicule':
+                $this->interventionVehiculeCounter++;
+                $newNumber = $this->interventionVehiculeCounter;
+                break;
+
+            case 'vehicule_intervention_expirante':
+                $this->vehiculeInterventionExpiranteCounter++;
+                $newNumber = $this->vehiculeInterventionExpiranteCounter;
+                break;
+        }
+
+        // Format final => "V-ENR-0001", "V-INTER-0001", etc.
+        return $prefix . '-' . str_pad($newNumber, 6, '0', STR_PAD_LEFT);
+    }
+
 }
