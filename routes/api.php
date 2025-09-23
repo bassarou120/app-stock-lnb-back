@@ -260,3 +260,7 @@ Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController:
 Route::get('/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']);
 
 Route::get('/mouvements/fiche/{id}', [MouvementStockController::class, 'genererFicheIndividuelle']);
+
+Route::post('/rapport-periodique', [MouvementTicketController::class, 'rapportperiodique']);
+
+Route::get('/getrapport-periodique', [MouvementTicketController::class, 'getrapportperiodique']);
