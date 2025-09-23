@@ -46,6 +46,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             UniteDeMesureSeeder::class,
             TypeInterventionSeeder::class,
+            CategorieSortieTicketsSeeder::class,
 
         ]);
 
