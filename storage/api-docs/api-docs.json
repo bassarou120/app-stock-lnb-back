@@ -680,8 +680,6 @@
                             "schema": {
                                 "required": [
                                     "dateDemande",
-                                    "id_bureau",
-                                    "id_personnel",
                                     "articles"
                                 ],
                                 "properties": {
@@ -696,10 +694,11 @@
                                         "type": "integer",
                                         "example": 3
                                     },
-                                    "id_personnel": {
-                                        "description": "Identifiant du personnel responsable de la demande (référence à la table personnels)",
-                                        "type": "integer",
-                                        "example": 5
+                                    "email_personnel": {
+                                        "description": "Email du personnel responsable de la demande (référence à la table employes)",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "employe@example.com"
                                     },
                                     "articles": {
                                         "type": "array",
@@ -712,7 +711,7 @@
                                                 "code_article": {
                                                     "description": "Code unique de l'article concerné (référence à la table articles)",
                                                     "type": "string",
-                                                    "example": "AAA67"
+                                                    "example": "ART-20240526-1"
                                                 },
                                                 "description": {
                                                     "description": "Description complémentaire de l'article demandé",
@@ -742,11 +741,15 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
                                         "message": {
                                             "type": "string",
-                                            "example": "Demande de fourniture créée avec succès"
+                                            "example": "Tous les articles ont été enregistrés avec succès !"
                                         },
-                                        "demande": {
+                                        "data": {
                                             "type": "object"
                                         }
                                     },
@@ -755,11 +758,11 @@
                             }
                         }
                     },
-                    "400": {
+                    "422": {
                         "description": "Requête invalide - Erreur de validation"
                     },
-                    "500": {
-                        "description": "Erreur interne du serveur"
+                    "404": {
+                        "description": "Ressource non trouvée"
                     }
                 }
             }
