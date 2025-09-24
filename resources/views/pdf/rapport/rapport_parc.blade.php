@@ -148,7 +148,8 @@
                     LNB-Lotterie National du Bénin SA
                 </td>
                 <td style="width: 50%; text-align: right;">
-                    Gestion :....................................<br><br>
+                    Gestion :............................<br><br>
+                    Rapport N° : {{ $numeroRapport }}<br/>
                     Rapport généré le : {{ $filterLabels['date_debut'] }}
                 </td>
             </tr>
@@ -218,6 +219,13 @@
                             <th>Titre</th>
                             <th>Coût</th>
                             <th>Observation</th>
+                        @elseif($typeRapport === 'vehicule_intervention_expirante')
+                            <th>Date Expiration</th>
+                            <th>Véhicule</th>
+                            <th>Immatriculation</th>
+                            <th>Type Intervention</th>
+                            <th>Titre</th>
+                            <th>Observation</th>
                         @endif
                     </tr>
                 </thead>
@@ -239,6 +247,13 @@
                             <td>{{ $item->typeIntervention->libelle_type_intervention ?? 'N/A' }}</td>
                             <td>{{ $item->titre ?? 'N/A' }}</td>
                             <td>{{ number_format($item->montant, 2, ',', ' ') ?? 'N/A' }}</td>
+                            <td>{{ $item->observation ?? 'N/A' }}</td>
+                        @elseif($typeRapport === 'vehicule_intervention_expirante')
+                            <td>{{ $item->date_expiration ? \Carbon\Carbon::parse($item->date_expiration)->format('d/m/Y') : 'N/A' }}</td>
+                            <td>{{ $item->vehicule->marque->libelle ?? 'N/A' }} - {{ $item->vehicule->modele->libelle_modele ?? 'N/A' }}</td>
+                            <td>{{ $item->vehicule->immatriculation ?? 'N/A' }}</td>
+                            <td>{{ $item->typeIntervention->libelle_type_intervention ?? 'N/A' }}</td>
+                            <td>{{ $item->titre ?? 'N/A' }}</td>
                             <td>{{ $item->observation ?? 'N/A' }}</td>
                         @endif
                     </tr>

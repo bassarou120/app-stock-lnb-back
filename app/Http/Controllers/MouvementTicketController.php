@@ -14,7 +14,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use App\Models\CategorieSortieTicket;
+use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 use PDF;
+use App\Models\Exercice;
 
 
 /**
@@ -179,6 +182,15 @@ class MouvementTicketController extends Controller
             return response()->json(['error' => "Le type de mouvement 'Entrée de Ticket' n'existe pas."], 404);
         }
 
+        // Récupérer l'exercice ouvert
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+        if (!$exerciceOuvert) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun exercice ouvert trouvé.'
+            ], 400);
+        }
+
         // Utilisation d'une transaction pour garantir l'intégrité des données
         DB::beginTransaction();
         try {
@@ -190,6 +202,7 @@ class MouvementTicketController extends Controller
                 "qte" => $request->qte,
                 "objet" => $request->objet,
                 "date" => $request->date,
+                'exercice_id' => $exerciceOuvert->id
             ]);
 
             $stockTicket = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)
@@ -203,6 +216,7 @@ class MouvementTicketController extends Controller
                     'compagnie_petrolier_id' => $request->compagnie_petrolier_id,
                     'qte_actuel' => 0,
                     'isdeleted' => false, // Assurez-vous que le flag isdeleted est défini
+                    'exercice_id' => $exerciceOuvert->id
                 ]);
             }
 
@@ -226,6 +240,15 @@ class MouvementTicketController extends Controller
             return response()->json(['message' => 'Mouvement introuvable'], 404);
         }
 
+        // Récupérer l'exercice ouvert
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+        if (!$exerciceOuvert) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun exercice ouvert trouvé.'
+            ], 400);
+        }
+
         // Validation des données
         $validator = Validator::make($request->all(), [
             "compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
@@ -240,6 +263,8 @@ class MouvementTicketController extends Controller
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
+
+
 
         DB::beginTransaction();
         try {
@@ -262,6 +287,7 @@ class MouvementTicketController extends Controller
                 "objet" => $request->objet,
                 "date" => $request->date,
                 "id_type_mouvement" => $type_mouvement->id,
+                "exercice_id" => $exerciceOuvert->id
             ]);
 
             // Réajuster l'ancien stock
@@ -287,6 +313,7 @@ class MouvementTicketController extends Controller
                     'compagnie_petrolier_id' => $request->compagnie_petrolier_id,
                     'qte_actuel' => 0,
                     'isdeleted' => false,
+                    'exercice_id' => $exerciceOuvert->id
                 ]);
             }
             $newStock->qte_actuel += $request->qte;
@@ -366,11 +393,11 @@ class MouvementTicketController extends Controller
             ->latest() // Il est important de trier pour que le premier élément du groupe soit cohérent
             ->get();
 
-        
+
         // 2. Grouper les mouvements par leur référence commune
         $groupedMouvements = $mouvements->groupBy('reference');
 
-        
+
         // 3. Transformer chaque groupe en un seul objet consolidé pour le frontend
         $transactions = $groupedMouvements->map(function ($group) {
             // Prendre le premier mouvement comme base pour les informations communes
@@ -409,7 +436,7 @@ class MouvementTicketController extends Controller
     }
 
 
-    //Sortie de ticket      
+    //Sortie de ticket
     // public function indexSortieTicket()
     // {
     //     $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Ticket')->first();
@@ -497,6 +524,7 @@ class MouvementTicketController extends Controller
                     "trajet_aller_retour" => $request->trajet_aller_retour,
                     "reference" => $reference,
                     "id_categorie_sortie_ticket" => $request->id_categorie_sortie_ticket,
+                    'exercice_id' => Exercice::where('statut', 'ouvert')->latest()->first()->id
                 ]);
 
                 // Déduire stock
@@ -560,6 +588,7 @@ class MouvementTicketController extends Controller
                 "kilometrage" => $request->kilometrage,
                 "kilometrage_de_fin" => $request->kilometrage_de_fin,
                 "id_categorie_sortie_ticket" => $request->id_categorie_sortie_ticket,
+                'exercice_id' => Exercice::where('statut', 'ouvert')->latest()->first()->id
             ]);
 
             DB::commit();
@@ -772,4 +801,372 @@ class MouvementTicketController extends Controller
 
         return Storage::response($mouvement->bon_de_sortie_path);
     }
+
+    public function rapportperiodique(Request $request)
+    {
+        Log::info('Début du rapport périodique.');
+
+        $annee = $request->input('annee');
+        $exercice = Exercice::where('id', $annee)->first();
+        $annee = $exercice->annee;
+        $periode = $request->input('periode', 'mensuel'); // 'mensuel' par défaut
+
+        Log::info('Paramètres de requête', ['annee' => $annee, 'periode' => $periode]);
+
+        if (empty($annee) || !is_numeric($annee)) {
+            Log::error('Erreur: Année invalide fournie.', ['annee' => $annee]);
+            return response()->json(['error' => 'Veuillez fournir une année valide.'], 400);
+        }
+
+        $rapport = [];
+        $totalEntreesAcc = 0;
+        $previousStockFinal = 0;
+
+        // Déterminer les plages de mois en fonction de la période choisie
+        $plages = [];
+        if ($periode === 'trimestriel') {
+            $plages = [
+                1 => 'Trimestre 1 (Janv - Mars)',
+                2 => 'Trimestre 2 (Avril - Juin)',
+                3 => 'Trimestre 3 (Juil - Sept)',
+                4 => 'Trimestre 4 (Oct - Déc)',
+            ];
+        } elseif ($periode === 'semestriel') {
+            $plages = [
+                1 => 'Semestre 1 (Janv - Juin)',
+                2 => 'Semestre 2 (Juil - Déc)',
+            ];
+        } else { // 'mensuel' par défaut
+            $moisLibelles = [
+                1 => 'Janvier', 2 => 'Février', 3 => 'Mars',
+                4 => 'Avril', 5 => 'Mai', 6 => 'Juin',
+                7 => 'Juillet', 8 => 'Août', 9 => 'Septembre',
+                10 => 'Octobre', 11 => 'Novembre', 12 => 'Décembre',
+            ];
+            foreach (range(1, 12) as $mois) {
+                $plages[$mois] = $moisLibelles[$mois];
+            }
+        }
+
+        Log::info('Plages de périodes déterminées.', ['plages' => $plages]);
+
+        // Calcul du stock initial de début d'année
+        $dateDebutAnnee = Carbon::create($annee, 1, 1)->startOfYear();
+
+        $entreesAvantAnnee = DB::table('mouvement_tickets as m')
+            ->join('type_mouvements as t', 'm.id_type_mouvement', '=', 't.id')
+            ->where('t.libelle_type_mouvement', 'Entrée de Ticket')
+            ->where('m.date', '<', $dateDebutAnnee)
+            ->sum('m.qte');
+
+        $sortiesAvantAnnee = DB::table('mouvement_tickets as m')
+            ->join('type_mouvements as t', 'm.id_type_mouvement', '=', 't.id')
+            ->where('t.libelle_type_mouvement', 'Sortie de Ticket')
+            ->where('m.date', '<', $dateDebutAnnee)
+            ->sum('m.qte');
+
+        $retoursAvantAnnee = DB::table('retour_tickets')
+            ->where('created_at', '<', $dateDebutAnnee)
+            ->sum('qte');
+
+        $stockInitialDebutAnnee = $entreesAvantAnnee - $sortiesAvantAnnee + $retoursAvantAnnee;
+        $stockInitial = $stockInitialDebutAnnee;
+
+        Log::info('Stock initial avant l\'année ' . $annee . ' : ' . $stockInitial);
+
+        foreach ($plages as $index => $label) {
+            $moisDebut = 0;
+            $moisFin = 0;
+
+            if ($periode === 'trimestriel') {
+                $moisDebut = ($index - 1) * 3 + 1;
+                $moisFin = $moisDebut + 2;
+            } elseif ($periode === 'semestriel') {
+                $moisDebut = ($index - 1) * 6 + 1;
+                $moisFin = $moisDebut + 5;
+            } else { // 'mensuel'
+                $moisDebut = $index;
+                $moisFin = $index;
+            }
+
+            $dateDebut = Carbon::create($annee, $moisDebut, 1)->startOfMonth();
+            $dateFin   = Carbon::create($annee, $moisFin, 1)->endOfMonth();
+
+            Log::info('Traitement de la période: ' . $label, ['dates' => [$dateDebut, $dateFin]]);
+
+            if ($index > 1) {
+                $stockInitial = $previousStockFinal;
+            } else {
+                $stockInitial = $stockInitialDebutAnnee;
+            }
+
+            Log::info('Stock initial pour cette période : ' . $stockInitial);
+
+            // Calculer les entrées de la période
+            $entrees = DB::table('mouvement_tickets as m')
+                ->join('type_mouvements as t', 'm.id_type_mouvement', '=', 't.id')
+                ->where('t.libelle_type_mouvement', 'Entrée de Ticket')
+                ->whereBetween('m.date', [$dateDebut, $dateFin])
+                ->sum('m.qte');
+
+            // Calculer les sorties de la période
+            $sorties = DB::table('mouvement_tickets as m')
+                ->join('type_mouvements as t', 'm.id_type_mouvement', '=', 't.id')
+                ->where('t.libelle_type_mouvement', 'Sortie de Ticket')
+                ->whereBetween('m.date', [$dateDebut, $dateFin])
+                ->sum('m.qte');
+
+            // Calculer les sorties par catégorie
+            $categories = DB::table('categorie_sortie_tickets')->pluck('libelle', 'id');
+            $sortiesParCategorie = [];
+            foreach ($categories as $id => $libelle) {
+                $sortiesParCategorie[$libelle] = DB::table('mouvement_tickets as m')
+                    ->join('type_mouvements as t', 'm.id_type_mouvement', '=', 't.id')
+                    ->where('t.libelle_type_mouvement', 'Sortie de Ticket')
+                    ->where('m.id_categorie_sortie_ticket', $id)
+                    ->whereBetween('m.date', [$dateDebut, $dateFin])
+                    ->sum('m.qte');
+            }
+
+            // Calculer les retours de la période
+            $retours = DB::table('retour_tickets')
+                ->whereBetween('created_at', [$dateDebut, $dateFin])
+                ->sum('qte');
+
+            // Calculer le stock final de la période
+            $stockFinal = $stockInitial + $entrees - $sorties + $retours;
+            $totalEntreesAcc += $entrees;
+
+            Log::info('Calculs pour la période ' . $label, [
+                'entrees' => $entrees,
+                'sorties' => $sorties,
+                'retours' => $retours,
+                'stock_final' => $stockFinal
+            ]);
+
+            $previousStockFinal = $stockFinal;
+
+            $rapport[] = [
+                'periode' => $label,
+                'stock_initial' => $stockInitial,
+                'entrees' => $entrees,
+                'sorties' => $sorties,
+                'sorties_par_categorie' => $sortiesParCategorie,
+                'retours' => $retours,
+                'stock_final' => $stockFinal,
+                'total_entrees_cumulees' => $totalEntreesAcc,
+            ];
+        }
+
+        Log::info('Fin du rapport périodique.');
+        // Vous pouvez utiliser dd() pour voir le rapport final
+        // dd($rapport);
+        //return response()->json($rapport);
+
+        return new PostResource(true, 'Rapport généré avec succès', $rapport);
+    }
+
+    public function imprimerRapportPeriodique(Request $request)
+    {
+        Log::info("Début de la génération du PDF du rapport périodique.");
+
+        // Récupérer l'année et la période depuis la requête
+        $anneeId = $request->input('annee');
+        $exercice = Exercice::where('id', $anneeId)->first();
+
+        if (!$exercice) {
+            Log::error('Erreur: Année invalide fournie.', ['anneeId' => $anneeId]);
+            return response()->json(['error' => 'Veuillez fournir une année valide.'], 400);
+        }
+
+        $annee = $exercice->annee;
+        $periode = $request->input('periode', 'mensuel'); // valeur par défaut
+
+        // Réutiliser la fonction rapportperiodique pour calculer le rapport
+        $rapportResource = $this->rapportperiodique(new Request([
+            'annee' => $anneeId,
+            'periode' => $periode
+        ]));
+
+        // Extraire les données du rapport
+        $rapport = $rapportResource->response()->getData(true)['data'];
+
+        $titre = "Rapport Périodique " . ucfirst($periode) . " - Année " . $annee;
+
+        // Générer le PDF à partir d'une vue Blade
+        $pdf = PDF::loadView('pdf.rapport-periodique', compact('rapport', 'titre'));
+
+        Log::info("PDF généré, envoi de la réponse.");
+
+        return $pdf->download('rapport-periodique-' . $annee . '-' . $periode . '.pdf');
+    }
+
+    private function determinerPlages($periode)
+    {
+        $plages = [];
+        if ($periode === 'trimestriel') {
+            $plages = [
+                1 => 'Trimestre 1 (Janv - Mars)',
+                2 => 'Trimestre 2 (Avril - Juin)',
+                3 => 'Trimestre 3 (Juil - Sept)',
+                4 => 'Trimestre 4 (Oct - Déc)',
+            ];
+        } elseif ($periode === 'semestriel') {
+            $plages = [
+                1 => 'Semestre 1 (Janv - Juin)',
+                2 => 'Semestre 2 (Juil - Déc)',
+            ];
+        } else { // 'mensuel' par défaut
+            $moisLibelles = [
+                1 => 'Janvier', 2 => 'Février', 3 => 'Mars',
+                4 => 'Avril', 5 => 'Mai', 6 => 'Juin',
+                7 => 'Juillet', 8 => 'Août', 9 => 'Septembre',
+                10 => 'Octobre', 11 => 'Novembre', 12 => 'Décembre',
+            ];
+            foreach (range(1, 12) as $mois) {
+                $plages[$mois] = $moisLibelles[$mois];
+            }
+        }
+        return $plages;
+    }
+
+    private function calculerRapport($annee, $plages, $periode)
+    {
+        Log::info("Début du calcul du rapport périodique.");
+        $rapport = [];
+        $totalEntreesAcc = 0;
+        $previousStockFinal = 0;
+
+        $dateDebutAnnee = Carbon::create($annee, 1, 1)->startOfYear();
+
+        $entreesAvantAnnee = DB::table('mouvement_tickets as m')
+            ->join('type_mouvements as t', 'm.id_type_mouvement', '=', 't.id')
+            ->where('t.libelle_type_mouvement', 'Entrée de Ticket')
+            ->where('m.date', '<', $dateDebutAnnee)
+            ->sum('m.qte');
+
+        $sortiesAvantAnnee = DB::table('mouvement_tickets as m')
+            ->join('type_mouvements as t', 'm.id_type_mouvement', '=', 't.id')
+            ->where('t.libelle_type_mouvement', 'Sortie de Ticket')
+            ->where('m.date', '<', $dateDebutAnnee)
+            ->sum('m.qte');
+
+        $retoursAvantAnnee = DB::table('retour_tickets')
+            ->where('created_at', '<', $dateDebutAnnee)
+            ->sum('qte');
+
+        $stockInitialDebutAnnee = $entreesAvantAnnee - $sortiesAvantAnnee + $retoursAvantAnnee;
+        $stockInitial = $stockInitialDebutAnnee;
+
+        Log::info('Stock initial avant l\'année ' . $annee . ' : ' . $stockInitial);
+
+        foreach ($plages as $index => $label) {
+            $moisDebut = 0;
+            $moisFin = 0;
+
+            if ($periode === 'trimestriel') {
+                $moisDebut = ($index - 1) * 3 + 1;
+                $moisFin = $moisDebut + 2;
+            } elseif ($periode === 'semestriel') {
+                $moisDebut = ($index - 1) * 6 + 1;
+                $moisFin = $moisDebut + 5;
+            } else { // 'mensuel'
+                $moisDebut = $index;
+                $moisFin = $index;
+            }
+
+            $dateDebut = Carbon::create($annee, $moisDebut, 1)->startOfMonth();
+            $dateFin   = Carbon::create($annee, $moisFin, 1)->endOfMonth();
+
+            Log::info('Traitement de la période: ' . $label, ['dates' => [$dateDebut, $dateFin]]);
+
+            if ($index > 1) {
+                $stockInitial = $previousStockFinal;
+            } else {
+                $stockInitial = $stockInitialDebutAnnee;
+            }
+
+            Log::info('Stock initial pour cette période : ' . $stockInitial);
+
+            // Calculer les entrées de la période
+            $entrees = DB::table('mouvement_tickets as m')
+                ->join('type_mouvements as t', 'm.id_type_mouvement', '=', 't.id')
+                ->where('t.libelle_type_mouvement', 'Entrée de Ticket')
+                ->whereBetween('m.date', [$dateDebut, $dateFin])
+                ->sum('m.qte');
+
+            // Calculer les sorties de la période
+            $sorties = DB::table('mouvement_tickets as m')
+                ->join('type_mouvements as t', 'm.id_type_mouvement', '=', 't.id')
+                ->where('t.libelle_type_mouvement', 'Sortie de Ticket')
+                ->whereBetween('m.date', [$dateDebut, $dateFin])
+                ->sum('m.qte');
+
+            // Calculer les sorties par catégorie pour cette période
+            $categories = DB::table('categorie_sortie_tickets')->pluck('libelle', 'id');
+            $sortiesParCategorie = [];
+            foreach ($categories as $id => $libelle) {
+                $sortiesParCategorie[$libelle] = DB::table('mouvement_tickets as m')
+                    ->join('type_mouvements as t', 'm.id_type_mouvement', '=', 't.id')
+                    ->where('t.libelle_type_mouvement', 'Sortie de Ticket')
+                    ->where('m.id_categorie_sortie_ticket', $id)
+                    ->whereBetween('m.date', [$dateDebut, $dateFin])
+                    ->sum('m.qte');
+            }
+
+            // Calculer les retours de la période
+            $retours = DB::table('retour_tickets')
+                ->whereBetween('created_at', [$dateDebut, $dateFin])
+                ->sum('qte');
+
+            // Calculer le stock final de la période
+            $stockFinal = $stockInitial + $entrees - $sorties + $retours;
+            $totalEntreesAcc += $entrees;
+
+            Log::info('Calculs pour la période ' . $label, [
+                'entrees' => $entrees,
+                'sorties' => $sorties,
+                'retours' => $retours,
+                'stock_final' => $stockFinal
+            ]);
+
+            $previousStockFinal = $stockFinal;
+
+            $rapport[] = [
+                'periode' => $label,
+                'stock_initial' => $stockInitial,
+                'entrees' => $entrees,
+                'sorties' => $sorties,
+                'sorties_par_categorie' => $sortiesParCategorie,
+                'retours' => $retours,
+                'stock_final' => $stockFinal,
+                'total_entrees_cumulees' => $totalEntreesAcc,
+            ];
+        }
+
+        Log::info("Fin du calcul du rapport périodique.");
+        return $rapport;
+    }
+
+    // Fonctions utilitaires à ajouter à la classe du contrôleur
+    private function getMoisPourTrimestre($trimestre) {
+        switch ($trimestre) {
+            case 1: return [1, 2, 3];
+            case 2: return [4, 5, 6];
+            case 3: return [7, 8, 9];
+            case 4: return [10, 11, 12];
+            default: return [];
+        }
+    }
+
+    private function getMoisPourSemestre($semestre) {
+        switch ($semestre) {
+            case 1: return [1, 2, 3, 4, 5, 6];
+            case 2: return [7, 8, 9, 10, 11, 12];
+            default: return [];
+        }
+    }
+
+
+
 }

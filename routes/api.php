@@ -48,6 +48,7 @@ use App\Http\Controllers\Rapport\Ticket\RapportTicketController;
 use App\Http\Controllers\Api\SiteSettingController;
 use App\Http\Controllers\Article_ExoController;
 use App\Http\Controllers\CategorieSortieTicketController;
+use App\Http\Controllers\ExerciceMouvementTicketController;
 
 
 Route::get('/user', function (Request $request) {
@@ -260,4 +261,10 @@ Route::get('/rapports/parBureau', [ImmobilisationRapportController::class, 'getR
 
 Route::get('/mouvements/fiche/{id}', [MouvementStockController::class, 'genererFicheIndividuelle']);
 
+Route::post('/rapport-periodique', [MouvementTicketController::class, 'rapportperiodique']);
+Route::get('rapports/periodique', [MouvementTicketController::class, 'rapportperiodique']);
+
 Route::get('/mouvements/demande-sortie/check-status-and-generate/{codeMouvement}', [MouvementStockController::class, 'checkStatusAccorde']);
+//Route::get('/getrapport-periodique', [MouvementTicketController::class, 'getrapportperiodique']);
+
+Route::get('rapports/periodique/imprimer', [MouvementTicketController::class, 'imprimerRapportPeriodique']);

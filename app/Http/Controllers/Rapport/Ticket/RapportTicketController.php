@@ -125,8 +125,8 @@ class RapportTicketController extends Controller
                 $validator = Validator::make($request->all(), [
                     'date_debut' => 'required|date',
                     'date_fin' => 'required|date|after_or_equal:date_debut',
-                    'coupon_id' => 'nullable|exists:coupon_tickets,id', // Utilisez 'coupon_id' si c'est le nom de la colonne
-                    'compagnie_id' => 'nullable|exists:compagnies,id',
+                    'coupon_ticket_id' => 'nullable|exists:coupon_tickets,id', // Utilisez 'coupon_id' si c'est le nom de la colonne
+                    'compagnie_petrolier_id' => 'nullable|exists:compagnies,id',
                 ]);
                 if ($validator->fails()) {
                     return new PostResource(false, 'Validation échouée pour le rapport de retour ticket.', ['errors' => $validator->errors()]);
@@ -139,11 +139,11 @@ class RapportTicketController extends Controller
                     'compagnie' // 'compagnie' car c'est le nom de la relation sur RetourTicket
                 ])->whereBetween('created_at', [$request->date_debut, $request->date_fin]); // Assurez-vous que la colonne est bien 'date_retour'
 
-                if ($request->filled('coupon_id')) {
-                    $query->where('coupon_id', $request->coupon_id);
+                if ($request->filled('coupon_ticket_id')) {
+                    $query->where('coupon_ticket_id', $request->coupon_ticket_id);
                 }
-                if ($request->filled('compagnie_id')) {
-                    $query->where('compagnie_petrolier_id', $request->compagnie_id);
+                if ($request->filled('compagnie_petrolier_id')) {
+                    $query->where('compagnie_petrolier_id', $request->compagnie_petrolier_id);
                 }
 
                 $data = $query->latest()->paginate(1000);
@@ -154,8 +154,8 @@ class RapportTicketController extends Controller
                 $validator = Validator::make($request->all(), [
                     'date_debut' => 'required|date',
                     'date_fin' => 'required|date|after_or_equal:date_debut',
-                    'coupon_id' => 'nullable|exists:coupon_tickets,id', // Utilisez 'coupon_id' si c'est le nom de la colonne
-                    'compagnie_id' => 'nullable|exists:compagnies,id',
+                    'coupon_ticket_id' => 'nullable|exists:coupon_tickets,id', // Utilisez 'coupon_id' si c'est le nom de la colonne
+                    'compagnie_petrolier_id' => 'nullable|exists:compagnies,id',
                 ]);
                 if ($validator->fails()) {
                     return new PostResource(false, 'Validation échouée pour le rapport d\'annulation ticket.', ['errors' => $validator->errors()]);
@@ -168,11 +168,11 @@ class RapportTicketController extends Controller
                     'compagnie' // 'compagnie' car c'est le nom de la relation sur AnnulationTicket
                 ])->whereBetween('created_at', [$request->date_debut, $request->date_fin]); // Assurez-vous que la colonne est bien 'date_annulation'
 
-                if ($request->filled('coupon_id')) {
-                    $query->where('coupon_id', $request->coupon_id);
+                if ($request->filled('coupon_ticket_id')) {
+                    $query->where('coupon_ticket_id', $request->coupon_ticket_id);
                 }
-                if ($request->filled('compagnie_id')) {
-                    $query->where('compagnie_petrolier_id', $request->compagnie_id);
+                if ($request->filled('compagnie_petrolier_id')) {
+                    $query->where('compagnie_petrolier_id', $request->compagnie_petrolier_id);
                 }
 
                 $data = $query->latest()->paginate(1000);
@@ -253,7 +253,7 @@ class RapportTicketController extends Controller
                     'date_debut' => 'required|date',
                     'date_fin' => 'required|date|after_or_equal:date_debut',
                     'coupon_ticket_id' => 'nullable|exists:coupon_tickets,id',
-                    'compagnie_id' => 'nullable|exists:compagnies,id',
+                    'compagnie_petrolier_id' => 'nullable|exists:compagnies,id',
                     'employe_id' => 'nullable|exists:employes,id',
                     'vehicule_id' => 'nullable|exists:vehicules,id',
                     'depart_id' => 'nullable|exists:departs,id',
@@ -272,8 +272,8 @@ class RapportTicketController extends Controller
                     if ($request->filled('coupon_ticket_id')) {
                         $query->where('coupon_ticket_id', $request->coupon_ticket_id);
                     }
-                    if ($request->filled('compagnie_id')) {
-                        $query->where('compagnie_id', $request->compagnie_id);
+                    if ($request->filled('compagnie_petrolier_id')) {
+                        $query->where('compagnie_petrolier_id', $request->compagnie_petrolier_id);
                     }
                     if ($request->filled('employe_id')) {
                         $query->where('employe_id', $request->employe_id);
@@ -306,8 +306,8 @@ class RapportTicketController extends Controller
                         $coupon = CouponTicket::find($request->coupon_ticket_id);
                         $filterLabels['coupon_ticket'] = $coupon ? $coupon->libelle_coupon : 'Non trouvé';
                     }
-                    if ($request->filled('compagnie_id')) {
-                        $compagnie = Compagnie::find($request->compagnie_id);
+                    if ($request->filled('compagnie_petrolier_id')) {
+                        $compagnie = Compagnie::find($request->compagnie_petrolier_id);
                         $filterLabels['compagnie'] = $compagnie ? $compagnie->nom_compagnie : 'Non trouvée';
                     }
                     if ($request->filled('employe_id')) {
@@ -336,8 +336,8 @@ class RapportTicketController extends Controller
                 $validator = Validator::make($request->all(), [
                     'date_debut' => 'required|date',
                     'date_fin' => 'required|date|after_or_equal:date_debut',
-                    'coupon_id' => 'nullable|exists:coupon_tickets,id',
-                    'compagnie_id' => 'nullable|exists:compagnies,id',
+                    'coupon_ticket_id' => 'nullable|exists:coupon_tickets,id',
+                    'compagnie_petrolier_id' => 'nullable|exists:compagnies,id',
                 ]);
                 if ($validator->fails()) {
                     return response()->json($validator->errors(), 422);
@@ -350,11 +350,11 @@ class RapportTicketController extends Controller
                     'compagnie'
                 ])->whereBetween('created_at', [$request->date_debut, $request->date_fin]);
 
-                if ($request->filled('coupon_id')) {
-                    $query->where('coupon_id', $request->coupon_id);
+                if ($request->filled('coupon_ticket_id')) {
+                    $query->where('coupon_ticket_id', $request->coupon_ticket_id);
                 }
-                if ($request->filled('compagnie_id')) {
-                    $query->where('compagnie_id', $request->compagnie_id);
+                if ($request->filled('compagnie_petrolier_id')) {
+                    $query->where('compagnie_petrolier_id', $request->compagnie_petrolier_id);
                 }
 
                 $data = $query->latest()->get();
@@ -367,12 +367,12 @@ class RapportTicketController extends Controller
                     'coupon_ticket' => 'Tous',
                     'compagnie' => 'Toutes',
                 ];
-                if ($request->filled('coupon_id')) {
-                    $coupon = CouponTicket::find($request->coupon_id);
+                if ($request->filled('coupon_ticket_id')) {
+                    $coupon = CouponTicket::find($request->coupon_ticket_id);
                     $filterLabels['coupon_ticket'] = $coupon ? $coupon->libelle_coupon : 'Non trouvé';
                 }
-                if ($request->filled('compagnie_id')) {
-                    $compagnie = Compagnie::find($request->compagnie_id);
+                if ($request->filled('compagnie_petrolier_id')) {
+                    $compagnie = Compagnie::find($request->compagnie_petrolier_id);
                     $filterLabels['compagnie'] = $compagnie ? $compagnie->nom_compagnie : 'Non trouvée';
                 }
                 break;
@@ -381,8 +381,8 @@ class RapportTicketController extends Controller
                 $validator = Validator::make($request->all(), [
                     'date_debut' => 'required|date',
                     'date_fin' => 'required|date|after_or_equal:date_debut',
-                    'coupon_id' => 'nullable|exists:coupon_tickets,id',
-                    'compagnie_id' => 'nullable|exists:compagnies,id',
+                    'coupon_ticket_id' => 'nullable|exists:coupon_tickets,id',
+                    'compagnie_petrolier_id' => 'nullable|exists:compagnies,id',
                 ]);
                 if ($validator->fails()) {
                     return response()->json($validator->errors(), 422);
@@ -395,11 +395,11 @@ class RapportTicketController extends Controller
                     'compagnie'
                 ])->whereBetween('created_at', [$request->date_debut, $request->date_fin]);
 
-                if ($request->filled('coupon_id')) {
-                    $query->where('coupon_id', $request->coupon_id);
+                if ($request->filled('coupon_ticket_id')) {
+                    $query->where('coupon_ticket_id', $request->coupon_ticket_id);
                 }
-                if ($request->filled('compagnie_id')) {
-                    $query->where('compagnie_id', $request->compagnie_id);
+                if ($request->filled('compagnie_petrolier_id')) {
+                    $query->where('compagnie_petrolier_id', $request->compagnie_petrolier_id);
                 }
 
                 $data = $query->latest()->get();
@@ -412,12 +412,12 @@ class RapportTicketController extends Controller
                     'coupon_ticket' => 'Tous',
                     'compagnie' => 'Toutes',
                 ];
-                if ($request->filled('coupon_id')) {
-                    $coupon = CouponTicket::find($request->coupon_id);
+                if ($request->filled('coupon_ticket_id')) {
+                    $coupon = CouponTicket::find($request->coupon_ticket_id);
                     $filterLabels['coupon_ticket'] = $coupon ? $coupon->libelle_coupon : 'Non trouvé';
                 }
-                if ($request->filled('compagnie_id')) {
-                    $compagnie = Compagnie::find($request->compagnie_id);
+                if ($request->filled('compagnie_petrolier_id')) {
+                    $compagnie = Compagnie::find($request->compagnie_petrolier_id);
                     $filterLabels['compagnie'] = $compagnie ? $compagnie->nom_compagnie : 'Non trouvée';
                 }
                 break;
