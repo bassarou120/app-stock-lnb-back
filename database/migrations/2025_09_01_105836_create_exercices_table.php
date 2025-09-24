@@ -11,8 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('mouvement_stocks', function (Blueprint $table) {
-            $table->string('statut')->nullable()->default('');
+        Schema::create('exercices', function (Blueprint $table) {
+            $table->id();
+             $table->date('date_debut');
+            $table->date('date_fin');
+            $table->integer('annee');
+            $table->string('statut')->default('cloture');
+            $table->timestamps();
         });
     }
 
@@ -21,8 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('mouvement_stocks', function (Blueprint $table) {
-            $table->dropColumn('statut');
-        });
+        Schema::dropIfExists('exercices');
     }
 };

@@ -27,6 +27,7 @@ use App\Http\Controllers\Parametrage\RoleController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\DashboardStockController;
 use App\Http\Controllers\MouvementStockController;
+use App\Http\Controllers\ExerciceController;
 use App\Http\Controllers\Parametrage\EmployeController;
 use App\Http\Controllers\Auth\AuthentificationController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
@@ -45,6 +46,9 @@ use App\Http\Controllers\Rapport\ImmobilisationRapportController;
 use App\Http\Controllers\Rapport\Parc\RapportParcController;
 use App\Http\Controllers\Rapport\Ticket\RapportTicketController;
 use App\Http\Controllers\Api\SiteSettingController;
+use App\Http\Controllers\Article_ExoController;
+use App\Http\Controllers\CategorieSortieTicketController;
+use App\Http\Controllers\ExerciceMouvementTicketController;
 
 
 Route::get('/user', function (Request $request) {
@@ -98,6 +102,8 @@ Route::apiResource('transferts', TransfertController::class);
 Route::apiResource('retour-ticket', RetourTicketController::class);
 Route::apiResource('annulation-ticket', AnnulationTicketController::class);
 Route::apiResource('trajets', TrajetController::class);
+Route::apiResource('exercices', ExerciceController::class);
+Route::apiResource('categorieSortieTicket', CategorieSortieTicketController::class);
 
 
 
@@ -224,6 +230,23 @@ Route::post('/immobilisations/import', [ImmobilisationController::class, 'import
 
 Route::post('/vehicules/{vehicule}/carte-grise', [VehiculeController::class, 'addCarteGrise']);
 
+Route::put('/mouvement-tickets/{id}/kilometrage-fin', [MouvementTicketController::class, 'updateKilometrageDeFin']);
+
+Route::put('/exercicestate/{id}/status', [ExerciceController::class, 'changeStatus']);
+
+Route::get('/exercice/ouvert', [ExerciceController::class, 'getExerciceOuvert']);
+
+// Define the specific route first
+Route::get('/articlesExercices', [Article_ExoController::class, 'articlesExercices']);
+
+// Then, define the general route
+Route::get('/articles/{id}', [ArticleController::class, 'show']);
+
+Route::get('/mouvement-tickets/generer-bon/{reference}', [MouvementTicketController::class, 'genererBonDeSortie']);
+Route::post('/mouvement-tickets/{id}/televerser-bon', [MouvementTicketController::class, 'televerserBonDeSortie']);
+Route::get('/mouvement-tickets/{id}/voir-bon', [MouvementTicketController::class, 'voirBonDeSortie']);
+
+
 Route::get('/generer-fiche-demande/{code_mouvement}', [MouvementStockController::class, 'genererFicheDemande']);
 
 Route::get('/mouvements/fiche/{id}', [MouvementStockController::class, 'genererFicheIndividuelle']);
@@ -231,5 +254,17 @@ Route::get('/mouvements/fiche/{id}', [MouvementStockController::class, 'genererF
 Route::post('/demande/valid-upload-signe', [MouvementStockController::class, 'validAndUploadSigne']);
 
 Route::get('/view-file', [MouvementStockController::class, 'viewFile']);
+
 Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController::class, 'downloadGroupedFile']);
 
+Route::get('/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']);
+
+Route::get('/mouvements/fiche/{id}', [MouvementStockController::class, 'genererFicheIndividuelle']);
+
+Route::post('/rapport-periodique', [MouvementTicketController::class, 'rapportperiodique']);
+Route::get('rapports/periodique', [MouvementTicketController::class, 'rapportperiodique']);
+
+Route::get('/mouvements/demande-sortie/check-status-and-generate/{codeMouvement}', [MouvementStockController::class, 'checkStatusAccorde']);
+//Route::get('/getrapport-periodique', [MouvementTicketController::class, 'getrapportperiodique']);
+
+Route::get('rapports/periodique/imprimer', [MouvementTicketController::class, 'imprimerRapportPeriodique']);

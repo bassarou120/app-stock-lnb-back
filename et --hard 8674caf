@@ -1,0 +1,20 @@
+[33m8674caf[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mroland_dev2[m[33m, [m[1;31morigin/roland_dev2[m[33m)[m HEAD@{0}: reset: moving to HEAD~1
+[33m6b5baa5[m HEAD@{1}: commit (merge): update
+[33m8674caf[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mroland_dev2[m[33m, [m[1;31morigin/roland_dev2[m[33m)[m HEAD@{2}: commit: update
+[33m03f5ba0[m HEAD@{3}: checkout: moving from roland_dev2 to roland_dev2
+[33m03f5ba0[m HEAD@{4}: checkout: moving from roland_dev2 to roland_dev2
+[33m03f5ba0[m HEAD@{5}: commit: rapport individuel
+[33mb1ad0cf[m HEAD@{6}: commit: encore
+[33m6e13158[m HEAD@{7}: commit: update
+[33m3161a82[m HEAD@{8}: commit: Seeder et import excel id_exercice
+[33mfb7c727[m HEAD@{9}: commit: update
+[33m23b7581[m HEAD@{10}: commit: update
+[33m0a136e5[m HEAD@{11}: commit: update
+[33ma034c50[m HEAD@{12}: commit: fin integration exercice
+[33m73a63f0[m HEAD@{13}: commit (merge): integration d'exercice
+[33m9f687c6[m HEAD@{14}: checkout: moving from roland_dev2 to roland_dev2
+[33m9f687c6[m HEAD@{15}: commit: update
+[33m42e4bcd[m HEAD@{16}: commit: update
+[33m362d34a[m[33m ([m[1;32mphilemon_dev2[m[33m)[m HEAD@{17}: checkout: moving from roland_dev2 to roland_dev2
+[33m362d34a[m[33m ([m[1;32mphilemon_dev2[m[33m)[m HEAD@{18}: checkout: moving from philemon_dev2 to roland_dev2
+[33m362d34a[m[33m ([m[1;32mphilemon_dev2[m[33m)[m HEAD@{19}: checkout: moving from master to philemon_dev2

@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
         // ]);
         $this->call([
             RoleSeeder::class,
+            ExerciceSeeder::class,
             TypeMouvementSeeder::class,
 //            CategorieSeeder::class,
 //            FournisseurSeeder::class,
@@ -45,6 +46,8 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             UniteDeMesureSeeder::class,
             TypeInterventionSeeder::class,
+            CategorieSortieTicketsSeeder::class,
+
         ]);
 
         // Appel de la commande artisan personnalisée

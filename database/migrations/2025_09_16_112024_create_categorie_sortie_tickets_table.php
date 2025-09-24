@@ -11,8 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('mouvement_stocks', function (Blueprint $table) {
-            $table->string('statut')->nullable()->default('');
+        Schema::create('categorie_sortie_tickets', function (Blueprint $table) {
+            $table->id();
+            $table->string('libelle');
+            $table->boolean('isdeleted')->default(false);
+            $table->timestamps();
         });
     }
 
@@ -21,8 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('mouvement_stocks', function (Blueprint $table) {
-            $table->dropColumn('statut');
-        });
+        Schema::dropIfExists('categorie_sortie_tickets');
     }
 };

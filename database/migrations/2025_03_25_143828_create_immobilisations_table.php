@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('immobilisations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('bureau_id')->constrained('bureaus')->onDelete('cascade');
-            $table->foreignId('employe_id')->constrained('employes')->onDelete('cascade');
+            $table->foreignId('employe_id')->nullable()->constrained('employes')->onDelete('cascade');
             $table->date('date_mouvement')->nullable();
             $table->foreignId('fournisseur_id')->constrained('fournisseurs')->onDelete('cascade');
             $table->string('designation')->nullable();

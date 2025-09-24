@@ -14,8 +14,10 @@ class CouponTicketController extends Controller
     // Afficher la liste des coupon_tickets
     public function index()
     {
-        // Récupérer tous les coupon_tickets triés par ordre décroissant
-        $couponTickets = CouponTicket::latest()->where('isdeleted', false)->paginate(1000);
+
+        $couponTickets = CouponTicket::where('isdeleted', false)
+            ->latest()
+            ->paginate(1000);
 
         // Retourner la réponse formatée avec PostResource
         return new PostResource(true, 'Liste des coupon tickets', $couponTickets);
@@ -23,10 +25,11 @@ class CouponTicketController extends Controller
 
     public function getCouponTicketsWithCompagnies()
     {
+
         $stocks = StockTicket::with(['couponTicket', 'compagnie'])
-            ->orderByDesc('created_at')
             ->where('isdeleted', false)
-            ->get(); // pas besoin de pagination si tu veux tout
+            ->orderByDesc('created_at')
+            ->get();
 
         return new PostResource(true, 'Liste des coupons avec compagnies', $stocks);
     }
@@ -87,6 +90,7 @@ class CouponTicketController extends Controller
         $couponTicket->isdeleted = true;
         $couponTicket->save();
         // Retourner la réponse formatée avec PostResource, indiquant que la suppression a réussi
-        return new PostResource(true, 'Coupon ticket supprimé avec succès', null);
+        return new PostResource(true, 'Coupons ticket supprimé avec succès', null);
     }
+
 }

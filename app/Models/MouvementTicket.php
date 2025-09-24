@@ -8,6 +8,7 @@ use App\Models\Parametrage\CompagniePetrolier;
 use App\Models\Parametrage\CouponTicket;
 use App\Models\Parametrage\Commune;
 use App\Models\Vehicule;
+use App\Models\CategorieSortieTicket;
 
 
 use Illuminate\Database\Eloquent\Model;
@@ -38,6 +39,7 @@ use Illuminate\Database\Eloquent\Model;
 class MouvementTicket extends Model
 {
     use HasFactory;
+
     protected $guarded=[];
     protected $fillable = [];
 
@@ -65,5 +67,20 @@ class MouvementTicket extends Model
     public function arriver()
     {
         return $this->belongsTo(Commune::class, 'commune_arriver');
+    }
+
+    public function exercices()
+    {
+        return $this->belongsToMany(Exercice::class, 'exercice_mouvement_stock', 'coupon_ticket_id', 'exercice_id');
+    }
+
+    public function exerciceMouvementTickets()
+    {
+        return $this->hasMany(ExerciceMouvementTicket::class, 'coupon_ticket_id');
+    }
+
+    public function categorieSortieTicket() // Ajoutez cette nouvelle relation
+    {
+        return $this->belongsTo(CategorieSortieTicket::class, 'id_categorie_sortie_ticket');
     }
 }

@@ -47,7 +47,8 @@ class Article extends Model
         // Si 'id_unite_de_mesure' est une colonne dans la table 'articles' et doit être mass-assignable
         'id_unite_de_mesure',
         // Si 'prix_unitaire' est une colonne dans la table 'articles' et doit être mass-assignable
-        'prix_unitaire'
+        'prix_unitaire',
+        'id_exercice'
     ];
 
     public function categorie()
@@ -71,4 +72,18 @@ class Article extends Model
     {
         return $this->belongsTo(UniteDeMesure::class, 'id_unite_de_mesure');
     }
+
+    public function exercices(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Exercice::class,            // modèle lié
+            'article_exercice',       // nom exact de la table pivot
+            'id_article',               // clé étrangère vers Article
+            'id_exercice'               // clé étrangère vers Exercice
+        )
+        ->withPivot('stock_debut_exercice', 'stock_fin_exercice', 'cmp_debut_exercice', 'cmp_fin_exercice')
+        ->withTimestamps();
+
+    }
+
 }

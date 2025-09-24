@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('mouvement_stocks', function (Blueprint $table) {
-            $table->string('statut')->nullable()->default('');
+            $table->foreignId('id_exercice')->constrained('exercices')->onDelete('cascade');
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('mouvement_stocks', function (Blueprint $table) {
-            $table->dropColumn('statut');
+            $table->dropForeign(['id_exercice']);
         });
     }
 };

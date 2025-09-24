@@ -17,6 +17,7 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Illuminate\Support\Facades\Response;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Models\Exercice;
 
 
 class ArticleController extends Controller
@@ -37,11 +38,23 @@ class ArticleController extends Controller
  */
     public function index()
     {
+
+        // Récupérer l'exercice ouvert
+/*         $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
+        if (!$exerciceOuvert) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun exercice ouvert trouvé.'
+            ], 404);
+        } */
+
         $articles = Article::with(['categorie', 'stock'])
         ->where('isdeleted', false)
+        ->orderBy('id_exercice', 'desc')
         ->latest()->paginate(1000);
         return new PostResource(true, 'Liste des articles', $articles);
     }
+
 
     // Créer un nouveau article
 
@@ -107,7 +120,6 @@ class ArticleController extends Controller
 
     }
 
-
     public function storeBatch(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -125,23 +137,32 @@ class ArticleController extends Controller
 
         $articles = [];
 
+        // Récupérer l'exercice ouvert
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+        if (!$exerciceOuvert) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun exercice ouvert trouvé.'
+            ], 400);
+        }
+
         // Utilisation d'une transaction pour garantir l'intégrité des données
         DB::beginTransaction();
         try {
             foreach ($request->articles as $articleData) {
 
                 // Récupérer le dernier article créé
-            $lastArticle = Article::orderBy('id', 'desc')->first();
-            $lastNumber = $lastArticle ? (int) substr($lastArticle->code_article, 4, 5) : 0;
+                $lastArticle = Article::orderBy('id', 'desc')->first();
+                $lastNumber = $lastArticle ? (int) substr($lastArticle->code_article, 4, 5) : 0;
 
-            // Incrémenter
-            $newNumber = str_pad($lastNumber + 1, 5, '0', STR_PAD_LEFT);
+                // Incrémenter
+                $newNumber = str_pad($lastNumber + 1, 5, '0', STR_PAD_LEFT);
 
-            // Année (2 derniers chiffres)
-            $year = date('y');
+                // Année (2 derniers chiffres)
+                $year = date('y');
 
-            // Générer code article
-            $codeArticle = "ART-{$newNumber}-{$year}";
+                // Générer code article
+                $codeArticle = "ART-{$newNumber}-{$year}";
 
                 $article = Article::create([
                     'id_cat' => $articleData['id_cat'],
@@ -149,24 +170,45 @@ class ArticleController extends Controller
                     'code_article' => $codeArticle,
                     'description' => $articleData['description'],
                     'stock_alerte' => $articleData['stock_alerte'],
+                    'id_exercice' => $exerciceOuvert->id
                 ]);
 
                 // Initialiser l'entrée de stock pour cet article
                 Stock::create([
                     'id_Article' => $article->id,
-                    'Qte_actuel' => 0
+                    'Qte_actuel' => 0,
+                    'id_exercice' => $exerciceOuvert->id, // lien stock → exercice
+                    //'prix_unitaire' => 0 // pour calcul CMP plus tard
+                ]);
+
+                // Ajouter une entrée dans la table article_exercice
+                DB::table('article_exercice')->insert([
+                    'id_article' => $article->id,
+                    'id_exercice' => $exerciceOuvert->id,
+                    'stock_debut_exercice' => 0,
+                    'stock_fin_exercice' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'cmp_debut_exercice' => 0,
+                    'cmp_fin_exercice' => 0,
                 ]);
 
                 $articles[] = $article;
             }
             DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['error' => 'Une erreur est survenue lors de l\'enregistrement des articles.'], 500);
-        }
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return response()->json([
+                    'error' => 'Une erreur est survenue',
+                    'message' => $e->getMessage(),
+                    'line' => $e->getLine(),
+                    'file' => $e->getFile()
+                ], 500);
+            }
 
         return new PostResource(true, count($articles) . ' articles créés et stocks initialisés avec succès', $articles);
     }
+
 
     // Mettre à jour un article existant
 
@@ -201,33 +243,87 @@ class ArticleController extends Controller
  *     @OA\Response(response=422, description="Erreur de validation")
  * )
  */
+
     public function update(Request $request, Article $article)
     {
         $validator = Validator::make($request->all(), [
             'id_cat' => 'required|exists:categorie_articles,id',
             'libelle' => 'required|string|max:255',
-            // 'code_article' => 'required|string|max:255',
-            'description' => 'string|max:255',
+            'description' => 'nullable|string|max:255',
             'stock_alerte' => 'required|integer|min:0',
         ]);
 
         Log::info($request->all());
 
-
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        $article->update([
-            'id_cat' => $request->id_cat,
-            'libelle' => $request->libelle,
-            'description' => $request->description,
-            // 'code_article' => $request->code_article,
-            'stock_alerte' => $request->stock_alerte,
-        ]);
+        DB::beginTransaction();
+        try {
+            // Mise à jour de l'article
+            $article->update([
+                'id_cat' => $request->id_cat,
+                'libelle' => $request->libelle,
+                'description' => $request->description,
+                'stock_alerte' => $request->stock_alerte,
+            ]);
+
+            // ======= Calcul CMP début et fin =======
+            // CMP début = basé sur le stock initial de l'exercice
+            $stockDebut = DB::table('stocks')
+                ->where('id_article', $article->id)
+                ->where('type', 'entrée') // uniquement les entrées (achats)
+                ->select(DB::raw('SUM(qte * prix_unitaire) as total'), DB::raw('SUM(qte) as total_qte'))
+                ->first();
+
+            $cmpDebut = ($stockDebut && $stockDebut->total_qte > 0)
+                ? round($stockDebut->total / $stockDebut->total_qte, 2)
+                : 0;
+
+            // CMP fin = basé sur toutes les entrées pendant l'exercice
+            $stockFin = DB::table('stocks')
+                ->where('id_article', $article->id)
+                ->where('type', 'entrée') // uniquement les entrées
+                ->select(DB::raw('SUM(qte * prix_unitaire) as total'), DB::raw('SUM(qte) as total_qte'))
+                ->first();
+
+            $cmpFin = ($stockFin && $stockFin->total_qte > 0)
+                ? round($stockFin->total / $stockFin->total_qte, 2)
+                : 0;
+
+            // Stock actuel
+            $stockActuel = DB::table('stocks')
+                ->where('id_article', $article->id)
+                ->orderBy('id', 'desc')
+                ->value('Qte_actuel') ?? 0;
+
+            // Mise à jour de la table article_exercice
+            DB::table('article_exercice')
+                ->where('id_article', $article->id)
+                ->update([
+                    'stock_debut_exercice' => $stockDebut->total_qte ?? 0,
+                    'stock_fin_exercice' => $stockActuel,
+                    'cmp_debut_exercice' => $cmpDebut,
+                    'cmp_fin_exercice' => $cmpFin,
+                    'updated_at' => now(),
+                ]);
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'error' => 'Une erreur est survenue lors de la mise à jour de l\'article.',
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ], 500);
+        }
 
         return new PostResource(true, 'Article mis à jour avec succès', $article);
     }
+
+
 
     // Supprimer un article
 
@@ -257,28 +353,52 @@ class ArticleController extends Controller
  */
     public function destroy(Article $article)
     {
+        // Vérifier l'exercice ouvert
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+        if (!$exerciceOuvert) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun exercice ouvert trouvé.'
+            ], 400);
+        }
+
+        // Empêcher la suppression si l'article n'appartient pas à l'exercice ouvert
+        if ($article->id_exercice !== $exerciceOuvert->id) {
+            return response()->json([
+                'success' => false,
+                'message' => "Impossible de supprimer un article lié à un exercice clôturé."
+            ], 403);
+        }
 
         $article->isdeleted = true;
         $article->save();
+
         return new PostResource(true, 'Article supprimé avec succès', null);
     }
 
 
+
     public function imprimer()
     {
-        $articles = Article::with(['categorie', 'stock'])->where('isdeleted', false)->get();
+        $articles = Article::with(['categorie', 'stock'])
+            ->where('isdeleted', false)
+            ->get();
 
         $pdf = Pdf::loadView('pdf.articles', compact('articles'));
 
         return $pdf->download('etat_du_stock.pdf');
     }
 
-
-
     public function exportArticlesExcel()
     {
-        $articles = Article::with(['categorie', 'stock'])->get()->map(function ($article) {
+        // Récupérer l'année dont le statut est "ouvert"
+        $exercice = Exercice::where('statut', 'ouvert')->first();
+        $annee = $exercice ? $exercice->annee : date('Y');
+
+        // Charger les articles
+        $articles = Article::with(['categorie', 'stock'])->get()->map(function ($article) use ($annee) {
             return [
+                'Année'             => $annee,
                 'Article'           => $article->libelle ?? '-',
                 'Description'       => $article->description ?? '-',
                 'Catégorie'         => $article->categorie->libelle_categorie_article ?? '-',
@@ -288,14 +408,18 @@ class ArticleController extends Controller
             ];
         })->toArray();
 
-        \Excel::create('etat_du_stock', function($excel) use ($articles) {
-            $excel->sheet('Stock', function($sheet) use ($articles) {
+        // Générer le fichier Excel
+        \Excel::create('etat_du_stock_' . $annee, function($excel) use ($articles, $annee) {
+            $excel->sheet('Stock_' . $annee, function($sheet) use ($articles) {
                 // Ajoute les données avec les en-têtes automatiquement
                 $sheet->fromArray($articles);
             });
         })->download('xlsx');
     }
 
+    /**
+     * Importe les articles à partir d'un fichier Excel.
+     */
     public function import(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -312,44 +436,102 @@ class ArticleController extends Controller
 
         $ignoredRows = [];
 
-        foreach ($rows as $index => $row) {
-            if ($index === 0) continue;
+        // Pré-charger tous les exercices pour éviter des requêtes répétées dans la boucle
+        $exercices = Exercice::all()->pluck('id', 'annee');
 
-            if (count($row) < 5) {
-                $ignoredRows[] = "Ligne $index ignorée : colonnes insuffisantes (" . count($row) . ")";
-                continue;
+        // Démarre une transaction pour garantir que toutes les opérations sont réussies ou annulées
+        DB::beginTransaction();
+
+        try {
+            foreach ($rows as $index => $row) {
+                if ($index === 0) continue; // Ignorer la ligne d'en-tête
+
+                // La nouvelle colonne 'année' est à l'index 5 (la 6ème colonne)
+                if (count($row) < 6) {
+                    $ignoredRows[] = "Ligne " . ($index + 1) . " ignorée : colonnes insuffisantes (" . count($row) . "). L'année d'exercice est manquante.";
+                    continue;
+                }
+
+                $code_article = trim($row[0]);
+                $designation_article = trim($row[1]);
+                $annee_exercice = trim($row[5]); // Récupérer l'année de l'exercice
+
+                // Vérifier si un article avec le même code ou libellé existe déjà
+                $articleExistant = Article::where('code_article', $code_article)
+                    ->orWhere('libelle', $designation_article)
+                    ->first();
+
+                if ($articleExistant) {
+                    $ignoredRows[] = "Ligne " . ($index + 1) . " ignorée : article avec code '$code_article' ou nom '$designation_article' déjà existant.";
+                    continue;
+                }
+
+                // Vérifier si l'année de l'exercice existe dans la base de données.
+                // Si elle n'existe pas, la créer.
+                if (!isset($exercices[$annee_exercice])) {
+                    // Créer un nouvel exercice pour cette année
+                    $newExercice = Exercice::create([
+                        'annee' => $annee_exercice,
+                        'date_debut' => Carbon::create($annee_exercice, 1, 1)->toDateString(),
+                        'date_fin' => Carbon::create($annee_exercice, 12, 31)->toDateString(),
+                        'statut' => 'cloture', // Les exercices importés sont considérés comme clôturés
+                    ]);
+
+                    // Mettre à jour notre collection d'exercices pour la suite de l'importation
+                    $exercices[$annee_exercice] = $newExercice->id;
+                }
+
+                $id_exercice = $exercices[$annee_exercice];
+
+                $categorie = CategorieArticle::firstOrCreate([
+                    'libelle_categorie_article' => trim($row[2])
+                ]);
+
+                // Créer l'article avec l'id_exercice récupéré
+                $article = Article::create([
+                    'id_cat' => $categorie->id,
+                    'libelle' => $designation_article,
+                    'code_article' => $code_article,
+                    'description' => trim($row[3]),
+                    'stock_alerte' => trim($row[4]),
+                    'id_exercice' => $id_exercice // Ajout de l'id de l'exercice
+                ]);
+
+                // Initialiser l'entrée de stock pour cet article
+                Stock::create([
+                    'id_Article' => $article->id,
+                    'Qte_actuel' => 0,
+                    'id_exercice' => $id_exercice,
+                ]);
+
+                // Ajouter une entrée dans la table article_exercice
+                DB::table('article_exercice')->insert([
+                    'id_article' => $article->id,
+                    'id_exercice' => $id_exercice,
+                    'stock_debut_exercice' => 0,
+                    'stock_fin_exercice' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'cmp_debut_exercice' => 0,
+                    'cmp_fin_exercice' => 0,
+                ]);
             }
 
-            $code_article = trim($row[0]);
-            $designation_article = trim($row[1]);
+            DB::commit();
 
-            // Vérifie si le code ou le nom existe déjà
-            $articleExistant = Article::where('code_article', $code_article)
-                ->orWhere('libelle', $designation_article)
-                ->first();
-
-            if ($articleExistant) {
-                $ignoredRows[] = "Ligne $index ignorée : article avec code '$code_article' où le nom '$designation_article' déjà existant.";
-                continue;
-            }
-
-            $categorie = CategorieArticle::firstOrCreate([
-                'libelle_categorie_article' => trim($row[2])
+            return response()->json([
+                'message' => 'Import terminé avec succès !',
+                'ignored' => $ignoredRows
             ]);
 
-            Article::create([
-                'id_cat' => $categorie->id,
-                'libelle' => $designation_article,
-                'code_article' => $code_article,
-                'description' => trim($row[3]),
-                'stock_alerte' => trim($row[4]),
-            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de l\'importation.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'message' => 'Import terminé !',
-            'ignored' => $ignoredRows
-        ]);
     }
 
 }

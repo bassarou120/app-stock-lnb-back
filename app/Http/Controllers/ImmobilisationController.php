@@ -16,8 +16,8 @@ use App\Models\Parametrage\TypeImmo;
 use App\Models\Parametrage\StatusImmo;
 use App\Models\Vehicule;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-
-
+use Illuminate\Support\Facades\DB;
+use App\Models\Transfert;
 
 class ImmobilisationController extends Controller
 {
@@ -45,6 +45,7 @@ class ImmobilisationController extends Controller
  */
     public function index()
     {
+
         $immos = Immobilisation::with([
             'vehicule',
             'groupeTypeImmo',
@@ -54,7 +55,8 @@ class ImmobilisationController extends Controller
             'bureau',
             'fournisseur'
         ])->where('isdeleted', false)
-        ->latest()->paginate(100);
+        ->latest()
+        ->paginate(100);
 
         return new PostResource(true, 'Liste des immobilisations', $immos);
     }
@@ -122,9 +124,48 @@ class ImmobilisationController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $immo = Immobilisation::create($request->all());
+        // Démarre une transaction de base de données
+        DB::beginTransaction();
 
-        return new PostResource(true, 'Immobilisation créée avec succès', $immo);
+        try {
+            // Création de l'immobilisation
+            $immo = Immobilisation::create($request->all());
+            //$immo = Immobilisation::create($immoData);
+
+            // Crée un enregistrement de transfert si le bureau ou l'employé est renseigné
+            if ($request->filled('bureau_id') || $request->filled('employe_id')) {
+                Transfert::create([
+                    'immo_id' => $immo->id, // On lie l'immobilisation au transfert
+                    'old_bureau_id' => null, // Ancien bureau est "Magasin", donc null
+                    'old_employe_id' => null, // Ancien employé est null
+                    'bureau_id' => $request->get('bureau_id'),
+                    'employe_id' => $request->get('employe_id'),
+                    'date_mouvement' => now(), // Date du jour
+                    'observation' => $request->observation,
+                ]);
+            }
+
+            // Met à jour la date de mise en service de l'immobilisation
+            $immo->date_mise_en_service = $immo->date_acquisition;
+            $immo->save();
+
+            // Si tout s'est bien passé, on valide la transaction
+            DB::commit();
+
+            return new PostResource(true, 'Immobilisation créée avec succès', $immo);
+
+        } catch (\Exception $e) {
+            // En cas d'erreur, on annule la transaction
+            DB::rollBack();
+
+            // Log l'erreur pour le débogage et retourne un message d'erreur
+            \Log::error('Erreur lors de la création de l\'immobilisation et de son transfert : ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la création de l\'immobilisation.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     // Mettre à jour une immobilisation existante
@@ -236,6 +277,7 @@ class ImmobilisationController extends Controller
 
     public function imprimerImmos()
     {
+
         // Récupère toutes les immobilisations avec leurs relations nécessaires
         $immobilisations = Immobilisation::with([
             'vehicule',
@@ -247,7 +289,8 @@ class ImmobilisationController extends Controller
             'fournisseur'
         ])
         ->where('isdeleted', false)
-        ->latest()->get();
+        ->latest()
+        ->get();
 
         $pdf = \Pdf::loadView('pdf.immobilisations', compact('immobilisations'));
 
@@ -300,7 +343,7 @@ class ImmobilisationController extends Controller
             $duree_amorti = $row[12];
             $etat = $row[13];
             $taux_ammortissement = $row[14];
-            $duree_ammortissement = $row[15];
+            $duree_ammortissement = round($row[15]);
             $date_acquisition = $row[16];
             $date_mise_en_service = $row[17];
             $observation = $row[18];
@@ -346,29 +389,97 @@ class ImmobilisationController extends Controller
             $id_status_immo = StatusImmo::firstOrCreate(['libelle_status_immo' => $status_immo]);
 
             // 👤 Découper nom et prénom
-            $parts = explode(' ', $employe_fullname);
-            $nom = array_shift($parts);
-            $prenom = implode(' ', $parts);
+            $employe = null;
+            if (!empty($employe_fullname)) {
+                // 👤 Découper nom et prénom
+                $parts = explode(' ', $employe_fullname);
+                $nom = array_shift($parts);
+                $prenom = implode(' ', $parts);
 
-            if (empty($nom) || empty($prenom)) {
-                $msg = "Nom ou prénom manquant à la ligne $index : $employe_fullname";
+                if (!empty($nom) && !empty($prenom)) {
+                    $employe = Employe::firstOrCreate([
+                        'nom' => $nom,
+                        'prenom' => $prenom
+                    ], [
+                        'email' => null
+                    ]);
+                }
+            }
+
+            $date_mouvement_formatee = null;
+            $date_acquisition_formatee = null;
+            $date_misenservice_formatee = null;
+            // date_mouvement_formatee Essayer le format Y-m-d (Année-Mois-Jour)
+            if (\DateTime::createFromFormat('Y-m-d', $date_mouvement) !== false) {
+                $date_mouvement_formatee = \Carbon\Carbon::createFromFormat('Y-m-d', $date_mouvement)->format('Y-m-d');
+            }
+            // Sinon, essayer le format d/m/Y (Jour/Mois/Année)
+            elseif (\DateTime::createFromFormat('d/m/Y', $date_mouvement) !== false) {
+                $date_mouvement_formatee = \Carbon\Carbon::createFromFormat('d/m/Y', $date_mouvement)->format('Y-m-d');
+            }
+            // Sinon, essayer le format m/d/Y (Mois/Jour/Année)
+            elseif (\DateTime::createFromFormat('m/d/Y', $date_mouvement) !== false) {
+                $date_mouvement_formatee = \Carbon\Carbon::createFromFormat('m/d/Y', $date_mouvement)->format('Y-m-d');
+            }
+
+            //date_acquisition_formatee
+            if (\DateTime::createFromFormat('Y-m-d', $date_acquisition) !== false) {
+                $date_acquisition_formatee = \Carbon\Carbon::createFromFormat('Y-m-d', $date_acquisition)->format('Y-m-d');
+            }
+            // Sinon, essayer le format d/m/Y (Jour/Mois/Année)
+            elseif (\DateTime::createFromFormat('d/m/Y', $date_acquisition) !== false) {
+                $date_acquisition_formatee = \Carbon\Carbon::createFromFormat('d/m/Y', $date_acquisition)->format('Y-m-d');
+            }
+            // Sinon, essayer le format m/d/Y (Mois/Jour/Année)
+            elseif (\DateTime::createFromFormat('m/d/Y', $date_acquisition) !== false) {
+                $date_acquisition_formatee = \Carbon\Carbon::createFromFormat('m/d/Y', $date_acquisition)->format('Y-m-d');
+            }
+
+            //date_mise_en_service_formatee
+            if (\DateTime::createFromFormat('Y-m-d', $date_mise_en_service) !== false) {
+                $date_mise_en_service_formatee = \Carbon\Carbon::createFromFormat('Y-m-d', $date_mise_en_service)->format('Y-m-d');
+            }
+            elseif (\DateTime::createFromFormat('d/m/Y', $date_mise_en_service) !== false) {
+                $date_mise_en_service_formatee = \Carbon\Carbon::createFromFormat('d/m/Y', $date_mise_en_service)->format('Y-m-d');
+            }
+            elseif (\DateTime::createFromFormat('m/d/Y', $date_mise_en_service) !== false) {
+                $date_mise_en_service_formatee = \Carbon\Carbon::createFromFormat('m/d/Y', $date_mise_en_service)->format('Y-m-d');
+            }
+
+
+
+            // Vérifier si un format valide a été trouvé
+            if (is_null($date_mouvement_formatee)) {
+                $msg = "Ligne $index ignorée : Format de date de mouvement '$date_mouvement' invalide.";
                 \Log::warning($msg);
                 $ignoredRows[] = $msg;
                 continue;
             }
 
-            $employe = Employe::firstOrCreate([
-                'nom' => $nom,
-                'prenom' => $prenom
-            ], [
-                'email' => null
-            ]);
+            if (is_null($date_acquisition_formatee)) {
+                // Le message d'erreur corrigé ici
+                $msg = "Ligne $index ignorée : Format de date d'acquisition '$date_acquisition' invalide.";
+                \Log::warning($msg);
+                $ignoredRows[] = $msg;
+                continue;
+            }
+
+            if (is_null($date_mise_en_service_formatee)) {
+                // Le message d'erreur corrigé ici
+                $msg = "Ligne $index ignorée : Format de date de mise en service '$date_mise_en_service' invalide.";
+                \Log::warning($msg);
+                $ignoredRows[] = $msg;
+                continue;
+            }
+
+
+
 
             // ✅ Créer l'immo
             Immobilisation::create([
                 'bureau_id' => $bureau_id->id,
-                'employe_id' => $employe->id,
-                'date_mouvement' => \Carbon\Carbon::createFromFormat('m/d/Y', $date_mouvement)->format('Y-m-d'),
+                'employe_id' => $employe ? $employe->id : null,
+                'date_mouvement' => $date_mouvement_formatee,
                 'fournisseur_id' => $fournisseur_id->id,
                 'designation' => $designation,
                 'isVehicule' => false,
@@ -380,8 +491,8 @@ class ImmobilisationController extends Controller
                 'etat' => $etat,
                 'taux_ammortissement' => $taux_ammortissement,
                 'duree_ammortissement' => $duree_ammortissement,
-                'date_acquisition' => \Carbon\Carbon::createFromFormat('m/d/Y', $date_acquisition)->format('Y-m-d'),
-                'date_mise_en_service' => \Carbon\Carbon::createFromFormat('m/d/Y', $date_mise_en_service)->format('Y-m-d'),
+                'date_acquisition' => $date_acquisition_formatee,
+                'date_mise_en_service' => $date_mise_en_service_formatee,
                 'observation' => $observation,
                 'id_status_immo' => $id_status_immo->id,
                 'montant_ttc' => $montant_ttc,
