@@ -807,6 +807,8 @@ class MouvementTicketController extends Controller
         Log::info('Début du rapport périodique.');
 
         $annee = $request->input('annee');
+        $exercice = Exercice::where('id', $annee)->first();
+        $annee = $exercice->annee;
         $periode = $request->input('periode', 'mensuel'); // 'mensuel' par défaut
 
         Log::info('Paramètres de requête', ['annee' => $annee, 'periode' => $periode]);
@@ -845,9 +847,9 @@ class MouvementTicketController extends Controller
                 $plages[$mois] = $moisLibelles[$mois];
             }
         }
-        
+
         Log::info('Plages de périodes déterminées.', ['plages' => $plages]);
-        
+
         // Calcul du stock initial de début d'année
         $dateDebutAnnee = Carbon::create($annee, 1, 1)->startOfYear();
 
@@ -862,7 +864,7 @@ class MouvementTicketController extends Controller
             ->where('t.libelle_type_mouvement', 'Sortie de Ticket')
             ->where('m.date', '<', $dateDebutAnnee)
             ->sum('m.qte');
-        
+
         $retoursAvantAnnee = DB::table('retour_tickets')
             ->where('created_at', '<', $dateDebutAnnee)
             ->sum('qte');
@@ -871,7 +873,7 @@ class MouvementTicketController extends Controller
         $stockInitial = $stockInitialDebutAnnee;
 
         Log::info('Stock initial avant l\'année ' . $annee . ' : ' . $stockInitial);
-        
+
         foreach ($plages as $index => $label) {
             $moisDebut = 0;
             $moisFin = 0;
@@ -930,7 +932,7 @@ class MouvementTicketController extends Controller
             $retours = DB::table('retour_tickets')
                 ->whereBetween('created_at', [$dateDebut, $dateFin])
                 ->sum('qte');
-            
+
             // Calculer le stock final de la période
             $stockFinal = $stockInitial + $entrees - $sorties + $retours;
             $totalEntreesAcc += $entrees;
@@ -958,34 +960,47 @@ class MouvementTicketController extends Controller
 
         Log::info('Fin du rapport périodique.');
         // Vous pouvez utiliser dd() pour voir le rapport final
-        // dd($rapport); 
-        return response()->json($rapport);
+        // dd($rapport);
+        //return response()->json($rapport);
+
+        return new PostResource(true, 'Rapport généré avec succès', $rapport);
     }
 
     public function imprimerRapportPeriodique(Request $request)
     {
         Log::info("Début de la génération du PDF du rapport périodique.");
-        $annee = $request->input('annee');
-        $periode = $request->input('periode');
-    
-        if (empty($annee) || !is_numeric($annee)) {
-            Log::error('Erreur: Année invalide fournie.', ['annee' => $annee]);
+
+        // Récupérer l'année et la période depuis la requête
+        $anneeId = $request->input('annee');
+        $exercice = Exercice::where('id', $anneeId)->first();
+
+        if (!$exercice) {
+            Log::error('Erreur: Année invalide fournie.', ['anneeId' => $anneeId]);
             return response()->json(['error' => 'Veuillez fournir une année valide.'], 400);
         }
 
-        $plages = $this->determinerPlages($periode);
-        $rapport = $this->calculerRapport($annee, $plages, $periode);
+        $annee = $exercice->annee;
+        $periode = $request->input('periode', 'mensuel'); // valeur par défaut
+
+        // Réutiliser la fonction rapportperiodique pour calculer le rapport
+        $rapportResource = $this->rapportperiodique(new Request([
+            'annee' => $anneeId,
+            'periode' => $periode
+        ]));
+
+        // Extraire les données du rapport
+        $rapport = $rapportResource->response()->getData(true)['data'];
 
         $titre = "Rapport Périodique " . ucfirst($periode) . " - Année " . $annee;
 
-        // Passez les données à la vue blade pour le PDF
+        // Générer le PDF à partir d'une vue Blade
         $pdf = PDF::loadView('pdf.rapport-periodique', compact('rapport', 'titre'));
 
         Log::info("PDF généré, envoi de la réponse.");
+
         return $pdf->download('rapport-periodique-' . $annee . '-' . $periode . '.pdf');
     }
 
-    
     private function determinerPlages($periode)
     {
         $plages = [];
@@ -1015,14 +1030,13 @@ class MouvementTicketController extends Controller
         return $plages;
     }
 
-    
     private function calculerRapport($annee, $plages, $periode)
     {
         Log::info("Début du calcul du rapport périodique.");
         $rapport = [];
         $totalEntreesAcc = 0;
         $previousStockFinal = 0;
-        
+
         $dateDebutAnnee = Carbon::create($annee, 1, 1)->startOfYear();
 
         $entreesAvantAnnee = DB::table('mouvement_tickets as m')
@@ -1036,7 +1050,7 @@ class MouvementTicketController extends Controller
             ->where('t.libelle_type_mouvement', 'Sortie de Ticket')
             ->where('m.date', '<', $dateDebutAnnee)
             ->sum('m.qte');
-        
+
         $retoursAvantAnnee = DB::table('retour_tickets')
             ->where('created_at', '<', $dateDebutAnnee)
             ->sum('qte');
@@ -1045,7 +1059,7 @@ class MouvementTicketController extends Controller
         $stockInitial = $stockInitialDebutAnnee;
 
         Log::info('Stock initial avant l\'année ' . $annee . ' : ' . $stockInitial);
-        
+
         foreach ($plages as $index => $label) {
             $moisDebut = 0;
             $moisFin = 0;
@@ -1104,7 +1118,7 @@ class MouvementTicketController extends Controller
             $retours = DB::table('retour_tickets')
                 ->whereBetween('created_at', [$dateDebut, $dateFin])
                 ->sum('qte');
-            
+
             // Calculer le stock final de la période
             $stockFinal = $stockInitial + $entrees - $sorties + $retours;
             $totalEntreesAcc += $entrees;
