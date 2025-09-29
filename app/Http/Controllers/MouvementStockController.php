@@ -64,7 +64,7 @@ class MouvementStockController extends Controller
 
     // store entrée simple
 
-    public function storeEntreeStock(Request $request)
+/*     public function storeEntreeStock(Request $request)
     {
         // Validation
         $validator = Validator::make($request->all(), [
@@ -155,6 +155,113 @@ class MouvementStockController extends Controller
         $stock->Qte_actuel += $request->qte;
         $stock->cout_moyen_pondere = round($nouveau_cmp, 2);
         $stock->save();
+
+        return new PostResource(true, 'Le mouvement d\'entrée de stock a été bien enregistré !', $mouvement);
+    } */
+
+    public function storeEntreeStock(Request $request)
+    {
+        // Validation
+        $validator = Validator::make($request->all(), [
+            "id_Article" => 'required|exists:articles,id',
+            "id_fournisseur" => 'required|exists:fournisseurs,id',
+            "id_unite_de_mesure" => 'required|exists:unite_de_mesures,id',
+            "description" => 'nullable|string|max:255',
+            "qte" => 'required|integer',
+            "prixUnitaire" => 'required|integer',
+            "date_mouvement" => 'required',
+            "piece_jointe_mouvement" => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Entrée de Stock")->latest()->first();
+        if (!$type_mouvement) {
+             return response()->json(['error' => "Le type de mouvement 'Entrée de Stock' n'existe pas."], 404);
+        }
+
+        // Récupérer l'exercice ouvert
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+        if (!$exerciceOuvert) {
+            return response()->json(['error' => 'Aucun exercice ouvert trouvé.'], 400);
+        }
+
+        // GESTION DU STOCK ET CALCUL DU CMP
+        // On cherche le stock lié à l'article ET à l'exercice ouvert
+        $stock = Stock::where('id_Article', $request->id_Article)
+                      ->where('id_exercice', $exerciceOuvert->id)
+                      ->first();
+        
+        // Initialisation des variables pour le calcul du CMP
+        $ancienne_quantite = 0;
+        $ancien_cmp = 0;
+        $nouveau_cmp = 0;
+
+        if ($stock == null) {
+            // L'article a été créé mais n'a jamais eu de stock dans cet exercice (ne devrait pas arriver si storeBatch est utilisé)
+            $stock = Stock::create([
+                'id_Article' => $request->id_Article,
+                'Qte_actuel' => 0,
+                'cout_moyen_pondere' => 0,
+                'id_exercice' => $exerciceOuvert->id, // Ajouter l'id_exercice ici
+            ]);
+
+        } else {
+            // RÉAPPROVISIONNEMENT : Récupération des valeurs existantes
+            $ancienne_quantite = $stock->Qte_actuel;
+            // On prend l'ancien CMP depuis la table Stock
+            $ancien_cmp = $stock->cout_moyen_pondere ?? 0; 
+        }
+
+        // Calcul du nouveau CMP
+        if ($ancienne_quantite <= 0) { // Utiliser <= pour couvrir 0 et les cas où le stock serait négatif (erreur)
+            // Premier stock ou stock épuisé : CMP = prix d'achat actuel
+            $nouveau_cmp = $request->prixUnitaire;
+        } else {
+            // Réapprovisionnement : CMP pondéré
+            $valeur_stock_existant = $ancienne_quantite * $ancien_cmp;
+            $valeur_nouvelle_entree = $request->qte * $request->prixUnitaire;
+            $quantite_totale = $ancienne_quantite + $request->qte;
+
+            // Protection contre la division par zéro (même si la condition précédente le couvre)
+            $nouveau_cmp = $quantite_totale > 0 
+                            ? ($valeur_stock_existant + $valeur_nouvelle_entree) / $quantite_totale
+                            : $request->prixUnitaire;
+        }
+
+
+        // Création du mouvement avec le CMP calculé
+        $mouvement = MouvementStock::create([
+            "id_Article" => $request->id_Article,
+            "id_fournisseur" => $request->id_fournisseur,
+            "id_unite_de_mesure" => $request->id_unite_de_mesure,
+            "description" => $request->description,
+            "id_type_mouvement" => $type_mouvement->id,
+            "qte" => $request->qte,
+            "prixUnitaire" => $request->prixUnitaire,
+            "cout_moyen_pondere" => round($nouveau_cmp, 2), // Le CMP calculé est enregistré
+            "date_mouvement" => $request->date_mouvement,
+            "id_exercice" => $exerciceOuvert->id, // Ajouter l'id_exercice au mouvement
+        ]);
+
+        // Si une pièce jointe est envoyée (inchangé)
+        if ($request->hasFile('piece_jointe_mouvement')) {
+            $file = $request->file('piece_jointe_mouvement');
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            $file->storeAs('piece_jointe_mouvement', $fileName, 'public');
+
+            PieceJointeMouvement::create([
+                'url' => 'storage/piece_jointe_mouvement/' . $fileName,
+                'id_mouvement_stock' => $mouvement->id
+            ]);
+        }
+
+        // Mise à jour du stock avec la nouvelle quantité et le nouveau CMP
+        $stock->Qte_actuel += $request->qte;
+        $stock->cout_moyen_pondere = round($nouveau_cmp, 2);
+        $stock->save(); // La table Stock a la bonne valeur
 
         return new PostResource(true, 'Le mouvement d\'entrée de stock a été bien enregistré !', $mouvement);
     }
@@ -1197,7 +1304,7 @@ class MouvementStockController extends Controller
         $validator = Validator::make($request->all(), [
             'code_mouvement' => 'required|string|exists:mouvement_stocks,code_mouvement',
             'date_mouvement' => 'required|date',
-            'statut' => 'required|string|in:Accordé,Refusé,Validé',
+            'statut' => 'required|string|in:Accordé,Refusé,Cloturé',
         ]);
 
         if ($validator->fails()) {
@@ -1476,11 +1583,11 @@ class MouvementStockController extends Controller
             return response()->json(['message' => 'Demande non trouvée.'], 404);
         }
 
-        // 3. Vérification du statut (autoriser "Accordé" ou "Validé")
+        // 3. Vérification du statut (autoriser "Accordé" ou "Cloturé")
         foreach ($itemsToUpdate as $item) {
-            if ($item->statut !== 'Accordé' && $item->statut !== 'Validé') {
+            if ($item->statut !== 'Accordé' && $item->statut !== 'Cloturé') {
                 return response()->json([
-                    'message' => 'Toutes les lignes de la demande groupée doivent être "Accordé" ou "Validé" pour pouvoir télécharger un document groupé.'
+                    'message' => 'Toutes les lignes de la demande groupée doivent être "Accordé" ou "Cloturé" pour pouvoir télécharger un document groupé.'
                 ], 403);
             }
         }
@@ -1500,7 +1607,7 @@ class MouvementStockController extends Controller
             }
 
             return response()->json([
-                'message' => 'Demande validée et fichier signé téléchargé avec succès.',
+                'message' => 'Demande Cloturée et fichier signé téléchargé avec succès.',
                 'file_path' => Storage::url($fullFilePath),
                 'new_statut' => $request->input('statut')
             ], 200);

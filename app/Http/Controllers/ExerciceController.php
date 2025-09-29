@@ -114,7 +114,7 @@ class ExerciceController extends Controller
         return new PostResource(true, 'exercice modifié avec succès', $exercice);
     }
 
-    public function changeStatus(Request $request, $id)
+/*     public function changeStatus(Request $request, $id)
     {
         $request->validate([
             'statut' => 'required|in:ouvert,cloture',
@@ -219,7 +219,117 @@ class ExerciceController extends Controller
             'success' => true,
             'exercice' => Exercice::find($id),
         ]);
+    } */
+
+
+    public function changeStatus(Request $request, $id)
+    {
+        $request->validate([
+            'statut' => 'required|in:ouvert,cloture',
+        ]);
+
+        $exercice = Exercice::findOrFail($id);
+        $nouvStatut = $request->input('statut');
+
+        DB::transaction(function () use ($exercice, $nouvStatut) {
+            if ($nouvStatut === 'ouvert') {
+                // Logique pour l'ouverture
+                Exercice::where('id', '!=', $exercice->id)->update(['statut' => 'cloture']);
+                $exercice->statut = 'ouvert';
+                $exercice->save();
+            }
+
+            if ($nouvStatut === 'cloture') {
+                // Clôturer l'exercice actuel
+                $exercice->statut = 'cloture';
+                $exercice->save();
+
+                // Créer le nouvel exercice pour l'année suivante
+                $nouvelExercice = Exercice::create([
+                    'annee' => $exercice->annee + 1,
+                    'statut' => 'ouvert',
+                    'date_debut' => Carbon::create($exercice->annee + 1, 1, 1),
+                    'date_fin' => Carbon::create($exercice->annee + 1, 12, 31),
+                ]);
+
+                // --- GESTION DES ARTICLES ---
+                $articlesExercice = DB::table('article_exercice')
+                    ->where('id_exercice', $exercice->id)
+                    ->get();
+
+                foreach ($articlesExercice as $article) {
+                    // 1. Récupérer le STOCK et le CMP de FIN 2025 depuis la table Stock
+                    $stock = Stock::where('id_Article', $article->id_article)
+                        ->where('id_exercice', $exercice->id)
+                        ->first();
+                    
+                    // Récupération de la quantité de fin d'exercice
+                    $stock_fin = $stock ? $stock->Qte_actuel : 0;
+                    
+                    // CORRECTION CLÉ : Récupération du CMP de fin d'exercice
+                    // On prend le CMP final enregistré dans la table Stock, car c'est la source de vérité après l'entrée.
+                    $cmp_fin = $stock ? $stock->cout_moyen_pondere : 0; 
+
+
+                    // Mettre à jour l'enregistrement d'article_exercice pour l'ancienne année
+                    DB::table('article_exercice')
+                        ->where('id_article', $article->id_article)
+                        ->where('id_exercice', $exercice->id)
+                        ->update([
+                            'stock_fin_exercice' => $stock_fin,
+                            'cmp_fin_exercice' => $cmp_fin,
+                            'updated_at' => now(),
+                        ]);
+
+                    // Créer l'enregistrement d'article_exercice pour la nouvelle année
+                    DB::table('article_exercice')->insert([
+                        'id_article' => $article->id_article,
+                        'id_exercice' => $nouvelExercice->id,
+                        'stock_debut_exercice' => $stock_fin,
+                        'stock_fin_exercice' => 0,
+                        'cmp_debut_exercice' => $cmp_fin,
+                        'cmp_fin_exercice' => 0,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                    // Créer l'enregistrement Stock pour le nouvel exercice
+                    Stock::create([
+                        'id_Article' => $article->id_article,
+                        'Qte_actuel' => $stock_fin,
+                        'cout_moyen_pondere' => $cmp_fin, // Optionnel, mais bonne pratique de transférer le CMP ici aussi
+                        'id_exercice' => $nouvelExercice->id,
+                    ]);
+                }
+
+                // --- GESTION DES MOUVEMENTS DE TICKETS (inchangé) ---
+                $allCouponTickets = CouponTicket::all();
+                $allCompagnies = CompagniePetrolier::all();
+
+                foreach ($allCouponTickets as $couponTicket) {
+                    foreach ($allCompagnies as $compagnie) {
+                        $stockFinal = MouvementTicket::where('exercice_id', $exercice->id)
+                            ->where('coupon_ticket_id', $couponTicket->id)
+                            ->where('compagnie_petrolier_id', $compagnie->id)
+                            ->sum('qte');
+
+                        ExerciceMouvementTicket::create([
+                            'exercice_id' => $nouvelExercice->id,
+                            'coupon_ticket_id' => $couponTicket->id,
+                            'compagnie_petrolier_id' => $compagnie->id,
+                            'qte_actuel' => $stockFinal,
+                        ]);
+                    }
+                }
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'exercice' => Exercice::find($id),
+        ]);
     }
+
 
     public function getExerciceOuvert()
     {
