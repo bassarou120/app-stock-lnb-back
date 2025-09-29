@@ -352,15 +352,31 @@ class ImmobilisationController extends Controller
             $reference_estampillonnage = $row[21];
 
             // 🔎 Vérification doublons EXACTEMENT comme pour les articles
-            $immobilisationExistante = Immobilisation::where('code', $code)
-                ->orWhere('designation', $designation)
-                ->first();
+            // $immobilisationExistante = Immobilisation::where('code', $code)
+            //     ->orWhere('designation', $designation)
+            //     ->first();
+
+            // if ($immobilisationExistante) {
+            //     $msg = "Ligne $index ignorée : immobilisation avec code '$code' ou désignation '$designation' existe déjà.";
+            //     \Log::info($msg);
+            //     $ignoredRows[] = $msg;
+            //     continue;
+            // }
+
+            // 🔎 Vérification des doublons : on ne considère comme un doublon que si
+            // l'enregistrement existe DEJA ET qu'il n'est PAS supprimé (isdeleted = false).
+            $immobilisationExistante = Immobilisation::where(function ($query) use ($code, $designation) {
+                $query->where('code', $code)
+                    ->orWhere('designation', $designation);
+            })
+            ->where('isdeleted', false) // <--- C'est la ligne CLEF
+            ->first();
 
             if ($immobilisationExistante) {
-                $msg = "Ligne $index ignorée : immobilisation avec code '$code' ou désignation '$designation' existe déjà.";
+                $msg = "Ligne $index ignorée : immobilisation avec code '$code' ou désignation '$designation' existe déjà et est ACTIVE.";
                 \Log::info($msg);
                 $ignoredRows[] = $msg;
-                continue;
+                continue; // On passe à la ligne suivante du fichier
             }
 
             // 🔍 Trouver les IDs correspondants
@@ -429,6 +445,7 @@ class ImmobilisationController extends Controller
                 'id_status_immo' => $id_status_immo->id,
                 'montant_ttc' => $montant_ttc,
                 'reference_estampillonnage' => $reference_estampillonnage,
+                'isdeleted' => false
             ]);
         }
 
