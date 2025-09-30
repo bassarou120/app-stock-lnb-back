@@ -18,6 +18,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Illuminate\Support\Facades\Response;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Models\Exercice;
+use Carbon\Carbon;
 
 
 class ArticleController extends Controller
@@ -25,22 +26,22 @@ class ArticleController extends Controller
     // Afficher la liste des articles
 
     /**
- * @OA\Get(
- *     path="/api/articles",
- *     tags={"Articles"},
- *     summary="Liste des articles avec leurs catégories et stocks",
- *     @OA\Response(
- *         response=200,
- *         description="Succès",
- *         @OA\JsonContent(ref="#/components/schemas/PostResourceResponse")
- *     )
- * )
- */
+     * @OA\Get(
+     *     path="/api/articles",
+     *     tags={"Articles"},
+     *     summary="Liste des articles avec leurs catégories et stocks",
+     *     @OA\Response(
+     *         response=200,
+     *         description="Succès",
+     *         @OA\JsonContent(ref="#/components/schemas/PostResourceResponse")
+     *     )
+     * )
+     */
     public function index()
     {
 
         // Récupérer l'exercice ouvert
-/*         $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
+        /*         $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
         if (!$exerciceOuvert) {
             return response()->json([
                 'success' => false,
@@ -49,9 +50,9 @@ class ArticleController extends Controller
         } */
 
         $articles = Article::with(['categorie', 'stock'])
-        ->where('isdeleted', false)
-        ->orderBy('id_exercice', 'desc')
-        ->latest()->paginate(1000);
+            ->where('isdeleted', false)
+            ->orderBy('id_exercice', 'desc')
+            ->latest()->paginate(1000);
         return new PostResource(true, 'Liste des articles', $articles);
     }
 
@@ -83,42 +84,39 @@ class ArticleController extends Controller
     // Nouvelle méthode pour ajouter plusieurs articles
 
     /**
- * @OA\Post(
- *     path="/api/articles/batch",
- *     tags={"Articles"},
- *     summary="Créer plusieurs articles en lot",
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(
- *                 property="articles",
- *                 type="array",
- *                 @OA\Items(
- *                     type="object",
- *                     required={"id_cat","libelle","code_article","stock_alerte"},
- *                     @OA\Property(property="id_cat", type="integer", example=3),
- *                     @OA\Property(property="libelle", type="string", example="Chaussures de sport"),
- *                     @OA\Property(property="code_article", type="string", example="ART-2025-001"),
- *                     @OA\Property(property="description", type="string", example="Description optionnelle"),
- *                     @OA\Property(property="stock_alerte", type="integer", example=5)
- *                 )
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=201,
- *         description="Articles créés",
- *         @OA\JsonContent(ref="#/components/schemas/PostResourceResponse")
- *     ),
- *     @OA\Response(response=422, description="Erreur de validation")
- * )
- */
+     * @OA\Post(
+     *     path="/api/articles/batch",
+     *     tags={"Articles"},
+     *     summary="Créer plusieurs articles en lot",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="articles",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     required={"id_cat","libelle","code_article","stock_alerte"},
+     *                     @OA\Property(property="id_cat", type="integer", example=3),
+     *                     @OA\Property(property="libelle", type="string", example="Chaussures de sport"),
+     *                     @OA\Property(property="code_article", type="string", example="ART-2025-001"),
+     *                     @OA\Property(property="description", type="string", example="Description optionnelle"),
+     *                     @OA\Property(property="stock_alerte", type="integer", example=5)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Articles créés",
+     *         @OA\JsonContent(ref="#/components/schemas/PostResourceResponse")
+     *     ),
+     *     @OA\Response(response=422, description="Erreur de validation")
+     * )
+     */
 
-    public function show(Article $article)
-    {
-
-    }
+    public function show(Article $article) {}
 
     public function storeBatch(Request $request)
     {
@@ -196,15 +194,15 @@ class ArticleController extends Controller
                 $articles[] = $article;
             }
             DB::commit();
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response()->json([
-                    'error' => 'Une erreur est survenue',
-                    'message' => $e->getMessage(),
-                    'line' => $e->getLine(),
-                    'file' => $e->getFile()
-                ], 500);
-            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'error' => 'Une erreur est survenue',
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ], 500);
+        }
 
         return new PostResource(true, count($articles) . ' articles créés et stocks initialisés avec succès', $articles);
     }
@@ -213,36 +211,36 @@ class ArticleController extends Controller
     // Mettre à jour un article existant
 
     /**
- * @OA\Put(
- *     path="/api/articles/{id}",
- *     tags={"Articles"},
- *     summary="Mettre à jour un article",
- *     @OA\Parameter(
- *         name="id",
- *         in="path",
- *         required=true,
- *         description="ID de l'article",
- *         @OA\Schema(type="integer")
- *     ),
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             required={"id_cat","libelle","code_article","stock_alerte"},
- *             @OA\Property(property="id_cat", type="integer", example=3),
- *             @OA\Property(property="libelle", type="string", example="Chaussures modifiées"),
- *             @OA\Property(property="code_article", type="string", example="ART-2025-002"),
- *             @OA\Property(property="description", type="string", example="Description mise à jour"),
- *             @OA\Property(property="stock_alerte", type="integer", example=10)
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Article mis à jour",
- *         @OA\JsonContent(ref="#/components/schemas/PostResourceResponse")
- *     ),
- *     @OA\Response(response=422, description="Erreur de validation")
- * )
- */
+     * @OA\Put(
+     *     path="/api/articles/{id}",
+     *     tags={"Articles"},
+     *     summary="Mettre à jour un article",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID de l'article",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"id_cat","libelle","code_article","stock_alerte"},
+     *             @OA\Property(property="id_cat", type="integer", example=3),
+     *             @OA\Property(property="libelle", type="string", example="Chaussures modifiées"),
+     *             @OA\Property(property="code_article", type="string", example="ART-2025-002"),
+     *             @OA\Property(property="description", type="string", example="Description mise à jour"),
+     *             @OA\Property(property="stock_alerte", type="integer", example=10)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Article mis à jour",
+     *         @OA\JsonContent(ref="#/components/schemas/PostResourceResponse")
+     *     ),
+     *     @OA\Response(response=422, description="Erreur de validation")
+     * )
+     */
 
     public function update(Request $request, Article $article)
     {
@@ -328,29 +326,29 @@ class ArticleController extends Controller
     // Supprimer un article
 
     /**
- * @OA\Delete(
- *     path="/api/articles/{id}",
- *     tags={"Articles"},
- *     summary="Supprimer un article",
- *     @OA\Parameter(
- *         name="id",
- *         in="path",
- *         required=true,
- *         description="ID de l'article",
- *         @OA\Schema(type="integer")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Article supprimé",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Article supprimé avec succès"),
- *             @OA\Property(property="data", type="null", example=null)
- *         )
- *     )
- * )
- */
+     * @OA\Delete(
+     *     path="/api/articles/{id}",
+     *     tags={"Articles"},
+     *     summary="Supprimer un article",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID de l'article",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Article supprimé",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Article supprimé avec succès"),
+     *             @OA\Property(property="data", type="null", example=null)
+     *         )
+     *     )
+     * )
+     */
     public function destroy(Article $article)
     {
         // Vérifier l'exercice ouvert
@@ -409,8 +407,8 @@ class ArticleController extends Controller
         })->toArray();
 
         // Générer le fichier Excel
-        \Excel::create('etat_du_stock_' . $annee, function($excel) use ($articles, $annee) {
-            $excel->sheet('Stock_' . $annee, function($sheet) use ($articles) {
+        \Excel::create('etat_du_stock_' . $annee, function ($excel) use ($articles, $annee) {
+            $excel->sheet('Stock_' . $annee, function ($sheet) use ($articles) {
                 // Ajoute les données avec les en-têtes automatiquement
                 $sheet->fromArray($articles);
             });
@@ -452,9 +450,17 @@ class ArticleController extends Controller
                     continue;
                 }
 
+                $annee_exercice = trim($row[5]);
+
+                // Vérifier si l'année est valide
+                if (empty($annee_exercice) || !is_numeric($annee_exercice)) {
+                    $ignoredRows[] = "Ligne " . ($index + 1) . " ignorée : année invalide ou vide.";
+                    continue;
+                }
+
+                $annee_exercice = (int) $annee_exercice; // Cast seulement après validation
                 $code_article = trim($row[0]);
                 $designation_article = trim($row[1]);
-                $annee_exercice = trim($row[5]); // Récupérer l'année de l'exercice
 
                 // Vérifier si un article avec le même code ou libellé existe déjà
                 $articleExistant = Article::where('code_article', $code_article)
@@ -523,7 +529,6 @@ class ArticleController extends Controller
                 'message' => 'Import terminé avec succès !',
                 'ignored' => $ignoredRows
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -533,5 +538,4 @@ class ArticleController extends Controller
             ], 500);
         }
     }
-
 }
