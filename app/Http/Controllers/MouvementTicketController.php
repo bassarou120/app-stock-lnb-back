@@ -465,7 +465,7 @@ class MouvementTicketController extends Controller
             "objet" => 'nullable|string|max:255',
             "commune_depart" => 'nullable|exists:communes,id',
             "commune_arriver" => 'nullable|exists:communes,id',
-            "kilometrage" => 'required|integer|min:0', // 👈 AJOUTEZ CETTE LIGNE
+            "kilometrage" => 'nullable|integer|min:0', // 👈 AJOUTEZ CETTE LIGNE
             "kilometrage_de_fin" => 'nullable|integer|min:0', // 👈 AJOUTEZ CETTE LIGNE
             "tickets" => 'required|array|min:1',
             "tickets.*.compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
@@ -519,7 +519,7 @@ class MouvementTicketController extends Controller
                     "date" => $request->date,
                     "commune_depart" => $request->commune_depart ?? null,
                     "commune_arriver" => $request->commune_arriver ?? null,
-                    "kilometrage" => $request->kilometrage,
+                    "kilometrage" => $request->kilometrage ?? null,
                     "kilometrage_de_fin" => $request->kilometrage_de_fin ?? null,
                     "trajet_aller_retour" => $request->trajet_aller_retour,
                     "reference" => $reference,
@@ -845,9 +845,9 @@ class MouvementTicketController extends Controller
                 $plages[$mois] = $moisLibelles[$mois];
             }
         }
-        
+
         Log::info('Plages de périodes déterminées.', ['plages' => $plages]);
-        
+
         // Calcul du stock initial de début d'année
         $dateDebutAnnee = Carbon::create($annee, 1, 1)->startOfYear();
 
@@ -862,7 +862,7 @@ class MouvementTicketController extends Controller
             ->where('t.libelle_type_mouvement', 'Sortie de Ticket')
             ->where('m.date', '<', $dateDebutAnnee)
             ->sum('m.qte');
-        
+
         $retoursAvantAnnee = DB::table('retour_tickets')
             ->where('created_at', '<', $dateDebutAnnee)
             ->sum('qte');
@@ -871,7 +871,7 @@ class MouvementTicketController extends Controller
         $stockInitial = $stockInitialDebutAnnee;
 
         Log::info('Stock initial avant l\'année ' . $annee . ' : ' . $stockInitial);
-        
+
         foreach ($plages as $index => $label) {
             $moisDebut = 0;
             $moisFin = 0;
@@ -930,7 +930,7 @@ class MouvementTicketController extends Controller
             $retours = DB::table('retour_tickets')
                 ->whereBetween('created_at', [$dateDebut, $dateFin])
                 ->sum('qte');
-            
+
             // Calculer le stock final de la période
             $stockFinal = $stockInitial + $entrees - $sorties + $retours;
             $totalEntreesAcc += $entrees;
@@ -958,7 +958,7 @@ class MouvementTicketController extends Controller
 
         Log::info('Fin du rapport périodique.');
         // Vous pouvez utiliser dd() pour voir le rapport final
-        // dd($rapport); 
+        // dd($rapport);
         return response()->json($rapport);
     }
 
@@ -967,7 +967,7 @@ class MouvementTicketController extends Controller
         Log::info("Début de la génération du PDF du rapport périodique.");
         $annee = $request->input('annee');
         $periode = $request->input('periode');
-    
+
         if (empty($annee) || !is_numeric($annee)) {
             Log::error('Erreur: Année invalide fournie.', ['annee' => $annee]);
             return response()->json(['error' => 'Veuillez fournir une année valide.'], 400);
@@ -985,7 +985,7 @@ class MouvementTicketController extends Controller
         return $pdf->download('rapport-periodique-' . $annee . '-' . $periode . '.pdf');
     }
 
-    
+
     private function determinerPlages($periode)
     {
         $plages = [];
@@ -1015,14 +1015,14 @@ class MouvementTicketController extends Controller
         return $plages;
     }
 
-    
+
     private function calculerRapport($annee, $plages, $periode)
     {
         Log::info("Début du calcul du rapport périodique.");
         $rapport = [];
         $totalEntreesAcc = 0;
         $previousStockFinal = 0;
-        
+
         $dateDebutAnnee = Carbon::create($annee, 1, 1)->startOfYear();
 
         $entreesAvantAnnee = DB::table('mouvement_tickets as m')
@@ -1036,7 +1036,7 @@ class MouvementTicketController extends Controller
             ->where('t.libelle_type_mouvement', 'Sortie de Ticket')
             ->where('m.date', '<', $dateDebutAnnee)
             ->sum('m.qte');
-        
+
         $retoursAvantAnnee = DB::table('retour_tickets')
             ->where('created_at', '<', $dateDebutAnnee)
             ->sum('qte');
@@ -1045,7 +1045,7 @@ class MouvementTicketController extends Controller
         $stockInitial = $stockInitialDebutAnnee;
 
         Log::info('Stock initial avant l\'année ' . $annee . ' : ' . $stockInitial);
-        
+
         foreach ($plages as $index => $label) {
             $moisDebut = 0;
             $moisFin = 0;
@@ -1104,7 +1104,7 @@ class MouvementTicketController extends Controller
             $retours = DB::table('retour_tickets')
                 ->whereBetween('created_at', [$dateDebut, $dateFin])
                 ->sum('qte');
-            
+
             // Calculer le stock final de la période
             $stockFinal = $stockInitial + $entrees - $sorties + $retours;
             $totalEntreesAcc += $entrees;
