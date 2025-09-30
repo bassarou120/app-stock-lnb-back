@@ -1160,6 +1160,41 @@ class MouvementTicketController extends Controller
         return $pdf->download('rapport-periodique-' . $annee . '-' . $periode . '.pdf');
     }
 
+    public function imprimerRapportPeriodiqueMontant(Request $request)
+    {
+        Log::info("Début de la génération du PDF du rapport périodique.");
+
+        // Récupérer l'année et la période depuis la requête
+        $anneeId = $request->input('annee');
+        $exercice = Exercice::where('id', $anneeId)->first();
+
+        if (!$exercice) {
+            Log::error('Erreur: Année invalide fournie.', ['anneeId' => $anneeId]);
+            return response()->json(['error' => 'Veuillez fournir une année valide.'], 400);
+        }
+
+        $annee = $exercice->annee;
+        $periode = $request->input('periode', 'mensuel'); // valeur par défaut
+
+        // Réutiliser la fonction rapportperiodique pour calculer le rapport
+        $rapportResource = $this->rapportperiodiqueMontant(new Request([
+            'annee' => $anneeId,
+            'periode' => $periode
+        ]));
+
+        // Extraire les données du rapport
+        $rapport = $rapportResource->response()->getData(true)['data'];
+
+        $titre = "Rapport Périodique " . ucfirst($periode) . " - Année " . $annee;
+
+        // Générer le PDF à partir d'une vue Blade
+        $pdf = PDF::loadView('pdf.rapport-periodique', compact('rapport', 'titre'));
+
+        Log::info("PDF généré, envoi de la réponse.");
+
+        return $pdf->download('rapport-periodique-' . $annee . '-' . $periode . '.pdf');
+    }
+
     private function determinerPlages($periode)
     {
         $plages = [];
