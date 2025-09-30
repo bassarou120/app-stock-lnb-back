@@ -57,8 +57,8 @@
             @foreach($stock_tickets as $index => $stock_ticket)
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ $stock_ticket->couponTicket->libelle ?? 'N/A' }}</td>
-                    <td>{{ $stock_ticket->compagnie->libelle ?? 'N/A' }}</td>
+                    <td>{{ $stock_ticket->couponTicket->libelle ?? '-' }}</td>
+                    <td>{{ $stock_ticket->compagnie->libelle ?? '-' }}</td>
                     <td>{{ number_format($stock_ticket->qte_actuel, 0, ',', ' ') }}</td>
                 </tr>
             @endforeach

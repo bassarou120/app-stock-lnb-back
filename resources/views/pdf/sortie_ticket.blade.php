@@ -145,11 +145,11 @@
     <div class="budget-section">
         <table>
             <tr>
-                <td style="width: 50%;"><strong>Véhicule:</strong> {{ $vehicule?->immatriculation ?? 'N/A' }}</td>
-                <td style="width: 50%;"><strong>Kilométrage Début:</strong> {{ $kilometrage ?? 'N/A' }} km</td>
+                <td style="width: 50%;"><strong>Véhicule:</strong> {{ $vehicule?->immatriculation ?? '-' }}</td>
+                <td style="width: 50%;"><strong>Kilométrage Début:</strong> {{ $kilometrage ?? '-' }} km</td>
             </tr>
             <tr>
-                <td><strong>Employé:</strong> {{ $employe?->fullnameEmploye ?? 'N/A' }}</td>
+                <td><strong>Employé:</strong> {{ $employe?->fullnameEmploye ?? '-' }}</td>
                 <td><strong>Kilométrage Fin:</strong> {{ $kilometrage_de_fin ?? 'Non renseigné' }} km</td>
             </tr>
             <tr>
@@ -157,15 +157,15 @@
                 <td><strong>Date:</strong> {{ \Carbon\Carbon::parse($date)->format('d/m/Y') }}</td>
             </tr>
             <tr>
-                <td><strong>Trajet Départ:</strong> {{ $communeDepart?->libelle_commune ?? 'N/A' }}</td>
-                <td><strong>Trajet Arrivée:</strong> {{ $communeArriver?->libelle_commune ?? 'N/A' }}</td>
+                <td><strong>Trajet Départ:</strong> {{ $communeDepart?->libelle_commune ?? '-' }}</td>
+                <td><strong>Trajet Arrivée:</strong> {{ $communeArriver?->libelle_commune ?? '-' }}</td>
             </tr>
             <tr>
                 <td><strong>Trajet A/R:</strong> {{ $trajet_aller_retour ? 'Oui' : 'Non' }}</td>
             </tr>
             {{-- Ajoutez cette nouvelle ligne --}}
             <tr>
-                <td><strong>Catégorie de Sortie:</strong> {{ $categorieSortieTicket?->libelle ?? 'N/A' }}</td>
+                <td><strong>Catégorie de Sortie:</strong> {{ $categorieSortieTicket?->libelle ?? '-' }}</td>
             </tr>
             {{-- Fin de l'ajout --}}
         </table>
@@ -190,8 +190,8 @@
             <tbody>
                 @foreach($mouvements as $mouvement)
                 <tr>
-                    <td>{{ $mouvement->compagniePetrolier?->libelle ?? 'N/A' }}</td>
-                    <td>{{ $mouvement->coupon_ticket?->libelle ?? 'N/A' }}</td>
+                    <td>{{ $mouvement->compagniePetrolier?->libelle ?? '-' }}</td>
+                    <td>{{ $mouvement->coupon_ticket?->libelle ?? '-' }}</td>
                     <td>{{ $mouvement->qte }}</td>
                     <td>{{ number_format($mouvement->coupon_ticket?->valeur ?? 0, 0, ',', '.') }} F</td>
                     <td>{{ number_format($mouvement->qte * ($mouvement->coupon_ticket?->valeur ?? 0), 0, ',', '.') }} F</td>

@@ -61,13 +61,13 @@
             @foreach($interventions as $index => $intervention)
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ $intervention->vehicule->immatriculation ?? 'N/A' }}</td>
-                    <td>{{ $intervention->typeIntervention->libelle_type_intervention ?? 'N/A' }}</td>
+                    <td>{{ $intervention->vehicule->immatriculation ?? '-' }}</td>
+                    <td>{{ $intervention->typeIntervention->libelle_type_intervention ?? '-' }}</td>
                     <td>{{ $intervention->titre }}</td>
                     <td>{{ \Carbon\Carbon::parse($intervention->date_intervention)->format('d/m/Y') }}</td>
                     <td>{{ \Carbon\Carbon::parse($intervention->date_expiration)->format('d/m/Y') }}</td>
                     <td>{{ number_format($intervention->montant, 2, ',', ' ') }}</td>
-                    <td>{{ $intervention->observation ?? 'N/A' }}</td>
+                    <td>{{ $intervention->observation ?? '-' }}</td>
                 </tr>
             @endforeach
         </tbody>

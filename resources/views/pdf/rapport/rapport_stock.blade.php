@@ -291,19 +291,19 @@
           <tr>
             <td>{{ $index + 1 }}</td>
             <td>{{ \Carbon\Carbon::parse($mouvement->date_mouvement)->format('d/m/Y') }}</td>
-            <td>{{ $mouvement->article->libelle ?? 'N/A' }}</td>
+            <td>{{ $mouvement->article->libelle ?? '-' }}</td>
             <td>{{ $mouvement->qte }}</td>
             @if($reportTypeLabel === 'd\'Entrée de Stock')
-              <td>{{ $mouvement->article->code_article ?? 'N/A' }}</td>
+              <td>{{ $mouvement->article->code_article ?? '-' }}</td>
               <td>{{ $mouvement->prixUnitaire }}</td>
-              <td>{{ $mouvement->unite_de_mesure->libelle ?? 'N/A' }}</td>
+              <td>{{ $mouvement->unite_de_mesure->libelle ?? '-' }}</td>
               <td>{{ $mouvement->cout_moyen_pondere}}</td>
-              <td>{{ $mouvement->fournisseur->nom ?? 'N/A' }}</td>
-              <td>{{ $mouvement->description ?? 'N/A' }}</td>
+              <td>{{ $mouvement->fournisseur->nom ?? '-' }}</td>
+              <td>{{ $mouvement->description ?? '-' }}</td>
             @elseif($reportTypeLabel === 'de Sortie de Stock')
-              <td>{{ $mouvement->employe->nom ?? '' }} {{ $mouvement->employe->prenom ?? 'N/A' }}</td>
-              <td>{{ $mouvement->code_mouvement ?? 'N/A' }}</td>
-              <td>{{ $mouvement->bureau->libelle_bureau ?? 'N/A' }}</td>
+              <td>{{ $mouvement->employe->nom ?? '' }} {{ $mouvement->employe->prenom ?? '-' }}</td>
+              <td>{{ $mouvement->code_mouvement ?? '-' }}</td>
+              <td>{{ $mouvement->bureau->libelle_bureau ?? '-' }}</td>
             @endif
             
           </tr>

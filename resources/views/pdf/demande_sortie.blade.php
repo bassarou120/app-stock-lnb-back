@@ -243,9 +243,9 @@
 
             <strong>Informations du Demandeur</strong><br/><br/>
 
-            <strong style="font-size:12px;">Nom et Prénom: :</strong> {{ $mouvement->employe->nom ?? 'N/A' }} {{ $mouvement->employe->prenom ?? 'N/A' }}<br/>
+            <strong style="font-size:12px;">Nom et Prénom: :</strong> {{ $mouvement->employe->nom ?? '-' }} {{ $mouvement->employe->prenom ?? '-' }}<br/>
 
-            <strong style="font-size:12px;">Bureau :</strong> {{ $mouvement->bureau->libelle_bureau ?? 'N/A' }}<br/>
+            <strong style="font-size:12px;">Bureau :</strong> {{ $mouvement->bureau->libelle_bureau ?? '-' }}<br/>
 
             <strong style="font-size:12px;">Date de la demande: :</strong> {{ \Carbon\Carbon::parse($mouvement->date_mouvement)->format('d/m/Y') }}<br/>
 
@@ -254,11 +254,11 @@
 
             <strong>Informations du Traiteur</strong><br/><br/>
 
-            <strong style="font-size:12px;">Nom et Prénom: :</strong> {{ $authUser->name ?? 'N/A' }} <br/>
+            <strong style="font-size:12px;">Nom et Prénom: :</strong> {{ $authUser->name ?? '-' }} <br/>
 
             <strong style="font-size:12px;">Date de traitement :</strong> {{ \Carbon\Carbon::parse($mouvement->updated_at)->format('d/m/Y') }}<br/>
 
-            <strong style="font-size:12px;">Statut :</strong> {{ $mouvement->statut ?? 'N/A' }}<br/>
+            <strong style="font-size:12px;">Statut :</strong> {{ $mouvement->statut ?? '-' }}<br/>
 
         </td>
       </tr>
@@ -299,9 +299,9 @@
         <tbody>
             @foreach ($details as $detail)
             <tr>
-                <td>{{ $detail->article->code_article ?? 'N/A' }}</td>
-                <td>{{ $detail->article->libelle ?? 'N/A' }}</td>
-                <td>{{ $detail->description ?? 'N/A' }}</td>
+                <td>{{ $detail->article->code_article ?? '-' }}</td>
+                <td>{{ $detail->article->libelle ?? '-' }}</td>
+                <td>{{ $detail->description ?? '-' }}</td>
                 <td>{{ $detail->qteDemande }}</td>
                 <td>{{ $detail->qte }}</td>
                 <td>{{ $detail->statut }}</td>

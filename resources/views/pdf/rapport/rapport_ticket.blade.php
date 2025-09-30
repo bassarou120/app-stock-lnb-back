@@ -346,33 +346,33 @@
                     <td>{{ $index + 1 }}</td>
                     @if($typeRapport === 'entree ticket')
                         <td>{{ $item->date }}</td>
-                        <td>{{ $item->coupon_ticket->libelle ?? 'N/A' }}</td>
-                        <td>{{ $item->compagniePetrolier->libelle ?? 'N/A' }}</td>
+                        <td>{{ $item->coupon_ticket->libelle ?? '-' }}</td>
+                        <td>{{ $item->compagniePetrolier->libelle ?? '-' }}</td>
                         <td>{{ $item->qte }}</td>
-                        <td>{{ $item->objet ?? 'N/A' }}</td>
-                        <td>{{ $item->description ?? 'N/A' }}</td>
+                        <td>{{ $item->objet ?? '-' }}</td>
+                        <td>{{ $item->description ?? '-' }}</td>
                     @elseif($typeRapport === 'sortie ticket')
                         <td>{{ $item->reference }}</td>
-                        <td>{{ $item->coupon_ticket->libelle ?? 'N/A' }}</td>
-                        <td>{{ $item->compagniePetrolier->libelle ?? 'N/A' }}</td>
+                        <td>{{ $item->coupon_ticket->libelle ?? '-' }}</td>
+                        <td>{{ $item->compagniePetrolier->libelle ?? '-' }}</td>
                         <td>{{ $item->qte }}</td>
-                        <td>{{ $item->employe->nom ?? '' }} {{ $item->employe->prenom ?? 'N/A' }}</td>
-                        <td>{{ $item->vehicule->immatriculation ?? 'N/A' }}</td>
-                        <td>{{ $item->kilometrage ?? 'N/A' }}</td>
-                        <td>{{ $item->objet ?? 'N/A' }}</td>
-                        <td>{{ $item->description ?? 'N/A' }}</td>
+                        <td>{{ $item->employe->nom ?? '' }} {{ $item->employe->prenom ?? '-' }}</td>
+                        <td>{{ $item->vehicule->immatriculation ?? '-' }}</td>
+                        <td>{{ $item->kilometrage ?? '-' }}</td>
+                        <td>{{ $item->objet ?? '-' }}</td>
+                        <td>{{ $item->description ?? '-' }}</td>
                     @elseif($typeRapport === 'retour ticket')
-                        <td>{{ $item->mouvement->reference ?? 'N/A' }}</td>
-                        <td>{{ $item->created_at ? \Carbon\Carbon::parse($item->date_retour)->format('d/m/Y') : 'N/A' }}</td>
-                        <td>{{ $item->coupon->libelle ?? 'N/A' }}</td>
-                        <td>{{ $item->compagnie->libelle ?? 'N/A' }}</td>
+                        <td>{{ $item->mouvement->reference ?? '-' }}</td>
+                        <td>{{ $item->created_at ? \Carbon\Carbon::parse($item->date_retour)->format('d/m/Y') : '-' }}</td>
+                        <td>{{ $item->coupon->libelle ?? '-' }}</td>
+                        <td>{{ $item->compagnie->libelle ?? '-' }}</td>
                         <td>{{ $item->qte }}</td>
                     @elseif($typeRapport === 'annulation ticket')
-                        <td>{{ $item->mouvement->reference ?? 'N/A' }}</td>
-                        <td>{{ $item->coupon->libelle ?? 'N/A' }}</td>
-                        <td>{{ $item->compagnie->libelle ?? 'N/A' }}</td>
+                        <td>{{ $item->mouvement->reference ?? '-' }}</td>
+                        <td>{{ $item->coupon->libelle ?? '-' }}</td>
+                        <td>{{ $item->compagnie->libelle ?? '-' }}</td>
                         <td>{{ $item->qte }}</td>
-                        <td>{{ $item->created_at ? \Carbon\Carbon::parse($item->date_retour)->format('d/m/Y') : 'N/A' }}</td>
+                        <td>{{ $item->created_at ? \Carbon\Carbon::parse($item->date_retour)->format('d/m/Y') : '-' }}</td>
                     @endif
                 </tr>
                 @endforeach

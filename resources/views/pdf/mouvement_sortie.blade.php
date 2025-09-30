@@ -61,13 +61,13 @@
             @foreach($mouvements as $index => $mouvement)
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ $mouvement->code_mouvement ?? 'N/A' }}</td>
-                    <td>{{ $mouvement->article->libelle ?? 'N/A' }}</td>
+                    <td>{{ $mouvement->code_mouvement ?? '-' }}</td>
+                    <td>{{ $mouvement->article->libelle ?? '-' }}</td>
                     <td>{{ $mouvement->description }}</td>
                     <td>{{ $mouvement->qte }}</td>
                     <td>{{ \Carbon\Carbon::parse($mouvement->date_mouvement)->format('d/m/Y') }}</td>
-                    <td>{{ $mouvement->employe->nom ?? 'N/A' }} {{ $mouvement->employe->prenom ?? 'N/A' }}</td>
-                    <td>{{ $mouvement->bureau->libelle_bureau ?? 'N/A' }}</td>
+                    <td>{{ $mouvement->employe->nom ?? '-' }} {{ $mouvement->employe->prenom ?? '-' }}</td>
+                    <td>{{ $mouvement->bureau->libelle_bureau ?? '-' }}</td>
                     
                 </tr>
             @endforeach

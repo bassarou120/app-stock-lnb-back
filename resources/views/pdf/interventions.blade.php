@@ -65,10 +65,10 @@
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $intervention->titre }}</td>
                     <td>{{ number_format($intervention->cout, 2, ',', ' ') }}</td>
-                    <td>{{ $intervention->observation ?? 'N/A' }}</td>
-                    <td>{{ $intervention->immobilisation->code ?? 'N/A' }}</td>
-                    <td>{{ $intervention->immobilisation->designation ?? 'N/A' }}</td>
-                    <td>{{ $intervention->typeIntervention->libelle_type_intervention ?? 'N/A' }}</td>
+                    <td>{{ $intervention->observation ?? '-' }}</td>
+                    <td>{{ $intervention->immobilisation->code ?? '-' }}</td>
+                    <td>{{ $intervention->immobilisation->designation ?? '-' }}</td>
+                    <td>{{ $intervention->typeIntervention->libelle_type_intervention ?? '-' }}</td>
                     <td>{{ \Carbon\Carbon::parse($intervention->date_intervention)->format('d/m/Y') }}</td>
                 </tr>
             @endforeach

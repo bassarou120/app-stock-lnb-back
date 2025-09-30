@@ -67,18 +67,18 @@
             @foreach($immobilisations as $index => $immo)
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ $immo->code ?? 'N/A' }}</td>
-                    <td>{{ $immo->designation ?? 'N/A' }}</td>
-                    <td>{{ number_format($immo->montant_ttc, 2, ',', ' ') ?? 'N/A' }}</td>
-                    <td>{{ $immo->etat ?? 'N/A' }}</td>
-                    <td>{{ $immo->observation ?? 'N/A' }}</td>
-                    <td>{{ $immo->groupeTypeImmo->libelle ?? 'N/A' }}</td>
-                    <td>{{ $immo->sousTypeImmo->libelle ?? 'N/A' }}</td>
-                    <td>{{ $immo->statusImmo->libelle_status_immo ?? 'N/A' }}</td>
+                    <td>{{ $immo->code ?? '-' }}</td>
+                    <td>{{ $immo->designation ?? '-' }}</td>
+                    <td>{{ number_format($immo->montant_ttc, 2, ',', ' ') ?? '-' }}</td>
+                    <td>{{ $immo->etat ?? '-' }}</td>
+                    <td>{{ $immo->observation ?? '-' }}</td>
+                    <td>{{ $immo->groupeTypeImmo->libelle ?? '-' }}</td>
+                    <td>{{ $immo->sousTypeImmo->libelle ?? '-' }}</td>
+                    <td>{{ $immo->statusImmo->libelle_status_immo ?? '-' }}</td>
                     <!-- <td>{{ $immo->bureau->libelle_bureau ?? 'N/A' }}</td> -->
-                    <td>{{ $immo->employe->nom ?? '' }} {{ $immo->employe->prenom ?? 'N/A' }}</td>
+                    <td>{{ $immo->employe->nom ?? '' }} {{ $immo->employe->prenom ?? '-' }}</td>
                     <!-- <td>{{ $immo->fournisseur->nom ?? 'N/A' }}</td> -->
-                    <td>{{ \Carbon\Carbon::parse($immo->date_acquisition)->format('d/m/Y') ?? 'N/A' }}</td>
+                    <td>{{ \Carbon\Carbon::parse($immo->date_acquisition)->format('d/m/Y') ?? '-' }}</td>
                     
                 </tr>
             @endforeach
