@@ -267,6 +267,7 @@ Route::get('rapports/periodique', [MouvementTicketController::class, 'rapportper
 
 Route::get('/mouvements/demande-sortie/check-status-and-generate/{codeMouvement}', [MouvementStockController::class, 'checkStatusAccorde']);
 //Route::get('/getrapport-periodique', [MouvementTicketController::class, 'getrapportperiodique']);
+Route::get('/mouvements/demande-sortie/check-status-and-generate/{id}', [MouvementStockController::class, 'checkStatusAccorde']);
 
 Route::get('rapports/periodique/imprimer', [MouvementTicketController::class, 'imprimerRapportPeriodique']);
 Route::get('/mouvements/demande-sortie/check-status-and-generate/{id}', [MouvementStockController::class, 'checkStatusAccorde']);
