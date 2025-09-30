@@ -465,7 +465,7 @@ class MouvementTicketController extends Controller
             "objet" => 'nullable|string|max:255',
             "commune_depart" => 'nullable|exists:communes,id',
             "commune_arriver" => 'nullable|exists:communes,id',
-            "kilometrage" => 'required|integer|min:0', // 👈 AJOUTEZ CETTE LIGNE
+            "kilometrage" => 'nullable|integer|min:0', // 👈 AJOUTEZ CETTE LIGNE
             "kilometrage_de_fin" => 'nullable|integer|min:0', // 👈 AJOUTEZ CETTE LIGNE
             "tickets" => 'required|array|min:1',
             "tickets.*.compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
@@ -519,7 +519,7 @@ class MouvementTicketController extends Controller
                     "date" => $request->date,
                     "commune_depart" => $request->commune_depart ?? null,
                     "commune_arriver" => $request->commune_arriver ?? null,
-                    "kilometrage" => $request->kilometrage,
+                    "kilometrage" => $request->kilometrage ?? null,
                     "kilometrage_de_fin" => $request->kilometrage_de_fin ?? null,
                     "trajet_aller_retour" => $request->trajet_aller_retour,
                     "reference" => $reference,
@@ -1029,6 +1029,7 @@ class MouvementTicketController extends Controller
         }
         return $plages;
     }
+
 
     private function calculerRapport($annee, $plages, $periode)
     {
