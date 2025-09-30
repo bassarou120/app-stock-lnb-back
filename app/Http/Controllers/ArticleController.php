@@ -456,6 +456,8 @@ class ArticleController extends Controller
                 if (empty($annee_exercice) || !is_numeric($annee_exercice)) {
                     $ignoredRows[] = "Ligne " . ($index + 1) . " ignorée : année invalide ou vide.";
                     continue;
+
+                    
                 }
 
                 $annee_exercice = (int) $annee_exercice; // Cast seulement après validation
