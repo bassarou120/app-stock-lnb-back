@@ -62,14 +62,14 @@
             @foreach($transferts as $index => $transfert)
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ $transfert->immobilisation->code ?? 'N/A' }}</td>
-                    <td>{{ $transfert->immobilisation->designation ?? 'N/A' }}</td>
-                    <td>{{ $transfert->old_bureau->libelle_bureau ?? 'N/A' }}</td>
-                    <td>{{ $transfert->bureau->libelle_bureau ?? 'N/A' }}</td>
-                    <td>{{ $transfert->old_employe->nom ?? '' }} {{ $transfert->old_employe->prenom ?? 'N/A' }}</td>
-                    <td>{{ $transfert->employe->nom ?? '' }} {{ $transfert->employe->prenom ?? 'N/A' }}</td>
+                    <td>{{ $transfert->immobilisation->code ?? '-' }}</td>
+                    <td>{{ $transfert->immobilisation->designation ?? '-' }}</td>
+                    <td>{{ $transfert->old_bureau->libelle_bureau ?? '-' }}</td>
+                    <td>{{ $transfert->bureau->libelle_bureau ?? '-' }}</td>
+                    <td>{{ $transfert->old_employe->nom ?? '' }} {{ $transfert->old_employe->prenom ?? '-' }}</td>
+                    <td>{{ $transfert->employe->nom ?? '' }} {{ $transfert->employe->prenom ?? '-' }}</td>
                     <td>{{ \Carbon\Carbon::parse($transfert->date_mouvement)->format('d/m/Y') }}</td>
-                    <td>{{ $transfert->observation ?? 'N/A' }}</td>
+                    <td>{{ $transfert->observation ?? '-' }}</td>
                 </tr>
             @endforeach
         </tbody>
