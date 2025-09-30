@@ -36,24 +36,42 @@ class ArticleController extends Controller
  *     )
  * )
  */
-    public function index()
+/*     public function index()
     {
-
         // Récupérer l'exercice ouvert
-/*         $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
-        if (!$exerciceOuvert) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Aucun exercice ouvert trouvé.'
-            ], 404);
-        } */
-
         $articles = Article::with(['categorie', 'stock'])
         ->where('isdeleted', false)
         ->orderBy('id_exercice', 'desc')
         ->latest()->paginate(1000);
         return new PostResource(true, 'Liste des articles', $articles);
-    }
+    }  */
+
+    public function index()
+    {
+        // 1. Récupérer l'exercice ouvert
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
+        
+        if (!$exerciceOuvert) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun exercice ouvert trouvé. Veuillez ouvrir un exercice pour consulter le stock.'
+            ], 404);
+        }
+        
+        $exerciceId = $exerciceOuvert->id;
+        
+        // 2. Filtrer la relation 'stock' par l'ID de l'exercice ouvert
+        $articles = Article::with(['categorie', 'stock' => function ($query) use ($exerciceId) {
+            // C'est la ligne magique ✨
+            $query->where('id_exercice', $exerciceId); 
+        }])
+        ->where('isdeleted', false)
+        ->latest()->paginate(1000);
+        
+        // 3. Retourner la réponse
+        // Lorsque vous accédez à $article->stock->Qte_actuel, vous obtiendrez 20.
+        return new PostResource(true, 'Liste des articles', $articles);
+    } 
 
 
     // Créer un nouveau article
