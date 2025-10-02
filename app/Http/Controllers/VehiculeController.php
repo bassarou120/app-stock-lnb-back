@@ -139,97 +139,153 @@ class VehiculeController extends Controller
     }
 
     public function import(Request $request)
-{
-    // 1️⃣ Validation
-    $validator = Validator::make($request->all(), [
-        'file' => 'required|mimes:xlsx,xls',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json(['errors' => $validator->errors()], 422);
-    }
-
-    // 2️⃣ Charger le fichier
-    $spreadsheet = IOFactory::load($request->file('file'));
-    $sheet = $spreadsheet->getActiveSheet();
-    $rows = $sheet->toArray();
-
-    $nbIgnored = 0; // Compter les véhicules ignorés
-
-    // 3️⃣ Boucler sur les lignes (en ignorant la première ligne d'entêtes)
-    foreach ($rows as $index => $row) {
-        if ($index === 0) continue; // Ignore header
-
-        $immatriculation = $row[0];
-        $numero_chassis = $row[1];
-        $kilometrage = $row[2];
-        $date_mise_en_service = $row[3];
-        $marqueNom = $row[4];
-        $modeleNom = $row[5];
-        $puissance = $row[6];
-        $places_assises = $row[7];
-        $energie = $row[8];
-
-        // 🔎 Trouver les IDs correspondants
-        $marque = Marque::firstOrCreate(['libelle' => $marqueNom]);
-        $modele = Modele::firstOrCreate([
-            'libelle_modele' => $modeleNom,
+    {
+        // 1️⃣ Validation
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|mimes:xlsx,xls',
         ]);
 
-        // ✅ Vérifier si la voiture existe déjà
-        $vehiculeExiste = Vehicule::where('immatriculation', $immatriculation)
-            ->orWhere('numero_chassis', $numero_chassis)
-            ->exists();
-
-        if ($vehiculeExiste) {
-            $nbIgnored++;
-            continue; // Ignore cette ligne si déjà existante
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // 🚗 Créer le véhicule
-        Vehicule::create([
-            'immatriculation' => $immatriculation,
-            'numero_chassis' => $numero_chassis,
-            'kilometrage' => $kilometrage,
-            'date_mise_en_service' => $date_mise_en_service,
-            'puissance' => $puissance,
-            'places_assises' => $places_assises,
-            'energie' => $energie,
-            'marque_id' => $marque->id,
-            'modele_id' => $modele->id,
-        ]); 
+        // 2️⃣ Initialisation des compteurs et du tableau de rapport
+        $totalRows = 0;
+        $successCount = 0;
+        $ignoredRows = []; // Tableau pour stocker les messages des lignes ignorées
+
+        try {
+            //code...
+            // 2️⃣ Charger le fichier
+            $spreadsheet = IOFactory::load($request->file('file'));
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray();
+
+            $nbIgnored = 0; // Compter les véhicules ignorés
+
+            // 3️⃣ Boucler sur les lignes (en ignorant la première ligne d'entêtes)
+            foreach ($rows as $index => $row) {
+                if ($index === 0) continue; // Ignore header
+
+                $totalRows++; // Compter le nombre total de lignes traitées (hors entête)
+        
+                $immatriculation = $row[0];
+                $numero_chassis = $row[1];
+                $kilometrage = $row[2];
+                $date_mise_en_service = $row[3];
+                $marqueNom = $row[4];
+                $modeleNom = $row[5];
+                $puissance = $row[6];
+                $places_assises = $row[7];
+                $energie = $row[8];
+
+                // 🛡️ Vérification des données essentielles (CORRIGÉE : utilisation de $immatriculation et $marqueNom)
+                if (empty($immatriculation) || empty($marqueNom)) {
+                    $msg = "Ligne " . ($index + 1) . " ignorée : Immatriculation ou Marque manquante.";
+                    $ignoredRows[] = $msg;
+                    \Log::warning($msg);
+                    continue;
+                }
+
+                // 🔎 Vérification doublons (CORRIGÉE : utilisation des variables $immatriculation et $numero_chassis)
+                // REMARQUE: Vous avez deux blocs de vérification de doublons. Je recommande de n'en garder qu'un,
+                // celui qui vérifie par immatriculation OU chassis (plus robuste). Je retire le bloc "plaque".
+
+                // Ligne ignorée: $vehiculeExistant = Vehicule::where('plaque', $plaque)->first();
+
+                // 🔎 Vérification de doublons par Immatriculation OU Numéro de Châssis (le plus robuste)
+                $vehiculeExiste = Vehicule::where('immatriculation', $immatriculation)
+                    ->orWhere('numero_chassis', $numero_chassis)
+                    ->exists();
+
+                if ($vehiculeExiste) {
+                    $msg = "Ligne " . ($index + 1) . " ignorée : Véhicule avec immatriculation '$immatriculation' ou chassis '$numero_chassis' existe déjà.";
+                    $ignoredRows[] = $msg;
+                    \Log::info($msg);
+                    // $nbIgnored++; // Variable inutile, on compte via $ignoredRows
+                    continue; // Ignore cette ligne si déjà existante
+                }
+        
+                // 🔎 Trouver les IDs correspondants
+                $marque = Marque::firstOrCreate(['libelle' => $marqueNom]);
+                $modele = Modele::firstOrCreate([
+                    'libelle_modele' => $modeleNom,
+                ]);
+        
+                // ✅ Vérifier si la voiture existe déjà
+                $vehiculeExiste = Vehicule::where('immatriculation', $immatriculation)
+                    ->orWhere('numero_chassis', $numero_chassis)
+                    ->exists();
+        
+                if ($vehiculeExiste) {
+                    $nbIgnored++;
+                    continue; // Ignore cette ligne si déjà existante
+                }
+        
+                // 🚗 Créer le véhicule
+                Vehicule::create([
+                    'immatriculation' => $immatriculation,
+                    'numero_chassis' => $numero_chassis,
+                    'kilometrage' => $kilometrage,
+                    'date_mise_en_service' => $date_mise_en_service,
+                    'puissance' => $puissance,
+                    'places_assises' => $places_assises,
+                    'energie' => $energie,
+                    'marque_id' => $marque->id,
+                    'modele_id' => $modele->id,
+                ]); 
+                $successCount++;
+            }
+
+            $summary = "Importation terminée. " . $successCount . " ligne(s) ajoutée(s) sur " . $totalRows . " ligne(s) de données traitée(s).";
+            
+            if (!empty($ignoredRows)) {
+                $summary .= " Attention : " . count($ignoredRows) . " ligne(s) ont été ignorée(s).";
+            }
+
+            $response = [
+                'message' => $summary,
+                'success_count' => $successCount,
+                'total_rows_processed' => $totalRows,
+                'ignored' => $ignoredRows
+            ];
+
+            return response()->json($response);
+
+        } catch (\Exception $e) {
+            // En cas d'erreur de lecture de fichier ou autre
+            return response()->json([
+                'error' => 'Erreur lors de l\'importation du fichier.',
+                'details' => $e->getMessage()
+            ], 500);
+        }
+
     }
 
-    return response()->json([
-        'message' => 'Import terminé',
-        'vehicules_ignores' => $nbIgnored
-    ]);
-}
-
-public function addCarteGrise(Request $request, Vehicule $vehicule)
-{
-    $validator = Validator::make($request->all(), [
-        'carte_grise' => 'required|file|mimes:pdf,jpg,jpeg,png',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json($validator->errors(), 422);
-    }
-
-    // Upload du fichier
-    if ($request->hasFile('carte_grise')) {
-        $file = $request->file('carte_grise');
-        $filename = time().'_'.$file->getClientOriginalName();
-        $path = $file->storeAs('carte_grises', $filename, 'public');
-
-        // Mise à jour du véhicule avec le chemin du fichier
-        $vehicule->update([
-            'carte_grise' => 'storage/'.$path,
+    public function addCarteGrise(Request $request, Vehicule $vehicule)
+    {
+        $validator = Validator::make($request->all(), [
+            'carte_grise' => 'required|file|mimes:pdf,jpg,jpeg,png',
         ]);
-    }
 
-    return new PostResource(true, 'Carte grise ajoutée avec succès', $vehicule);
-}
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        // Upload du fichier
+        if ($request->hasFile('carte_grise')) {
+            $file = $request->file('carte_grise');
+            $filename = time().'_'.$file->getClientOriginalName();
+            $path = $file->storeAs('carte_grises', $filename, 'public');
+
+            // Mise à jour du véhicule avec le chemin du fichier
+            $vehicule->update([
+                'carte_grise' => 'storage/'.$path,
+            ]);
+        }
+
+        return new PostResource(true, 'Carte grise ajoutée avec succès', $vehicule);
+    }
 
 
 }

@@ -26,33 +26,51 @@ class ArticleController extends Controller
     // Afficher la liste des articles
 
     /**
-     * @OA\Get(
-     *     path="/api/articles",
-     *     tags={"Articles"},
-     *     summary="Liste des articles avec leurs catégories et stocks",
-     *     @OA\Response(
-     *         response=200,
-     *         description="Succès",
-     *         @OA\JsonContent(ref="#/components/schemas/PostResourceResponse")
-     *     )
-     * )
-     */
+ * @OA\Get(
+ *     path="/api/articles",
+ *     tags={"Articles"},
+ *     summary="Liste des articles avec leurs catégories et stocks",
+ *     @OA\Response(
+ *         response=200,
+ *         description="Succès",
+ *         @OA\JsonContent(ref="#/components/schemas/PostResourceResponse")
+ *     )
+ * )
+ */
+/*     public function index()
+    {
+        // Récupérer l'exercice ouvert
+        $articles = Article::with(['categorie', 'stock'])
+        ->where('isdeleted', false)
+        ->orderBy('id_exercice', 'desc')
+        ->latest()->paginate(1000);
+        return new PostResource(true, 'Liste des articles', $articles);
+    }  */
+
     public function index()
     {
+        // 1. Récupérer l'exercice ouvert
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
 
-        // Récupérer l'exercice ouvert
-        /*         $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
         if (!$exerciceOuvert) {
             return response()->json([
                 'success' => false,
-                'message' => 'Aucun exercice ouvert trouvé.'
+                'message' => 'Aucun exercice ouvert trouvé. Veuillez ouvrir un exercice pour consulter le stock.'
             ], 404);
-        } */
+        }
 
-        $articles = Article::with(['categorie', 'stock'])
-            ->where('isdeleted', false)
-            ->orderBy('id_exercice', 'desc')
-            ->latest()->paginate(1000);
+        $exerciceId = $exerciceOuvert->id;
+
+        // 2. Filtrer la relation 'stock' par l'ID de l'exercice ouvert
+        $articles = Article::with(['categorie', 'stock' => function ($query) use ($exerciceId) {
+            // C'est la ligne magique ✨
+            $query->where('id_exercice', $exerciceId);
+        }])
+        ->where('isdeleted', false)
+        ->latest()->paginate(1000);
+
+        // 3. Retourner la réponse
+        // Lorsque vous accédez à $article->stock->Qte_actuel, vous obtiendrez 20.
         return new PostResource(true, 'Liste des articles', $articles);
     }
 
@@ -420,6 +438,7 @@ class ArticleController extends Controller
      */
     public function import(Request $request)
     {
+        // 1️⃣ Validation du fichier
         $validator = Validator::make($request->all(), [
             'file' => 'required|mimes:xlsx,xls',
         ]);
@@ -432,6 +451,9 @@ class ArticleController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         $rows = $sheet->toArray();
 
+        // 2️⃣ Initialisation des compteurs et du tableau de rapport
+        $totalDataRows = 0; // Renommé pour ne compter que les lignes de données réelles
+        $successCount = 0;
         $ignoredRows = [];
 
         // Pré-charger tous les exercices pour éviter des requêtes répétées dans la boucle
@@ -441,12 +463,25 @@ class ArticleController extends Controller
         DB::beginTransaction();
 
         try {
+            // 3️⃣ Boucle de traitement des lignes
             foreach ($rows as $index => $row) {
                 if ($index === 0) continue; // Ignorer la ligne d'en-tête
 
+                // NOUVELLE VÉRIFICATION : Ignorer les lignes entièrement vides
+                $nonEmptyCells = array_filter($row, function($cell) {
+                    return trim($cell) !== '';
+                });
+
+                if (empty($nonEmptyCells)) {
+                    continue; // Ignorer la ligne vide et passer à la suivante
+                }
+
+                $excelRowNumber = $index + 1;
+                $totalDataRows++; // Compter uniquement les lignes de données réelles
+
                 // La nouvelle colonne 'année' est à l'index 5 (la 6ème colonne)
                 if (count($row) < 6) {
-                    $ignoredRows[] = "Ligne " . ($index + 1) . " ignorée : colonnes insuffisantes (" . count($row) . "). L'année d'exercice est manquante.";
+                    $ignoredRows[] = "Ligne " . $excelRowNumber . " ignorée : colonnes insuffisantes (" . count($row) . "). L'année d'exercice est manquante.";
                     continue;
                 }
 
@@ -454,10 +489,8 @@ class ArticleController extends Controller
 
                 // Vérifier si l'année est valide
                 if (empty($annee_exercice) || !is_numeric($annee_exercice)) {
-                    $ignoredRows[] = "Ligne " . ($index + 1) . " ignorée : année invalide ou vide.";
+                    $ignoredRows[] = "Ligne " . $excelRowNumber . " ignorée : année invalide ou vide.";
                     continue;
-
-                    
                 }
 
                 $annee_exercice = (int) $annee_exercice; // Cast seulement après validation
@@ -465,17 +498,18 @@ class ArticleController extends Controller
                 $designation_article = trim($row[1]);
 
                 // Vérifier si un article avec le même code ou libellé existe déjà
+                // Attention: L'utilisation de orWhere peut être lente si la table est grande et non indexée.
                 $articleExistant = Article::where('code_article', $code_article)
                     ->orWhere('libelle', $designation_article)
                     ->first();
 
                 if ($articleExistant) {
-                    $ignoredRows[] = "Ligne " . ($index + 1) . " ignorée : article avec code '$code_article' ou nom '$designation_article' déjà existant.";
+                    $ignoredRows[] = "Ligne " . $excelRowNumber . " ignorée : article avec code '$code_article' ou nom '$designation_article' déjà existant.";
+                    Log::info("Importation ignorée - Ligne " . $excelRowNumber . ": article avec code '$code_article' ou nom '$designation_article' déjà existant.");
                     continue;
                 }
 
                 // Vérifier si l'année de l'exercice existe dans la base de données.
-                // Si elle n'existe pas, la créer.
                 if (!isset($exercices[$annee_exercice])) {
                     // Créer un nouvel exercice pour cette année
                     $newExercice = Exercice::create([
@@ -491,6 +525,7 @@ class ArticleController extends Controller
 
                 $id_exercice = $exercices[$annee_exercice];
 
+                // Trouver ou créer la catégorie
                 $categorie = CategorieArticle::firstOrCreate([
                     'libelle_categorie_article' => trim($row[2])
                 ]);
@@ -523,19 +558,33 @@ class ArticleController extends Controller
                     'cmp_debut_exercice' => 0,
                     'cmp_fin_exercice' => 0,
                 ]);
+
+                $successCount++; // Incrémenter le compteur de succès
             }
 
             DB::commit();
 
+            // 4️⃣ Construction du message de retour final
+            $summary = "Importation terminée. " . $successCount . " article(s) ajouté(s) sur " . $totalDataRows . " ligne(s) de données traitée(s).";
+
+            if (!empty($ignoredRows)) {
+                $summary .= " Attention : " . count($ignoredRows) . " ligne(s) ont été ignorée(s).";
+            }
+
             return response()->json([
-                'message' => 'Import terminé avec succès !',
+                'message' => $summary,
+                'success_count' => $successCount,
+                'total_rows_processed' => $totalDataRows,
                 'ignored' => $ignoredRows
             ]);
+
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Erreur lors de l\'importation des articles: ' . $e->getMessage() . ' à la ligne ' . $e->getLine());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Une erreur est survenue lors de l\'importation.',
+                'message' => 'Une erreur critique est survenue lors de l\'importation.',
                 'error' => $e->getMessage()
             ], 500);
         }

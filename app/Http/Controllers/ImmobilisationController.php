@@ -343,7 +343,7 @@ class ImmobilisationController extends Controller
             $duree_amorti = $row[12];
             $etat = $row[13];
             $taux_ammortissement = $row[14];
-            $duree_ammortissement = $row[15];
+            $duree_ammortissement = round($row[15]);
             $date_acquisition = $row[16];
             $date_mise_en_service = $row[17];
             $observation = $row[18];
@@ -352,15 +352,31 @@ class ImmobilisationController extends Controller
             $reference_estampillonnage = $row[21];
 
             // 🔎 Vérification doublons EXACTEMENT comme pour les articles
-            $immobilisationExistante = Immobilisation::where('code', $code)
-                ->orWhere('designation', $designation)
-                ->first();
+            // $immobilisationExistante = Immobilisation::where('code', $code)
+            //     ->orWhere('designation', $designation)
+            //     ->first();
+
+            // if ($immobilisationExistante) {
+            //     $msg = "Ligne $index ignorée : immobilisation avec code '$code' ou désignation '$designation' existe déjà.";
+            //     \Log::info($msg);
+            //     $ignoredRows[] = $msg;
+            //     continue;
+            // }
+
+            // 🔎 Vérification des doublons : on ne considère comme un doublon que si
+            // l'enregistrement existe DEJA ET qu'il n'est PAS supprimé (isdeleted = false).
+            $immobilisationExistante = Immobilisation::where(function ($query) use ($code, $designation) {
+                $query->where('code', $code)
+                    ->orWhere('designation', $designation);
+            })
+            ->where('isdeleted', false) // <--- C'est la ligne CLEF
+            ->first();
 
             if ($immobilisationExistante) {
-                $msg = "Ligne $index ignorée : immobilisation avec code '$code' ou désignation '$designation' existe déjà.";
+                $msg = "Ligne $index ignorée : immobilisation avec code '$code' ou désignation '$designation' existe déjà et est ACTIVE.";
                 \Log::info($msg);
                 $ignoredRows[] = $msg;
-                continue;
+                continue; // On passe à la ligne suivante du fichier
             }
 
             // 🔍 Trouver les IDs correspondants
@@ -389,29 +405,97 @@ class ImmobilisationController extends Controller
             $id_status_immo = StatusImmo::firstOrCreate(['libelle_status_immo' => $status_immo]);
 
             // 👤 Découper nom et prénom
-            $parts = explode(' ', $employe_fullname);
-            $nom = array_shift($parts);
-            $prenom = implode(' ', $parts);
+            $employe = null;
+            if (!empty($employe_fullname)) {
+                // 👤 Découper nom et prénom
+                $parts = explode(' ', $employe_fullname);
+                $nom = array_shift($parts);
+                $prenom = implode(' ', $parts);
 
-            if (empty($nom) || empty($prenom)) {
-                $msg = "Nom ou prénom manquant à la ligne $index : $employe_fullname";
+                if (!empty($nom) && !empty($prenom)) {
+                    $employe = Employe::firstOrCreate([
+                        'nom' => $nom,
+                        'prenom' => $prenom
+                    ], [
+                        'email' => null
+                    ]);
+                }
+            }
+
+            $date_mouvement_formatee = null;
+            $date_acquisition_formatee = null;
+            $date_misenservice_formatee = null;
+            // date_mouvement_formatee Essayer le format Y-m-d (Année-Mois-Jour)
+            if (\DateTime::createFromFormat('Y-m-d', $date_mouvement) !== false) {
+                $date_mouvement_formatee = \Carbon\Carbon::createFromFormat('Y-m-d', $date_mouvement)->format('Y-m-d');
+            }
+            // Sinon, essayer le format d/m/Y (Jour/Mois/Année)
+            elseif (\DateTime::createFromFormat('d/m/Y', $date_mouvement) !== false) {
+                $date_mouvement_formatee = \Carbon\Carbon::createFromFormat('d/m/Y', $date_mouvement)->format('Y-m-d');
+            }
+            // Sinon, essayer le format m/d/Y (Mois/Jour/Année)
+            elseif (\DateTime::createFromFormat('m/d/Y', $date_mouvement) !== false) {
+                $date_mouvement_formatee = \Carbon\Carbon::createFromFormat('m/d/Y', $date_mouvement)->format('Y-m-d');
+            }
+
+            //date_acquisition_formatee
+            if (\DateTime::createFromFormat('Y-m-d', $date_acquisition) !== false) {
+                $date_acquisition_formatee = \Carbon\Carbon::createFromFormat('Y-m-d', $date_acquisition)->format('Y-m-d');
+            }
+            // Sinon, essayer le format d/m/Y (Jour/Mois/Année)
+            elseif (\DateTime::createFromFormat('d/m/Y', $date_acquisition) !== false) {
+                $date_acquisition_formatee = \Carbon\Carbon::createFromFormat('d/m/Y', $date_acquisition)->format('Y-m-d');
+            }
+            // Sinon, essayer le format m/d/Y (Mois/Jour/Année)
+            elseif (\DateTime::createFromFormat('m/d/Y', $date_acquisition) !== false) {
+                $date_acquisition_formatee = \Carbon\Carbon::createFromFormat('m/d/Y', $date_acquisition)->format('Y-m-d');
+            }
+
+            //date_mise_en_service_formatee
+            if (\DateTime::createFromFormat('Y-m-d', $date_mise_en_service) !== false) {
+                $date_mise_en_service_formatee = \Carbon\Carbon::createFromFormat('Y-m-d', $date_mise_en_service)->format('Y-m-d');
+            }
+            elseif (\DateTime::createFromFormat('d/m/Y', $date_mise_en_service) !== false) {
+                $date_mise_en_service_formatee = \Carbon\Carbon::createFromFormat('d/m/Y', $date_mise_en_service)->format('Y-m-d');
+            }
+            elseif (\DateTime::createFromFormat('m/d/Y', $date_mise_en_service) !== false) {
+                $date_mise_en_service_formatee = \Carbon\Carbon::createFromFormat('m/d/Y', $date_mise_en_service)->format('Y-m-d');
+            }
+
+
+
+            // Vérifier si un format valide a été trouvé
+            if (is_null($date_mouvement_formatee)) {
+                $msg = "Ligne $index ignorée : Format de date de mouvement '$date_mouvement' invalide.";
                 \Log::warning($msg);
                 $ignoredRows[] = $msg;
                 continue;
             }
 
-            $employe = Employe::firstOrCreate([
-                'nom' => $nom,
-                'prenom' => $prenom
-            ], [
-                'email' => null
-            ]);
+            if (is_null($date_acquisition_formatee)) {
+                // Le message d'erreur corrigé ici
+                $msg = "Ligne $index ignorée : Format de date d'acquisition '$date_acquisition' invalide.";
+                \Log::warning($msg);
+                $ignoredRows[] = $msg;
+                continue;
+            }
+
+            if (is_null($date_mise_en_service_formatee)) {
+                // Le message d'erreur corrigé ici
+                $msg = "Ligne $index ignorée : Format de date de mise en service '$date_mise_en_service' invalide.";
+                \Log::warning($msg);
+                $ignoredRows[] = $msg;
+                continue;
+            }
+
+
+
 
             // ✅ Créer l'immo
             Immobilisation::create([
                 'bureau_id' => $bureau_id->id,
-                'employe_id' => $employe->id,
-                'date_mouvement' => \Carbon\Carbon::createFromFormat('m/d/Y', $date_mouvement)->format('Y-m-d'),
+                'employe_id' => $employe ? $employe->id : null,
+                'date_mouvement' => $date_mouvement_formatee,
                 'fournisseur_id' => $fournisseur_id->id,
                 'designation' => $designation,
                 'isVehicule' => false,
@@ -423,12 +507,13 @@ class ImmobilisationController extends Controller
                 'etat' => $etat,
                 'taux_ammortissement' => $taux_ammortissement,
                 'duree_ammortissement' => $duree_ammortissement,
-                'date_acquisition' => \Carbon\Carbon::createFromFormat('m/d/Y', $date_acquisition)->format('Y-m-d'),
-                'date_mise_en_service' => \Carbon\Carbon::createFromFormat('m/d/Y', $date_mise_en_service)->format('Y-m-d'),
+                'date_acquisition' => $date_acquisition_formatee,
+                'date_mise_en_service' => $date_mise_en_service_formatee,
                 'observation' => $observation,
                 'id_status_immo' => $id_status_immo->id,
                 'montant_ttc' => $montant_ttc,
                 'reference_estampillonnage' => $reference_estampillonnage,
+                'isdeleted' => false
             ]);
         }
 
