@@ -7,8 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\MouvementTicket;
 use App\Models\RetourTicket;
 use App\Models\AnnulationTicket;
-use App\Models\Parametrage\TypeMouvement; // Pour trouver l'ID des types de mouvement de ticket
-use App\Models\CouponTicket; // Pour le filtre et le libellé du coupon
+use App\Models\Parametrage\TypeMouvement; // Pour trouver l'ID des types de mouvement de ticket// Pour le filtre et le libellé du coupon
 use App\Models\Compagnie; // Pour le filtre et le libellé de la compagnie
 use App\Models\Employe; // Pour le filtre de l'employé dans les sorties
 use App\Models\Vehicule; // Pour le filtre du véhicule dans les sorties
@@ -18,6 +17,8 @@ use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon; // Pour formater les dates
+use App\Models\Parametrage\CouponTicket;
+
 
 class RapportTicketController extends Controller
 {
