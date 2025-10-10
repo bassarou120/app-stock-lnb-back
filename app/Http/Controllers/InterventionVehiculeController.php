@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\PostResource;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
+
 
 class InterventionVehiculeController extends Controller
 {
@@ -284,27 +286,44 @@ class InterventionVehiculeController extends Controller
  */
 
     public function update(Request $request, InterventionVehicule $interventionVehicule)
-    {
+{
+    $validator = Validator::make($request->all(), [
+        'vehicule_id' => 'required|exists:vehicules,id',
+        'titre' => 'required|string|max:255',
+        'montant' => 'required|numeric|min:0',
+        'observation' => 'nullable|string',
+        'date_intervention' => 'required|date',
+        'type_intervention_id' => 'required|exists:type_interventions,id',
+        'date_expiration' => 'nullable|date',
+        'piece_jointe' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:5120',
+    ]);
 
-        $validator = Validator::make($request->all(), [
-            'vehicule_id' => 'required|exists:vehicules,id',
-            'titre' => 'required|string|max:255',
-            'montant' => 'required|numeric|min:0', // Changé à 'numeric'
-            'observation' => 'nullable|string',
-            'date_intervention' => 'required|date',
-            'type_intervention_id' => 'required|exists:type_interventions,id',
-            'date_expiration' => 'nullable|date', // AJOUTÉ: Rendre date_expiration nullable et de type date
-        ]);
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
+    }
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+    $data = $request->all();
+
+    // Si une nouvelle pièce jointe est envoyée
+    if ($request->hasFile('piece_jointe')) {
+        // Supprime l’ancienne pièce jointe s’il y en avait une
+        if ($interventionVehicule->piece_jointe && Storage::disk('public')->exists(str_replace('storage/', '', $interventionVehicule->piece_jointe))) {
+            Storage::disk('public')->delete(str_replace('storage/', '', $interventionVehicule->piece_jointe));
         }
 
-        // Met à jour l'intervention avec toutes les données validées
-        $interventionVehicule->update($request->all());
-
-        return new PostResource(true, 'intervention mise à jour avec succès', $interventionVehicule);
+        // Enregistre la nouvelle pièce jointe
+        $file = $request->file('piece_jointe');
+        $fileName = time() . '_' . $file->getClientOriginalName();
+        $file->storeAs('piece_jointe_intervention', $fileName, 'public');
+        $data['piece_jointe'] = 'storage/piece_jointe_intervention/' . $fileName;
     }
+
+    // Met à jour l’intervention
+    $interventionVehicule->update($data);
+
+    return new PostResource(true, 'intervention mise à jour avec succès', $interventionVehicule);
+}
+
 
     public function InterventionVehicule()
     {
