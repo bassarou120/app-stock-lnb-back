@@ -145,7 +145,7 @@ class ArticleController extends Controller
             'articles.*.id_cat' => 'required|exists:categorie_articles,id',
             'articles.*.libelle' => 'required|string|max:255',
             // 'articles.*.code_article' => 'required|string|max:255|unique:articles,code_article',
-            'articles.*.description' => 'string|max:255',
+            'articles.*.description' => 'nullable|string|max:255',
             'articles.*.stock_alerte' => 'required|integer|min:0',
         ]);
 
@@ -537,7 +537,7 @@ class ArticleController extends Controller
                     'id_cat' => $categorie->id,
                     'libelle' => $designation_article,
                     'code_article' => $code_article,
-                    'description' => trim($row[3]),
+                    'description' => trim($row[3] ?? ''),
                     'stock_alerte' => trim($row[4]),
                     'id_exercice' => $id_exercice // Ajout de l'id de l'exercice
                 ]);
