@@ -23,26 +23,26 @@ class ImmobilisationController extends Controller
 {
     // Afficher la liste des immobilisations
     /**
- * @OA\Get(
- *     path="/api/immobilisations",
- *     tags={"Immobilisations"},
- *     summary="Liste des immobilisations",
- *     @OA\Response(
- *         response=200,
- *         description="Liste récupérée avec succès",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Liste des immobilisations"),
- *             @OA\Property(
- *                 property="data",
- *                 type="array",
- *                 @OA\Items(ref="#/components/schemas/Immobilisation")
- *             )
- *         )
- *     )
- * )
- */
+     * @OA\Get(
+     *     path="/api/immobilisations",
+     *     tags={"Immobilisations"},
+     *     summary="Liste des immobilisations",
+     *     @OA\Response(
+     *         response=200,
+     *         description="Liste récupérée avec succès",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Liste des immobilisations"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(ref="#/components/schemas/Immobilisation")
+     *             )
+     *         )
+     *     )
+     * )
+     */
     public function index()
     {
 
@@ -55,8 +55,8 @@ class ImmobilisationController extends Controller
             'bureau',
             'fournisseur'
         ])->where('isdeleted', false)
-        ->latest()
-        ->paginate(100);
+            ->latest()
+            ->paginate(100);
 
         return new PostResource(true, 'Liste des immobilisations', $immos);
     }
@@ -64,37 +64,37 @@ class ImmobilisationController extends Controller
     // Créer une nouvelle immobilisation
 
     /**
- * @OA\Post(
- *     path="/api/immobilisations",
- *     tags={"Immobilisations"},
- *     summary="Créer une nouvelle immobilisation",
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             required={"id_groupe_type_immo", "id_sous_type_immo", "id_status_immo"},
- *             @OA\Property(property="designation", type="string", example="Scanner HP"),
- *             @OA\Property(property="code", type="string", example="IMMO-2025-002"),
- *             @OA\Property(property="montant_ttc", type="integer", example=250000),
- *             @OA\Property(property="date_acquisition", type="string", format="date"),
- *             @OA\Property(property="date_mise_en_service", type="string", format="date"),
- *             @OA\Property(property="id_groupe_type_immo", type="integer", example=1),
- *             @OA\Property(property="id_sous_type_immo", type="integer", example=1),
- *             @OA\Property(property="id_status_immo", type="integer", example=1),
- *             @OA\Property(property="fournisseur_id", type="integer"),
- *             @OA\Property(property="employe_id", type="integer"),
- *             @OA\Property(property="bureau_id", type="integer"),
- *             @OA\Property(property="vehicule_id", type="integer"),
- *             @OA\Property(property="isVehicule", type="boolean", example=false)
- *         )
- *     ),
- *     @OA\Response(
- *         response=201,
- *         description="Immobilisation créée",
- *         @OA\JsonContent(ref="#/components/schemas/PostResourceImmobilisationResponse")
- *     ),
- *     @OA\Response(response=422, description="Erreur de validation")
- * )
- */
+     * @OA\Post(
+     *     path="/api/immobilisations",
+     *     tags={"Immobilisations"},
+     *     summary="Créer une nouvelle immobilisation",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"id_groupe_type_immo", "id_sous_type_immo", "id_status_immo"},
+     *             @OA\Property(property="designation", type="string", example="Scanner HP"),
+     *             @OA\Property(property="code", type="string", example="IMMO-2025-002"),
+     *             @OA\Property(property="montant_ttc", type="integer", example=250000),
+     *             @OA\Property(property="date_acquisition", type="string", format="date"),
+     *             @OA\Property(property="date_mise_en_service", type="string", format="date"),
+     *             @OA\Property(property="id_groupe_type_immo", type="integer", example=1),
+     *             @OA\Property(property="id_sous_type_immo", type="integer", example=1),
+     *             @OA\Property(property="id_status_immo", type="integer", example=1),
+     *             @OA\Property(property="fournisseur_id", type="integer"),
+     *             @OA\Property(property="employe_id", type="integer"),
+     *             @OA\Property(property="bureau_id", type="integer"),
+     *             @OA\Property(property="vehicule_id", type="integer"),
+     *             @OA\Property(property="isVehicule", type="boolean", example=false)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Immobilisation créée",
+     *         @OA\JsonContent(ref="#/components/schemas/PostResourceImmobilisationResponse")
+     *     ),
+     *     @OA\Response(response=422, description="Erreur de validation")
+     * )
+     */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -153,7 +153,6 @@ class ImmobilisationController extends Controller
             DB::commit();
 
             return new PostResource(true, 'Immobilisation créée avec succès', $immo);
-
         } catch (\Exception $e) {
             // En cas d'erreur, on annule la transaction
             DB::rollBack();
@@ -171,43 +170,43 @@ class ImmobilisationController extends Controller
     // Mettre à jour une immobilisation existante
 
     /**
- * @OA\Put(
- *     path="/api/immobilisations/{id}",
- *     tags={"Immobilisations"},
- *     summary="Mettre à jour une immobilisation",
- *     @OA\Parameter(
- *         name="id",
- *         in="path",
- *         required=true,
- *         description="ID de l'immobilisation",
- *         @OA\Schema(type="integer")
- *     ),
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             required={"id_groupe_type_immo", "id_sous_type_immo", "id_status_immo"},
- *             @OA\Property(property="designation", type="string", example="Scanner HP"),
- *             @OA\Property(property="code", type="string", example="IMMO-2025-002"),
- *             @OA\Property(property="montant_ttc", type="integer", example=250000),
- *             @OA\Property(property="date_acquisition", type="string", format="date"),
- *             @OA\Property(property="date_mise_en_service", type="string", format="date"),
- *             @OA\Property(property="id_groupe_type_immo", type="integer", example=1),
- *             @OA\Property(property="id_sous_type_immo", type="integer", example=1),
- *             @OA\Property(property="id_status_immo", type="integer", example=1),
- *             @OA\Property(property="fournisseur_id", type="integer"),
- *             @OA\Property(property="employe_id", type="integer"),
- *             @OA\Property(property="bureau_id", type="integer"),
- *             @OA\Property(property="vehicule_id", type="integer"),
- *             @OA\Property(property="isVehicule", type="boolean", example=false)
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Immobilisation mise à jour",
- *         @OA\JsonContent(ref="#/components/schemas/PostResourceImmobilisationResponse")
- *     )
- * )
- */
+     * @OA\Put(
+     *     path="/api/immobilisations/{id}",
+     *     tags={"Immobilisations"},
+     *     summary="Mettre à jour une immobilisation",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID de l'immobilisation",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"id_groupe_type_immo", "id_sous_type_immo", "id_status_immo"},
+     *             @OA\Property(property="designation", type="string", example="Scanner HP"),
+     *             @OA\Property(property="code", type="string", example="IMMO-2025-002"),
+     *             @OA\Property(property="montant_ttc", type="integer", example=250000),
+     *             @OA\Property(property="date_acquisition", type="string", format="date"),
+     *             @OA\Property(property="date_mise_en_service", type="string", format="date"),
+     *             @OA\Property(property="id_groupe_type_immo", type="integer", example=1),
+     *             @OA\Property(property="id_sous_type_immo", type="integer", example=1),
+     *             @OA\Property(property="id_status_immo", type="integer", example=1),
+     *             @OA\Property(property="fournisseur_id", type="integer"),
+     *             @OA\Property(property="employe_id", type="integer"),
+     *             @OA\Property(property="bureau_id", type="integer"),
+     *             @OA\Property(property="vehicule_id", type="integer"),
+     *             @OA\Property(property="isVehicule", type="boolean", example=false)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Immobilisation mise à jour",
+     *         @OA\JsonContent(ref="#/components/schemas/PostResourceImmobilisationResponse")
+     *     )
+     * )
+     */
     public function update(Request $request, Immobilisation $immobilisation)
     {
         $validator = Validator::make($request->all(), [
@@ -245,28 +244,28 @@ class ImmobilisationController extends Controller
     // Supprimer une immobilisation
 
     /**
- * @OA\Delete(
- *     path="/api/immobilisations/{id}",
- *     tags={"Immobilisations"},
- *     summary="Supprimer une immobilisation",
- *     @OA\Parameter(
- *         name="id",
- *         in="path",
- *         required=true,
- *         @OA\Schema(type="integer")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Immobilisation supprimée",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Immobilisation supprimée avec succès"),
- *             @OA\Property(property="data", type="null", example=null)
- *         )
- *     )
- * )
- */
+     * @OA\Delete(
+     *     path="/api/immobilisations/{id}",
+     *     tags={"Immobilisations"},
+     *     summary="Supprimer une immobilisation",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Immobilisation supprimée",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Immobilisation supprimée avec succès"),
+     *             @OA\Property(property="data", type="null", example=null)
+     *         )
+     *     )
+     * )
+     */
     public function destroy(Immobilisation $immobilisation)
     {
         $immobilisation->isdeleted = true;
@@ -288,9 +287,9 @@ class ImmobilisationController extends Controller
             'bureau',
             'fournisseur'
         ])
-        ->where('isdeleted', false)
-        ->latest()
-        ->get();
+            ->where('isdeleted', false)
+            ->latest()
+            ->get();
 
         $pdf = \Pdf::loadView('pdf.immobilisations', compact('immobilisations'));
 
@@ -369,14 +368,21 @@ class ImmobilisationController extends Controller
                 $query->where('code', $code)
                     ->orWhere('designation', $designation);
             })
-            ->where('isdeleted', false) // <--- C'est la ligne CLEF
-            ->first();
+                ->where('isdeleted', false) // <--- C'est la ligne CLEF
+                ->first();
 
             if ($immobilisationExistante) {
                 $msg = "Ligne $index ignorée : immobilisation avec code '$code' ou désignation '$designation' existe déjà et est ACTIVE.";
                 \Log::info($msg);
                 $ignoredRows[] = $msg;
                 continue; // On passe à la ligne suivante du fichier
+            }
+
+            if (empty($bureau)) {
+                $msg = "Ligne $index ignorée : le libellé du bureau est vide.";
+                \Log::warning($msg);
+                $ignoredRows[] = $msg;
+                continue;
             }
 
             // 🔍 Trouver les IDs correspondants
@@ -398,7 +404,7 @@ class ImmobilisationController extends Controller
 
             $id_sous_type_immo = SousTypeImmo::firstOrCreate([
                 'libelle' => $sous_type_immo,
-                'compte'=> $compte,
+                'compte' => $compte,
                 'id_type_immo' => $type_immo_id
             ]);
 
@@ -454,11 +460,9 @@ class ImmobilisationController extends Controller
             //date_mise_en_service_formatee
             if (\DateTime::createFromFormat('Y-m-d', $date_mise_en_service) !== false) {
                 $date_mise_en_service_formatee = \Carbon\Carbon::createFromFormat('Y-m-d', $date_mise_en_service)->format('Y-m-d');
-            }
-            elseif (\DateTime::createFromFormat('d/m/Y', $date_mise_en_service) !== false) {
+            } elseif (\DateTime::createFromFormat('d/m/Y', $date_mise_en_service) !== false) {
                 $date_mise_en_service_formatee = \Carbon\Carbon::createFromFormat('d/m/Y', $date_mise_en_service)->format('Y-m-d');
-            }
-            elseif (\DateTime::createFromFormat('m/d/Y', $date_mise_en_service) !== false) {
+            } elseif (\DateTime::createFromFormat('m/d/Y', $date_mise_en_service) !== false) {
                 $date_mise_en_service_formatee = \Carbon\Carbon::createFromFormat('m/d/Y', $date_mise_en_service)->format('Y-m-d');
             }
 
@@ -522,5 +526,4 @@ class ImmobilisationController extends Controller
             'ignored' => $ignoredRows
         ]);
     }
-
 }
