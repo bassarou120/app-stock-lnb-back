@@ -36,6 +36,8 @@ class VehiculeController extends Controller
             'vehicules.*.puissance' => 'nullable|string|max:100',
             'vehicules.*.places_assises' => 'nullable|integer',
             'vehicules.*.energie' => 'nullable|string|max:50',
+            'vehicules.*.date_amortissement' => 'required',
+            'vehicules.*.nbreannee_amortissement' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
@@ -58,6 +60,8 @@ class VehiculeController extends Controller
                     'puissance' => $vehiculeData['puissance'] ?? null,
                     'places_assises' => $vehiculeData['places_assises'] ?? null,
                     'energie' => $vehiculeData['energie'] ?? null,
+                    'date_amortissement' => $vehiculeData['date_amortissement'],
+                    'nbreannee_amortissement' => $vehiculeData['nbreannee_amortissement']
                 ]);
 
 
@@ -87,6 +91,8 @@ class VehiculeController extends Controller
             'puissance' => 'nullable|string|max:100',
             'places_assises' => 'nullable|integer',
             'energie' => 'nullable|string|max:50',
+            'date_amortissement' => 'nullable|date',
+            'nbreannee_amortissement' => 'nullable|integer'
         ]);
 
         if ($validator->fails()) {
