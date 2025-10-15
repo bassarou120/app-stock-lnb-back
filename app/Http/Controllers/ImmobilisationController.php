@@ -299,7 +299,7 @@ class ImmobilisationController extends Controller
 
     public function import(Request $request)
     {
-        // 1️⃣ Validation
+        // 1️⃣ Validation du fichier
         $validator = Validator::make($request->all(), [
             'file' => 'required|mimes:xlsx,xls',
         ]);
@@ -308,193 +308,141 @@ class ImmobilisationController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // 2️⃣ Charger le fichier
+        // 2️⃣ Chargement du fichier
         $spreadsheet = IOFactory::load($request->file('file'));
         $sheet = $spreadsheet->getActiveSheet();
         $rows = $sheet->toArray();
 
-        // Tableau pour stocker les lignes ignorées
         $ignoredRows = [];
+        $importedCount = 0;
+        $realLine = 1; // correspond à la ligne Excel réelle (pour les logs)
 
-        // 3️⃣ Boucler sur les lignes (en ignorant la première ligne d'entêtes)
+        // 3️⃣ Boucle sur les lignes (en ignorant la première ligne d'entête)
         foreach ($rows as $index => $row) {
-            if ($index === 0) continue; // Ignore header
+            $realLine++;
 
-            // 🛡️ Vérifie que la ligne a bien au moins 22 colonnes
+            if ($index === 0) continue; // sauter l'entête
+
+            // 🔍 Vérifie si la ligne est entièrement vide
+            $isEmpty = true;
+            foreach ($row as $cell) {
+                if (trim((string)$cell) !== '') {
+                    $isEmpty = false;
+                    break;
+                }
+            }
+
+            if ($isEmpty) {
+                continue; // Ignore totalement la ligne vide
+            }
+
+            // 🛡️ Vérifie le nombre de colonnes
             if (count($row) < 22) {
-                $msg = "Ligne $index ignorée : colonnes insuffisantes (" . count($row) . ")";
+                $msg = "Ligne $realLine ignorée : colonnes insuffisantes (" . count($row) . ")";
                 \Log::warning($msg);
                 $ignoredRows[] = $msg;
                 continue;
             }
 
-            $bureau = $row[0];
-            $employe_fullname = $row[1];
-            $date_mouvement = $row[2];
-            $fournisseur = $row[3];
-            $compte = $row[4];
-            $type_immo = $row[5];
-            $designation = trim($row[6]);
-            $isVehicule = $row[7];
-            $vehicule = $row[8];
-            $code = trim($row[9]);
-            $groupe_type_immo = $row[10];
-            $sous_type_immo = $row[11];
-            $duree_amorti = $row[12];
-            $etat = $row[13];
-            $taux_ammortissement = $row[14];
-            $duree_ammortissement = round($row[15]);
-            $date_acquisition = $row[16];
-            $date_mise_en_service = $row[17];
-            $observation = $row[18];
-            $status_immo = $row[19];
-            $montant_ttc = $row[20];
-            $reference_estampillonnage = $row[21];
+            // --- Extraction propre ---
+            [
+                $bureau,
+                $employe_fullname,
+                $date_mouvement,
+                $fournisseur,
+                $compte,
+                $type_immo,
+                $designation,
+                $isVehicule,
+                $vehicule,
+                $code,
+                $groupe_type_immo,
+                $sous_type_immo,
+                $duree_amorti,
+                $etat,
+                $taux_ammortissement,
+                $duree_ammortissement,
+                $date_acquisition,
+                $date_mise_en_service,
+                $observation,
+                $status_immo,
+                $montant_ttc,
+                $reference_estampillonnage
+            ] = array_map(fn($v) => trim((string)$v), $row);
 
-            // 🔎 Vérification doublons EXACTEMENT comme pour les articles
-            // $immobilisationExistante = Immobilisation::where('code', $code)
-            //     ->orWhere('designation', $designation)
-            //     ->first();
-
-            // if ($immobilisationExistante) {
-            //     $msg = "Ligne $index ignorée : immobilisation avec code '$code' ou désignation '$designation' existe déjà.";
-            //     \Log::info($msg);
-            //     $ignoredRows[] = $msg;
-            //     continue;
-            // }
-
-            // 🔎 Vérification des doublons : on ne considère comme un doublon que si
-            // l'enregistrement existe DEJA ET qu'il n'est PAS supprimé (isdeleted = false).
+            // 🔎 Vérif doublon (isdeleted = false)
             $immobilisationExistante = Immobilisation::where(function ($query) use ($code, $designation) {
                 $query->where('code', $code)
                     ->orWhere('designation', $designation);
             })
-            ->where('isdeleted', false) // <--- C'est la ligne CLEF
+            ->where('isdeleted', false)
             ->first();
 
             if ($immobilisationExistante) {
-                $msg = "Ligne $index ignorée : immobilisation avec code '$code' ou désignation '$designation' existe déjà et est ACTIVE.";
+                $msg = "Ligne $realLine ignorée : immobilisation avec code '$code' ou désignation '$designation' déjà active.";
                 \Log::info($msg);
                 $ignoredRows[] = $msg;
-                continue; // On passe à la ligne suivante du fichier
+                continue;
             }
 
-            // 🔍 Trouver les IDs correspondants
+            // --- Relations liées ---
             $bureau_id = Bureau::firstOrCreate(['libelle_bureau' => $bureau]);
             $fournisseur_id = Fournisseur::firstOrCreate(['nom' => $fournisseur]);
             $type_immo_id = TypeImmo::firstOrCreate(['libelle_typeImmo' => $type_immo, 'compte' => $compte])->id;
 
-            if (!empty($groupe_type_immo)) {
-                $id_groupe_type_immo = GroupeTypeImmo::firstOrCreate([
-                    'libelle' => $groupe_type_immo,
-                    'compte' => $compte
-                ]);
-            } else {
-                $msg = "Ligne $index ignorée : groupe type immo vide.";
+            if (empty($groupe_type_immo)) {
+                $msg = "Ligne $realLine ignorée : groupe type immo vide.";
                 \Log::warning($msg);
                 $ignoredRows[] = $msg;
                 continue;
             }
 
+            $id_groupe_type_immo = GroupeTypeImmo::firstOrCreate([
+                'libelle' => $groupe_type_immo,
+                'compte' => $compte
+            ]);
+
             $id_sous_type_immo = SousTypeImmo::firstOrCreate([
                 'libelle' => $sous_type_immo,
-                'compte'=> $compte,
+                'compte' => $compte,
                 'id_type_immo' => $type_immo_id
             ]);
 
             $id_status_immo = StatusImmo::firstOrCreate(['libelle_status_immo' => $status_immo]);
 
-            // 👤 Découper nom et prénom
+            // 👤 Employé
             $employe = null;
             if (!empty($employe_fullname)) {
-                // 👤 Découper nom et prénom
-                $parts = explode(' ', $employe_fullname);
+                $parts = preg_split('/\s+/', trim($employe_fullname));
                 $nom = array_shift($parts);
                 $prenom = implode(' ', $parts);
-
                 if (!empty($nom) && !empty($prenom)) {
-                    $employe = Employe::firstOrCreate([
-                        'nom' => $nom,
-                        'prenom' => $prenom
-                    ], [
-                        'email' => null
-                    ]);
+                    $employe = Employe::firstOrCreate(['nom' => $nom, 'prenom' => $prenom]);
                 }
             }
 
-            $date_mouvement_formatee = null;
-            $date_acquisition_formatee = null;
-            $date_misenservice_formatee = null;
-            // date_mouvement_formatee Essayer le format Y-m-d (Année-Mois-Jour)
-            if (\DateTime::createFromFormat('Y-m-d', $date_mouvement) !== false) {
-                $date_mouvement_formatee = \Carbon\Carbon::createFromFormat('Y-m-d', $date_mouvement)->format('Y-m-d');
-            }
-            // Sinon, essayer le format d/m/Y (Jour/Mois/Année)
-            elseif (\DateTime::createFromFormat('d/m/Y', $date_mouvement) !== false) {
-                $date_mouvement_formatee = \Carbon\Carbon::createFromFormat('d/m/Y', $date_mouvement)->format('Y-m-d');
-            }
-            // Sinon, essayer le format m/d/Y (Mois/Jour/Année)
-            elseif (\DateTime::createFromFormat('m/d/Y', $date_mouvement) !== false) {
-                $date_mouvement_formatee = \Carbon\Carbon::createFromFormat('m/d/Y', $date_mouvement)->format('Y-m-d');
-            }
+            // 🗓️ Formats de dates automatiques
+            $formats = ['Y-m-d', 'd/m/Y', 'm/d/Y'];
+            $formatDate = fn($date) => collect($formats)
+                ->map(fn($fmt) => \DateTime::createFromFormat($fmt, $date))
+                ->filter()
+                ->first()?->format('Y-m-d');
 
-            //date_acquisition_formatee
-            if (\DateTime::createFromFormat('Y-m-d', $date_acquisition) !== false) {
-                $date_acquisition_formatee = \Carbon\Carbon::createFromFormat('Y-m-d', $date_acquisition)->format('Y-m-d');
-            }
-            // Sinon, essayer le format d/m/Y (Jour/Mois/Année)
-            elseif (\DateTime::createFromFormat('d/m/Y', $date_acquisition) !== false) {
-                $date_acquisition_formatee = \Carbon\Carbon::createFromFormat('d/m/Y', $date_acquisition)->format('Y-m-d');
-            }
-            // Sinon, essayer le format m/d/Y (Mois/Jour/Année)
-            elseif (\DateTime::createFromFormat('m/d/Y', $date_acquisition) !== false) {
-                $date_acquisition_formatee = \Carbon\Carbon::createFromFormat('m/d/Y', $date_acquisition)->format('Y-m-d');
-            }
+            $date_mouvement_formatee = $formatDate($date_mouvement);
+            $date_acquisition_formatee = $formatDate($date_acquisition);
+            $date_mise_en_service_formatee = $formatDate($date_mise_en_service);
 
-            //date_mise_en_service_formatee
-            if (\DateTime::createFromFormat('Y-m-d', $date_mise_en_service) !== false) {
-                $date_mise_en_service_formatee = \Carbon\Carbon::createFromFormat('Y-m-d', $date_mise_en_service)->format('Y-m-d');
-            }
-            elseif (\DateTime::createFromFormat('d/m/Y', $date_mise_en_service) !== false) {
-                $date_mise_en_service_formatee = \Carbon\Carbon::createFromFormat('d/m/Y', $date_mise_en_service)->format('Y-m-d');
-            }
-            elseif (\DateTime::createFromFormat('m/d/Y', $date_mise_en_service) !== false) {
-                $date_mise_en_service_formatee = \Carbon\Carbon::createFromFormat('m/d/Y', $date_mise_en_service)->format('Y-m-d');
-            }
-
-
-
-            // Vérifier si un format valide a été trouvé
-            if (is_null($date_mouvement_formatee)) {
-                $msg = "Ligne $index ignorée : Format de date de mouvement '$date_mouvement' invalide.";
+            if (!$date_mouvement_formatee || !$date_acquisition_formatee || !$date_mise_en_service_formatee) {
+                $msg = "Ligne $realLine ignorée : une ou plusieurs dates invalides.";
                 \Log::warning($msg);
                 $ignoredRows[] = $msg;
                 continue;
             }
 
-            if (is_null($date_acquisition_formatee)) {
-                // Le message d'erreur corrigé ici
-                $msg = "Ligne $index ignorée : Format de date d'acquisition '$date_acquisition' invalide.";
-                \Log::warning($msg);
-                $ignoredRows[] = $msg;
-                continue;
-            }
-
-            if (is_null($date_mise_en_service_formatee)) {
-                // Le message d'erreur corrigé ici
-                $msg = "Ligne $index ignorée : Format de date de mise en service '$date_mise_en_service' invalide.";
-                \Log::warning($msg);
-                $ignoredRows[] = $msg;
-                continue;
-            }
-
-
-
-
-            // ✅ Créer l'immo
+            // ✅ Insertion
             Immobilisation::create([
                 'bureau_id' => $bureau_id->id,
-                'employe_id' => $employe ? $employe->id : null,
+                'employe_id' => $employe?->id,
                 'date_mouvement' => $date_mouvement_formatee,
                 'fournisseur_id' => $fournisseur_id->id,
                 'designation' => $designation,
@@ -506,21 +454,24 @@ class ImmobilisationController extends Controller
                 'duree_amorti' => $duree_amorti,
                 'etat' => $etat,
                 'taux_ammortissement' => $taux_ammortissement,
-                'duree_ammortissement' => $duree_ammortissement,
+                'duree_ammortissement' => round($duree_ammortissement),
                 'date_acquisition' => $date_acquisition_formatee,
                 'date_mise_en_service' => $date_mise_en_service_formatee,
                 'observation' => $observation,
                 'id_status_immo' => $id_status_immo->id,
                 'montant_ttc' => $montant_ttc,
                 'reference_estampillonnage' => $reference_estampillonnage,
-                'isdeleted' => false
+                'isdeleted' => false,
             ]);
+
+            $importedCount++;
         }
 
         return response()->json([
-            'message' => 'Import terminé !',
+            'message' => "Import terminé ! ($importedCount lignes importées)",
             'ignored' => $ignoredRows
         ]);
     }
+
 
 }
