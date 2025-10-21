@@ -144,7 +144,7 @@ class VehiculeController extends Controller
         return $pdf->download('liste_vehicules.pdf');
     }
 
-    public function import(Request $request)
+    /* public function import(Request $request)
     {
         // 1️⃣ Validation
         $validator = Validator::make($request->all(), [
@@ -266,7 +266,124 @@ class VehiculeController extends Controller
             ], 500);
         }
 
+    } */
+
+    public function import(Request $request)
+{
+    // 1️⃣ Validation (Inchangée)
+    $validator = Validator::make($request->all(), [
+        'file' => 'required|mimes:xlsx,xls',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
     }
+
+    // 2️⃣ Initialisation des compteurs et du tableau de rapport (Inchangée)
+    $totalRows = 0;
+    $successCount = 0;
+    $ignoredRows = [];
+
+    try {
+        // 2️⃣ Charger le fichier (Inchangé)
+        $spreadsheet = IOFactory::load($request->file('file'));
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray();
+
+        // 3️⃣ Boucler sur les lignes (en ignorant la première ligne d'entêtes)
+        foreach ($rows as $index => $row) {
+            if ($index === 0) continue; // Ignore header
+
+            // 🛑 AJOUT CLÉ : Ignorer les lignes complètement vides 🛑
+            // array_filter supprime les valeurs nulles, vides ou égales à 0 (sauf si '0' est le contenu).
+            // Si le tableau filtré est vide, c'est que la ligne entière est vide ou contient des espaces.
+            if (empty(array_filter($row, function($value) {
+                // Considérez la ligne vide si toutes les valeurs sont nulles ou des chaînes vides après avoir enlevé les espaces
+                return !is_null($value) && trim($value) !== ''; 
+            }))) {
+                continue; // Passe à la ligne suivante (ignore cette ligne vide)
+            }
+            // ----------------------------------------------------
+
+            $totalRows++; // Compter le nombre total de LIGNES DE DONNÉES réelles traitées.
+    
+            $immatriculation = $row[0];
+            $numero_chassis = $row[1];
+            // ... (Définition des autres variables inchangée) ...
+            $kilometrage = $row[2];
+            $date_mise_en_service = $row[3];
+            $marqueNom = $row[4];
+            $modeleNom = $row[5];
+            $puissance = $row[6];
+            $places_assises = $row[7];
+            $energie = $row[8];
+
+            // 🛡️ La vérification des données essentielles reste très importante
+            if (empty($immatriculation) || empty($marqueNom)) {
+                $msg = "Ligne " . ($index + 1) . " ignorée : Immatriculation ou Marque manquante. (Ligne de données non complètement vide)";
+                $ignoredRows[] = $msg;
+                \Log::warning($msg);
+                continue;
+            }
+            
+            // 🔎 Vérification de doublons (Inchangée)
+            $vehiculeExiste = Vehicule::where('immatriculation', $immatriculation)
+                ->orWhere('numero_chassis', $numero_chassis)
+                ->exists();
+
+            if ($vehiculeExiste) {
+                $msg = "Ligne " . ($index + 1) . " ignorée : Véhicule avec immatriculation '$immatriculation' ou chassis '$numero_chassis' existe déjà.";
+                $ignoredRows[] = $msg;
+                \Log::info($msg);
+                continue;
+            }
+            
+            // 🔎 Trouver les IDs correspondants (Inchangée)
+            $marque = Marque::firstOrCreate(['libelle' => $marqueNom]);
+            $modele = Modele::firstOrCreate([
+                'libelle_modele' => $modeleNom,
+            ]);
+            
+            // 🚗 Créer le véhicule (Inchangée)
+            Vehicule::create([
+                'immatriculation' => $immatriculation,
+                'numero_chassis' => $numero_chassis,
+                'kilometrage' => $kilometrage,
+                'date_mise_en_service' => $date_mise_en_service,
+                'puissance' => $puissance,
+                'places_assises' => $places_assises,
+                'energie' => $energie,
+                'marque_id' => $marque->id,
+                'modele_id' => $modele->id,
+            ]); 
+            $successCount++;
+        }
+
+        // 4️⃣ Retourner la réponse (Inchangée)
+        $summary = "Importation terminée. " . $successCount . " ligne(s) ajoutée(s) sur " . $totalRows . " ligne(s) de données traitée(s).";
+        
+        if (!empty($ignoredRows)) {
+            $summary .= " Attention : " . count($ignoredRows) . " ligne(s) ont été ignorée(s).";
+        }
+
+        $response = [
+            'message' => $summary,
+            'success_count' => $successCount,
+            'total_rows_processed' => $totalRows,
+            'ignored' => $ignoredRows
+        ];
+
+        return response()->json($response);
+
+    } catch (\Exception $e) {
+        // En cas d'erreur de lecture de fichier ou autre
+        return response()->json([
+            'error' => 'Erreur lors de l\'importation du fichier.',
+            'details' => $e->getMessage()
+        ], 500);
+    }
+}
+
 
     public function addCarteGrise(Request $request, Vehicule $vehicule)
     {
