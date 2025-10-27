@@ -22,6 +22,14 @@ return new class extends Migration
             $table->integer('nbreannee_amortissement')->nullable()->default(5);
             $table->string('date_amortissement')->nullable();
 
+            $table->foreignId('id_sous_type_immo')
+                ->constrained('sous_type_immos')
+                ->onDelete('cascade');
+
+            $table->foreignId('id_groupe_type_immo')
+                ->constrained('groupe_type_immos')
+                ->onDelete('cascade');
+
             $table->timestamps();
         });
     }
