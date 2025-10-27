@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>RAPPORT {{ $reportTypeLabel }}</title>
+  <title>RAPPORT DES IMMOBILISATIONS PAR BUREAU</title>
   <style>
     @page {
       size: A4 landscape;
@@ -216,7 +216,7 @@
 
         <td colspan="2" style="text-align: center;">
         <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
-          <h2>RAPPORT INDIVIDUEL</h2>
+          <h2>RAPPORT DES IMMOBILISATIONS PAR BUREAU</h2>
           (Période du <strong>{{ $filterLabels['date_debut'] ?? 'Toutes les dates' }}</strong> au <strong>{{ $filterLabels['date_fin'] ?? 'Toutes les dates' }}</strong>)
         </td>
       </tr>
@@ -228,12 +228,15 @@
       <tr>
         <td style="width: 50%;">
           <strong>CRITERES D'EXPORTATION</strong><br/><br/>
-          <strong style="font-size:11px;">Article :</strong> {{ $filterLabels['article'] ?? 'Tous' }}<br/>
-
-            <strong style="font-size:11px;">Fournisseur :</strong> {{ $filterLabels['fournisseur'] ?? 'Tous' }}<br/>
+          <strong style="font-size:11px;">Bureau Sélectionné :</strong>
+              @if(request('bureau_id'))
+                $immobilisations->first()->bureau->libelle_bureau ?? 'Non trouvé' }}
+               @else
+                Tous les bureaux
+              @endif<br/>
         </td>
-        <td style="width: 50%;">
-          -
+        <td style="width: 50%;text-align: right;">
+          <strong>Nombre d'immobilisations :</strong> {{ $immobilisations->count() }}
         </td>
       </tr>
     </table>
@@ -242,48 +245,42 @@
   <div class="table-section">
     @if($rapportData->isEmpty())
       <div style="text-align: center; font-size: 10pt; margin-top: 20px;">
-        Aucun mouvement de stock trouvé pour les critères de recherche spécifiés.
+        Aucun bureau trouvé pour les critères de recherche spécifiés.
       </div>
     @else
       <table>
-        <thead>
-          <tr>
-                <th>Numéro</th>
-                <th>Date</th>
-                <th>Stock Init.</th>
-                <th>Entrées</th>
-                <th>Sorties</th>
-                <th>Stock final</th>
-                <th>PU</th>
-                <th>Observations</th>
-
-          </tr>
-        </thead>
+         <thead>
+           <tr>
+             <th style="width: 3%;">N°</th>
+             <th style="width: 8%;">Code</th>
+             <th style="width: 15%;">Désignation</th>
+             <th style="width: 10%;">Montant TTC</th>
+             <th style="width: 10%;">Bureau</th>
+             <th style="width: 8%;">Statut</th>
+             <th style="width: 8%;">Personnel</th>
+             <th style="width: 10%;">Groupe Type</th>
+             <th style="width: 10%;">Sous Type</th>
+             <th style="width: 8%;">Date Acquis.</th>
+             <th style="width: 10%;">Observation</th>
+            </tr>
+           </thead>
         <tbody>
-            @foreach ($rapportData as $index => $mouvement)
+            @foreach ($immobilisations as $index => $immo)
             <tr>
                 <td>{{ $index + 1 }}</td>
-                <td class="col-date">{{ \Carbon\Carbon::parse($mouvement['date_mouvement'])->format('d/m/Y') }}</td>
-
-                <td class="empty-cell">
-                    {{ $mouvement['stock_initial_ligne'] ?? '0' }}
-                </td>
-                <td class="number">
-                    {{ number_format($mouvement['entrees'], 0, ',', ' ') }}
-                </td>
-                <td class="number">
-                    {{ number_format($mouvement['sorties'], 0, ',', ' ') }}
-                </td>
-                <td class="number">
-                    {{ number_format($mouvement['stock_final'], 0, ',', ' ') }}
-                </td>
-                <td class="currency">
-                    {{ number_format($mouvement['pu'] ?? 0, 0, ',', ' ') }}
-                </td>
-                <td class="observations-text">
-                    {{ $mouvement['observations'] }}
-                </td>
-            </tr>
+                <td>{{ $immo->code }}</td>
+                 <td>{{ $immo->designation }}</td>
+                 <td class="right currency">{{ number_format($immo->montant_ttc, 0, ',', ' ') }} F CFA
+                 </td>
+                 <td>{{ $immo->bureau->libelle_bureau ?? 'Non défini' }}</td>
+                 <td>{{ $immo->statusImmo->libelle_status_immo ?? 'N/A' }}</td>
+                 <td>{{ $immo->employe->fullnameEmploye ?? 'Non défini' }}</td>
+                 <td>{{ $immo->groupeTypeImmo->libelle ?? 'N/A' }}</td>
+                 <td>{{ $immo->sousTypeImmo->libelle ?? 'N/A' }}</td>
+                 <td class="center">{{ \Carbon\Carbon::parse($immo->date_acquisition)->format('d/m/Y') }}
+                 </td>
+                 <td>{{ $immo->observation }}</td>
+               </tr>
             @endforeach
         </tbody>
       </table>
@@ -292,7 +289,7 @@
 
 
     <div class="footer-section">
-        <p>Edité le 19/08/2025</p>
+        <p>Edité le {{ date('d/m/Y à H:i:s') }}</p>
     </div>
 
 

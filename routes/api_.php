@@ -184,14 +184,13 @@ Route::get('/rapports/transferts', [ImmobilisationRapportController::class, 'get
 Route::get('/rapports/interventions', [ImmobilisationRapportController::class, 'getRapportData']);
 
 Route::get('/rapports/immobilisations/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportImmos']);
+
 // Routes pour l'impression PDF des rapports
 Route::get('/rapports/immobilisations/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
 // Route pour l'impression PDF des rapports de transferts
 Route::get('/rapports/transferts/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
 // Route pour l'impression PDF des rapports d'interventions
 Route::get('/rapports/interventions/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
-// Route pour l'impression PDF des rapports de bureau
-Route::get('/rapports/bureau/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
 // Routes API pour les Rapports de Stock (Entrée et Sortie)
 Route::get('/rapports/stock', [StockRapportController::class, 'getRapportData']);
 Route::get('/rapports/stock/imprimer', [StockRapportController::class, 'imprimerRapportStock']);
@@ -259,7 +258,8 @@ Route::get('/view-file', [MouvementStockController::class, 'viewFile']);
 
 Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController::class, 'downloadGroupedFile']);
 
-Route::get('/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']);
+/* Route::post('/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']); */
+Route::match(['GET', 'POST'], '/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']);
 
 Route::get('/mouvements/demande-sortie/check-status-and-generate/{id}', [MouvementStockController::class, 'checkStatusAccorde']);
 

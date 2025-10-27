@@ -6,7 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Parametrage\Modele;
 use App\Models\Parametrage\Marque;
-
+use App\Models\Parametrage\GroupeTypeImmo;
+use App\Models\Parametrage\SousTypeImmo;
 
 class Vehicule extends Model
 {
@@ -24,7 +25,9 @@ class Vehicule extends Model
         'energie',
         'nbreannee_amortissement',
         'date_amortissement',
-        'carte_grise'
+        'carte_grise',
+        'id_sous_type_immo',
+        'id_groupe_type_immo'
     ];
 
     public function marque()
@@ -35,5 +38,13 @@ class Vehicule extends Model
     public function modele()
     {
         return $this->belongsTo(Modele::class, 'modele_id');
+    }
+
+    public function sousTypeImmo() {
+        return $this->belongsTo(SousTypeImmo::class, 'id_sous_type_immo');
+    }
+
+    public function groupeTypeImmo() {
+        return $this->belongsTo(GroupeTypeImmo::class, 'id_groupe_type_immo');
     }
 }

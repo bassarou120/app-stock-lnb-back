@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Vehicule;
+use App\Models\Parametrage\TypeImmo;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -10,18 +11,21 @@ use Illuminate\Support\Facades\DB;
 
 use App\Models\Parametrage\Marque;
 use App\Models\Parametrage\Modele;
+use App\Models\Parametrage\GroupeTypeImmo;
+use App\Models\Parametrage\SousTypeImmo;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class VehiculeController extends Controller
 {
      // Afficher la liste des véhicules
-     public function index()
+    public function index()
      {
-         $vehicules = Vehicule::with(['modele', 'marque'])
+         $vehicules = Vehicule::with(['modele', 'marque', 'sousTypeImmo', 'groupeTypeImmo'])
          ->where('isdeleted', false)
          ->latest()->paginate(1000);
+
          return new PostResource(true, 'Liste des véhicules', $vehicules);
-     }
+     } 
 
      public function storeBatch(Request $request)
     {
@@ -38,6 +42,8 @@ class VehiculeController extends Controller
             'vehicules.*.energie' => 'nullable|string|max:50',
             'vehicules.*.date_amortissement' => 'required',
             'vehicules.*.nbreannee_amortissement' => 'required|integer',
+            'vehicules.*.id_sous_type_immo' => 'required|exists:sous_type_immos,id',
+            'vehicules.*.id_groupe_type_immo' => 'required|exists:groupe_type_immos,id',
         ]);
 
         if ($validator->fails()) {
@@ -50,6 +56,7 @@ class VehiculeController extends Controller
         DB::beginTransaction();
         try {
             foreach ($request->vehicules as $vehiculeData) {
+                //dd($vehiculeData);
                 $vehicule = Vehicule::create([
                     'marque_id' => $vehiculeData['marque_id'],
                     'modele_id' => $vehiculeData['modele_id'],
@@ -61,7 +68,9 @@ class VehiculeController extends Controller
                     'places_assises' => $vehiculeData['places_assises'] ?? null,
                     'energie' => $vehiculeData['energie'] ?? null,
                     'date_amortissement' => $vehiculeData['date_amortissement'],
-                    'nbreannee_amortissement' => $vehiculeData['nbreannee_amortissement']
+                    'nbreannee_amortissement' => $vehiculeData['nbreannee_amortissement'],
+                    'id_sous_type_immo' => $vehiculeData['id_sous_type_immo'],
+                    'id_groupe_type_immo' => $vehiculeData['id_groupe_type_immo'],
                 ]);
 
 
@@ -69,9 +78,16 @@ class VehiculeController extends Controller
                 $vehicules[] = $vehicule;
             }
             DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['error' => 'Une erreur est survenue lors de l\'enregistrement des vehicule.'], 500);
+        } catch (\Illuminate\Database\QueryException $qe) {
+        DB::rollBack();
+        // Affiche l'erreur SQL exacte
+        return response()->json([
+            'status' => 'query_error',
+            'message' => $qe->getMessage(),
+            'sql' => $qe->getSql(),
+            'bindings' => $qe->getBindings()
+        ], 500);
+
         }
 
         return new PostResource(true, count($vehicules) . ' vehicules créés avec succès', $vehicules);
@@ -92,7 +108,9 @@ class VehiculeController extends Controller
             'places_assises' => 'nullable|integer',
             'energie' => 'nullable|string|max:50',
             'date_amortissement' => 'nullable|date',
-            'nbreannee_amortissement' => 'nullable|integer'
+            'nbreannee_amortissement' => 'nullable|integer',
+            'id_sous_type_immo' => 'required|exists:sous_type_immos,id',
+            'id_groupe_type_immo' => 'required|exists:groupe_type_immos,id',
         ]);
 
         if ($validator->fails()) {
@@ -309,7 +327,7 @@ class VehiculeController extends Controller
     
             $immatriculation = $row[0];
             $numero_chassis = $row[1];
-            // ... (Définition des autres variables inchangée) ...
+
             $kilometrage = $row[2];
             $date_mise_en_service = $row[3];
             $marqueNom = $row[4];
@@ -317,6 +335,32 @@ class VehiculeController extends Controller
             $puissance = $row[6];
             $places_assises = $row[7];
             $energie = $row[8];
+            $sousTypeNom = $row[9]; 
+            $groupeTypeNom = $row[10]; 
+            $typeImmoId = TypeImmo::where('libelle_typeImmo', 'Véhicules')->value('id'); // récupère l'id numérique
+            $compte = $row[12];
+
+            
+            $sousType = null;
+            if (!empty($sousTypeNom)) {
+                $sousType = SousTypeImmo::firstOrCreate(
+                    ['libelle' => $sousTypeNom],
+                    [
+                        'id_type_immo' => $typeImmoId,   // Obligatoire
+                        'compte' => $compte           // Obligatoire
+                    ]
+                );
+            }
+
+            $groupeType = null;
+            if(!empty($groupeTypeNom)) {
+                $groupeType = GroupeTypeImmo::firstOrCreate(
+                    ['libelle' => $groupeTypeNom],
+                    [
+                        'compte' => $compte           // Obligatoire
+                    ]
+                );
+            }
 
             // 🛡️ La vérification des données essentielles reste très importante
             if (empty($immatriculation) || empty($marqueNom)) {
@@ -355,6 +399,8 @@ class VehiculeController extends Controller
                 'energie' => $energie,
                 'marque_id' => $marque->id,
                 'modele_id' => $modele->id,
+                'id_sous_type_immo' => $sousType?->id,
+                'id_groupe_type_immo' => $groupeType?->id,
             ]); 
             $successCount++;
         }
