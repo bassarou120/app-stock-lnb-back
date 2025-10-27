@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Vehicule;
+use App\Models\Parametrage\TypeImmo;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -326,7 +327,7 @@ class VehiculeController extends Controller
     
             $immatriculation = $row[0];
             $numero_chassis = $row[1];
-            // ... (Définition des autres variables inchangée) ...
+
             $kilometrage = $row[2];
             $date_mise_en_service = $row[3];
             $marqueNom = $row[4];
@@ -334,6 +335,32 @@ class VehiculeController extends Controller
             $puissance = $row[6];
             $places_assises = $row[7];
             $energie = $row[8];
+            $sousTypeNom = $row[9]; 
+            $groupeTypeNom = $row[10]; 
+            $typeImmoId = TypeImmo::where('libelle_typeImmo', 'Véhicules')->value('id'); // récupère l'id numérique
+            $compte = $row[12];
+
+            
+            $sousType = null;
+            if (!empty($sousTypeNom)) {
+                $sousType = SousTypeImmo::firstOrCreate(
+                    ['libelle' => $sousTypeNom],
+                    [
+                        'id_type_immo' => $typeImmoId,   // Obligatoire
+                        'compte' => $compte           // Obligatoire
+                    ]
+                );
+            }
+
+            $groupeType = null;
+            if(!empty($groupeTypeNom)) {
+                $groupeType = GroupeTypeImmo::firstOrCreate(
+                    ['libelle' => $groupeTypeNom],
+                    [
+                        'compte' => $compte           // Obligatoire
+                    ]
+                );
+            }
 
             // 🛡️ La vérification des données essentielles reste très importante
             if (empty($immatriculation) || empty($marqueNom)) {
@@ -372,6 +399,8 @@ class VehiculeController extends Controller
                 'energie' => $energie,
                 'marque_id' => $marque->id,
                 'modele_id' => $modele->id,
+                'id_sous_type_immo' => $sousType?->id,
+                'id_groupe_type_immo' => $groupeType?->id,
             ]); 
             $successCount++;
         }
