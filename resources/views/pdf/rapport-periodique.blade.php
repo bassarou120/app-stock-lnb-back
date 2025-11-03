@@ -171,6 +171,7 @@
                             <td>{{ $donnees['entrees'] }}</td>
                             <td>{{ $donnees['retours'] }}</td>
                             <td>{{ $donnees['entrees'] + $donnees['retours'] }}</td>
+                            <!-- <td>{{ $donnees['entrees'] + $donnees['retours'] }}</td> -->
                             <td>{{ $donnees['sorties_par_categorie']['Dotation Agences'] ?? 0 }}</td>
                             <td>{{ $donnees['sorties_par_categorie']['Dotation Chef Garage'] ?? 0 }}</td>
                             <td>{{ $donnees['sorties_par_categorie']['Groupe Electrogène'] ?? 0 }}</td>
