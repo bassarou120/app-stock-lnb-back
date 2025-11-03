@@ -6,10 +6,14 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Immobilisation;
 use App\Models\Transfert;
+use App\Models\vehicule;
+use App\Models\Parametrage\Bureau;
+use App\Models\Parametrage\Fournisseur;
 use App\Models\Intervention; // NOUVEAU: Importer le modèle Intervention
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use Barryvdh\DomPDF\Facade\Pdf; // Assurez-vous que c'est bien la façade Pdf et non '\Pdf'
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ImmobilisationRapportController extends Controller
 {
@@ -19,46 +23,114 @@ class ImmobilisationRapportController extends Controller
     public function getRapportData(Request $request)
     {
         $typeRapport = $request->input('id_type_rapport');
-        $data = null;
-        $message = '';
-        $success = true;
+            $data = null;
+            $message = '';
+            $success = true;
 
-        // Validation commune pour le type de rapport
-        $validator = Validator::make($request->all(), [
-            'id_type_rapport' => 'required|string',
-        ]);
+            // Validation commune pour le type de rapport
+            $validator = Validator::make($request->all(), [
+                'id_type_rapport' => 'required|string',
+            ]);
 
-        if ($validator->fails()) {
-            return new PostResource(false, 'Type de rapport manquant.', ['errors' => $validator->errors()]);
-        }
+            if ($validator->fails()) {
+                return new PostResource(false, 'Type de rapport manquant.', ['errors' => $validator->errors()]);
+            }
 
-        switch ($typeRapport) {
+            switch ($typeRapport) {
             case 'enregistrement':
-                // Validation spécifique pour le rapport d'enregistrement
+                // Validation (inchangée)
                 $validator = Validator::make($request->all(), [
                     'code_immo' => 'nullable|string',
                     'date_debut_acquisition' => 'nullable|date',
                 ]);
 
                 if ($validator->fails()) {
-                    return new PostResource(false, 'Validation échouée pour le rapport d\'enregistrement.', ['errors' => $validator->errors()]);
+                    return new PostResource(false, 'Validation échouée pour le rapport d\'enregistrement.', [
+                        'errors' => $validator->errors()
+                    ]);
                 }
 
-                $query = Immobilisation::with([
+                $codeImmo = $request->input('code_immo');
+                $dateDebutAcquisition = $request->input('date_debut_acquisition');
+
+                // -------------------------------------------------------------
+                // 1. Requête pour les IMMOBILISATIONS (avec pagination standard)
+                // -------------------------------------------------------------
+                $immoQuery = Immobilisation::with([
                     'vehicule', 'groupeTypeImmo', 'sousTypeImmo', 'statusImmo',
                     'employe', 'bureau', 'fournisseur'
                 ]);
 
                 if ($request->filled('code_immo')) {
-                    $query->where('code', 'like', '%' . $request->input('code_immo') . '%');
+                    $immoQuery->where('code', 'like', '%' . $codeImmo . '%');
                 }
 
                 if ($request->filled('date_debut_acquisition')) {
-                    $query->whereDate('date_acquisition', '>=', $request->input('date_debut_acquisition'));
+                    $immoQuery->whereDate('date_acquisition', '>=', $dateDebutAcquisition);
                 }
 
-                $data = $query->latest()->paginate(100);
-                $message = 'Rapport d\'enregistrement des immobilisations généré avec succès.';
+                // PAGINATION STANDARD appliquée aux Immobilisations
+                $dataImmoPaginated = $immoQuery->latest()->paginate(100);
+
+                // -------------------------------------------------------------
+                // 2. Requête pour les VEHICULES (sans pagination, filtrés)
+                // -------------------------------------------------------------
+                $vehiculeQuery = Vehicule::with([
+                    'modele', 'marque', 'sousTypeImmo', 'groupeTypeImmo', 'employe', 'bureau', 'fournisseur'
+                ])->where('isdeleted', false);
+
+                if ($request->filled('code_immo')) {
+                    $vehiculeQuery->where('code', 'like', '%' . $codeImmo . '%');
+                }
+
+                if ($request->filled('date_debut_acquisition')) {
+                    $vehiculeQuery->whereDate('date_acquisition', '>=', $dateDebutAcquisition);
+                }
+
+                // On récupère TOUS les véhicules filtrés (sans pagination)
+                $dataVehicule = $vehiculeQuery->get();
+
+                // -------------------------------------------------------------
+                // 3. Normalisation et Fusion par Tableaux Bruts
+                // -------------------------------------------------------------
+
+                // 3a. Normaliser les Immobilisations et ajouter le type d'actif
+                $immoArray = $dataImmoPaginated->getCollection()->map(function($immo) {
+                    $data = $immo->toArray();
+                    $data['type_actif'] = 'Immobilisation';
+                    // Mettre à null les champs spécifiques aux véhicules pour éviter les N/A
+                    $data['immatriculation'] = null;
+                    $data['numero_chassis'] = null;
+                    return $data;
+                })->toArray();
+
+
+                // 3b. Normaliser les Véhicules: CRÉER LE CHAMP 'designation' = "Marque - Modèle"
+                $vehiculeArray = $dataVehicule->map(function($vehicule) {
+                    $data = $vehicule->toArray();
+                    $data['type_actif'] = 'Vehicule';
+
+                    // Construction de la désignation pour la colonne commune du frontend
+                    $marque = optional($vehicule->marque)->libelle ?? 'N/A';
+                    $modele = optional($vehicule->modele)->libelle_modele ?? 'N/A';
+                    $data['designation'] = $marque . ' - ' . $modele;
+
+                    return $data;
+                })->toArray();
+
+                // 3c. Fusionner les deux tableaux
+                $mergedArray = array_merge($immoArray, $vehiculeArray);
+                $mergedCollection = collect($mergedArray);
+
+                // 3d. Trier et réindexer la collection fusionnée
+                $sortedMergedCollection = $mergedCollection->sortByDesc('created_at')->values();
+
+                // 3e. Mettre à jour l'objet de pagination
+                $dataImmoPaginated->setCollection($sortedMergedCollection);
+
+                // Renvoyer l'objet paginé mis à jour
+                $data = $dataImmoPaginated;
+                $message = 'Rapport combiné Immobilisations/Véhicules généré avec succès.';
                 break;
 
             case 'transfert':
@@ -135,12 +207,11 @@ class ImmobilisationRapportController extends Controller
                 $message = 'Rapport des interventions sur immobilisations généré avec succès.';
                 break;
 
-            case 'inventaire': // <-- NOUVEAU CASE POUR LA FICHE D'INVENTAIRE
+            case 'inventaire': 
                 // Validation spécifique pour la fiche d'inventaire (dates d'acquisition obligatoires)
                 $validator = Validator::make($request->all(), [
                     'date_debut_acquisition' => 'required|date',
                     'date_fin_acquisition' => 'required|date|after_or_equal:date_debut_acquisition',
-                    // Aucun autre filtre attendu pour l'inventaire simple, selon la discussion
                 ]);
 
                 if ($validator->fails()) {
@@ -149,13 +220,73 @@ class ImmobilisationRapportController extends Controller
                     ]);
                 }
 
-                $query = Immobilisation::with([
+                $dateDebut = $request->input('date_debut_acquisition');
+                $dateFin = $request->input('date_fin_acquisition');
+
+                // -------------------------------------------------------------
+                // 1. Requête IMMOBILISATIONS (Base de l'objet paginé)
+                // -------------------------------------------------------------
+                $immoQuery = Immobilisation::with([
                     'vehicule', 'groupeTypeImmo', 'sousTypeImmo', 'statusImmo',
                     'employe', 'bureau', 'fournisseur'
-                ])->whereBetween('date_acquisition', [$request->date_debut_acquisition, $request->date_fin_acquisition]);
+                ]);
+                $immoQuery->whereBetween('date_acquisition', [$dateDebut, $dateFin]);
+                $dataImmoPaginated = $immoQuery->latest()->paginate(100);
 
-                $data = $query->latest()->paginate(100);
-                $message = 'Fiche d\'inventaire des immobilisations générée avec succès.';
+                // -------------------------------------------------------------
+                // 2. Requête VEHICULES (Collection complète filtrée)
+                // -------------------------------------------------------------
+                $vehiculeQuery = Vehicule::with([
+                    'modele', 'marque', 'sousTypeImmo', 'groupeTypeImmo', 'employe', 'bureau', 'fournisseur'
+                ])->where('isdeleted', false);
+                $vehiculeQuery->whereBetween('date_acquisition', [$dateDebut, $dateFin]);
+                $dataVehicule = $vehiculeQuery->get(); 
+                
+                // -------------------------------------------------------------
+                // 3. Normalisation et Fusion par Tableaux Bruts
+                // -------------------------------------------------------------
+                
+                // 3a. Normaliser les Immobilisations et ajouter le type d'actif
+                $immoArray = $dataImmoPaginated->getCollection()->map(function($immo) {
+                    $data = $immo->toArray();
+                    $data['type_actif'] = 'Immobilisation';
+                    // Mettre à null les champs spécifiques aux véhicules
+                    $data['immatriculation'] = null; 
+                    $data['numero_chassis'] = null;
+                    return $data;
+                })->toArray();
+
+
+                // 3b. Normaliser les Véhicules: CRÉER LE CHAMP 'designation'
+                $vehiculeArray = $dataVehicule->map(function($vehicule) {
+                    $data = $vehicule->toArray();
+                    $data['type_actif'] = 'Vehicule';
+                    
+                    // **FIX** : Créer le champ 'designation' à partir de la marque et du modèle
+                    $marque = optional($vehicule->marque)->libelle ?? 'N/A';
+                    $modele = optional($vehicule->modele)->libelle_modele ?? 'N/A';
+                    
+                    // Construction de la désignation pour l'affichage dans la colonne commune
+                    $data['designation'] = $marque . ' - ' . $modele;
+                    
+                    // Mettre à null les champs spécifiques aux Immos pour l'affichage (si besoin)
+                    // e.g. si le champ 'etat' est différent pour les deux modèles et que ça cause N/A
+                    
+                    return $data;
+                })->toArray();
+
+                // 3c. Fusionner les deux tableaux
+                $mergedArray = array_merge($immoArray, $vehiculeArray);
+                $mergedCollection = collect($mergedArray);
+
+                // 3d. Trier et réindexer la collection fusionnée 
+                $sortedMergedCollection = $mergedCollection->sortByDesc('created_at')->values();
+                
+                // 3e. Mettre à jour l'objet de pagination
+                $dataImmoPaginated->setCollection($sortedMergedCollection);
+                
+                $data = $dataImmoPaginated;
+                $message = 'Fiche d\'inventaire combinée Immobilisations/Véhicules générée avec succès.';
                 break;
 
             case 'bureau':
@@ -398,5 +529,34 @@ class ImmobilisationRapportController extends Controller
         $pdf = \Pdf::loadView($viewName, $compactData);
 
         return $pdf->download($filename);
+    }
+
+    public function getCodesImmoEtVehicule(Request $request)
+    {
+        try {
+            // 1. Récupérer les codes des immobilisations avec le champ 'type'
+            $codesImmo = Immobilisation::select('id', 'code')
+                ->addSelect(\DB::raw("'immobilisation' as type")) // Ajoute le type 'immobilisation'
+                ->get();
+
+            // 2. Récupérer les codes des véhicules avec le champ 'type'
+            $codesVehicule = Vehicule::select('id', 'code')
+                ->where('isdeleted', false)
+                ->addSelect(\DB::raw("'vehicule' as type")) // Ajoute le type 'vehicule'
+                ->get();
+
+            // 3. Fusionner les deux collections sans écraser (méthode concat)
+            $codesCombinés = $codesImmo->concat($codesVehicule); 
+
+            // Renvoyer la collection combinée
+            $result = [
+                'codes' => $codesCombinés->values() 
+            ];
+
+            return new PostResource(true, 'Liste combinée des codes récupérée avec succès.', $result);
+
+        } catch (\Exception $e) {
+            return new PostResource(false, 'Erreur lors de la récupération des codes : ' . $e->getMessage());
+        }
     }
 }

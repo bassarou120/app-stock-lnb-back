@@ -30,6 +30,17 @@ return new class extends Migration
                 ->constrained('groupe_type_immos')
                 ->onDelete('cascade');
 
+            // LES NOUVEAU CHAMPS
+            $table->integer('montant_ttc')->nullable();
+            $table->integer('taux_ammortissement')->nullable();
+            $table->foreignId('fournisseur_id')->constrained('fournisseurs')->onDelete('cascade');
+            $table->foreignId('bureau_id')->constrained('bureaus')->onDelete('cascade');
+            $table->string('etat')->nullable();
+            $table->string('observation')->nullable();
+            $table->foreignId('id_status_immo')->constrained('status_immos')->onDelete('cascade');
+            $table->date('date_acquisition');
+            $table->string('code')->nullable();
+            
             $table->timestamps();
         });
     }

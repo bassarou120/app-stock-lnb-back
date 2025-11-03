@@ -473,5 +473,33 @@ class ImmobilisationController extends Controller
         ]);
     }
 
+    public function getCodesImmoEtVehicule(Request $request)
+    {
+        try {
+            // Récupérer les codes des immobilisations (select 'id' et 'code')
+            $codesImmo = Immobilisation::select('id', 'code')->get();
+
+            // Récupérer les codes des véhicules (select 'id' et 'code', où 'isdeleted' est false)
+            $codesVehicule = Vehicule::select('id', 'code')->where('isdeleted', false)->get();
+
+            // Fusionner les deux collections en une seule
+            // La collection $codesImmo recevra tous les éléments de $codesVehicule.
+            $codesCombinés = $codesImmo->merge($codesVehicule);
+
+            // Optionnel : Trier par code (si nécessaire)
+            // $codesCombinés = $codesCombinés->sortBy('code')->values();
+
+            // Renvoyer la collection combinée directement dans la clé 'data'
+            // Vous pouvez choisir un nom de clé plus générique si vous le souhaitez, comme 'codes'
+            $result = [
+                'codes' => $codesCombinés
+            ];
+
+            return new PostResource(true, 'Liste combinée des codes récupérée avec succès.', $result);
+
+        } catch (\Exception $e) {
+            return new PostResource(false, 'Erreur lors de la récupération des codes : ' . $e->getMessage());
+        }
+    }
 
 }

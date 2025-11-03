@@ -8,6 +8,9 @@ use App\Models\Parametrage\Modele;
 use App\Models\Parametrage\Marque;
 use App\Models\Parametrage\GroupeTypeImmo;
 use App\Models\Parametrage\SousTypeImmo;
+use App\Models\Parametrage\Bureau;
+use App\Models\Parametrage\Fournisseur;
+use App\Models\Parametrage\Employe;
 
 class Vehicule extends Model
 {
@@ -27,7 +30,17 @@ class Vehicule extends Model
         'date_amortissement',
         'carte_grise',
         'id_sous_type_immo',
-        'id_groupe_type_immo'
+        'id_groupe_type_immo',
+        //
+        'bureau_id',
+        'fournisseur_id',
+        'etat',
+        'observation',
+        'id_status_immo',
+        'date_acquisition',
+        'montant_ttc',
+        'taux_ammortissement',
+        'code'
     ];
 
     public function marque()
@@ -46,5 +59,20 @@ class Vehicule extends Model
 
     public function groupeTypeImmo() {
         return $this->belongsTo(GroupeTypeImmo::class, 'id_groupe_type_immo');
+    }
+
+    public function bureau()
+    {
+        return $this->belongsTo(Bureau::class);
+    }
+
+    public function employe()
+    {
+        return $this->belongsTo(Employe::class);
+    }
+
+    public function fournisseur()
+    {
+        return $this->belongsTo(Fournisseur::class);
     }
 }

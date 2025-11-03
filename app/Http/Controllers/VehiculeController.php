@@ -44,6 +44,16 @@ class VehiculeController extends Controller
             'vehicules.*.nbreannee_amortissement' => 'required|integer',
             'vehicules.*.id_sous_type_immo' => 'required|exists:sous_type_immos,id',
             'vehicules.*.id_groupe_type_immo' => 'required|exists:groupe_type_immos,id',
+            //
+            'vehicules.*bureau_id' => 'nullable|exists:bureaus,id',
+            'vehicules.*fournisseur_id' => 'nullable|exists:fournisseurs,id',
+            'vehicules.*etat' => 'nullable|string',
+            'vehicules.*taux_ammortissement' => 'nullable|integer',
+            'vehicules.*date_acquisition' => 'required',
+            'vehicules.*observation' => 'nullable|string',
+            'vehicules.*id_status_immo' => 'required|exists:status_immos,id',
+            'vehicules.*montant_ttc' => 'nullable|integer',
+            'vehicules.*code' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -71,6 +81,16 @@ class VehiculeController extends Controller
                     'nbreannee_amortissement' => $vehiculeData['nbreannee_amortissement'],
                     'id_sous_type_immo' => $vehiculeData['id_sous_type_immo'],
                     'id_groupe_type_immo' => $vehiculeData['id_groupe_type_immo'],
+                    //
+                    'taux_ammortissement' => $vehiculeData['taux_ammortissement'],
+                    'montant_ttc' => $vehiculeData['montant_ttc'],
+                    'id_status_immo' => $vehiculeData['id_status_immo'],
+                    'date_acquisition' => $vehiculeData['date_acquisition'],
+                    'observation' => $vehiculeData['observation'] ?? null,
+                    'fournisseur_id' => $vehiculeData['fournisseur_id'] ?? null,
+                    'bureau_id' => $vehiculeData['bureau_id'] ?? null,
+                    'etat' => $vehiculeData['etat'] ?? null,
+                    'code' => $vehiculeData['code'] ?? null,
                 ]);
 
 
@@ -111,6 +131,16 @@ class VehiculeController extends Controller
             'nbreannee_amortissement' => 'nullable|integer',
             'id_sous_type_immo' => 'required|exists:sous_type_immos,id',
             'id_groupe_type_immo' => 'required|exists:groupe_type_immos,id',
+            //
+            'vehicules.*bureau_id' => 'nullable|exists:bureaus,id',
+            'vehicules.*fournisseur_id' => 'nullable|exists:fournisseurs,id',
+            'vehicules.*etat' => 'nullable|string',
+            'vehicules.*taux_ammortissement' => 'nullable|integer',
+            'vehicules.*date_acquisition' => 'required',
+            'vehicules.*observation' => 'nullable|string',
+            'vehicules.*id_status_immo' => 'required|exists:status_immos,id',
+            'vehicules.*montant_ttc' => 'nullable|integer',
+            'vehicules.*code' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -325,22 +355,33 @@ class VehiculeController extends Controller
 
             $totalRows++; // Compter le nombre total de LIGNES DE DONNÉES réelles traitées.
     
-            $immatriculation = $row[0];
-            $numero_chassis = $row[1];
 
-            $kilometrage = $row[2];
-            $date_mise_en_service = $row[3];
-            $marqueNom = $row[4];
-            $modeleNom = $row[5];
-            $puissance = $row[6];
-            $places_assises = $row[7];
-            $energie = $row[8];
-            $sousTypeNom = $row[9]; 
-            $groupeTypeNom = $row[10]; 
+            $code = $row[0];
+            $immatriculation = $row[1];
+            $numero_chassis = $row[2];
+
+            $kilometrage = $row[3];
+            $date_mise_en_service = $row[4];
+            $marqueNom = $row[5];
+            $modeleNom = $row[6];
+            $puissance = $row[7];
+            $places_assises = $row[8];
+            $energie = $row[9];
+            $sousTypeNom = $row[10]; 
+            $groupeTypeNom = $row[11]; 
             $typeImmoId = TypeImmo::where('libelle_typeImmo', 'Véhicules')->value('id'); // récupère l'id numérique
-            $compte = $row[12];
+            $compte = $row[13];
+            //
+            $taux_ammortissement = $row[14];
+            $montant_ttc = $row[15];
+            $id_status_immo = $row[16];
+            $date_acquisition = $row[17];
+            $observation = $row[18];
+            $fournisseur_id = $row[19];
+            $bureau_id = $row[20];
+            $etat = $row[21];
 
-            
+
             $sousType = null;
             if (!empty($sousTypeNom)) {
                 $sousType = SousTypeImmo::firstOrCreate(
@@ -388,6 +429,21 @@ class VehiculeController extends Controller
                 'libelle_modele' => $modeleNom,
             ]);
             
+            $statusImmo = StatusImmo::firstOrCreate(
+                ['libelle_status_immo' => $id_status_immo], // condition de recherche
+                ['libelle_status_immo' => $id_status_immo]  // valeurs à insérer si inexistant
+            );
+
+            $fournisseur = Fournisseur::firstOrCreate(
+                ['nom' => $fournisseur_id],
+                ['nom' => $fournisseur_id]
+            );
+
+            $bureau = Bureau::firstOrCreate(
+                ['libelle_bureau' => $bureau_id],
+                ['libelle_bureau' => $bureau_id]
+            );
+            
             // 🚗 Créer le véhicule (Inchangée)
             Vehicule::create([
                 'immatriculation' => $immatriculation,
@@ -401,6 +457,16 @@ class VehiculeController extends Controller
                 'modele_id' => $modele->id,
                 'id_sous_type_immo' => $sousType?->id,
                 'id_groupe_type_immo' => $groupeType?->id,
+                //
+                'taux_ammortissement' => $taux_ammortissement,
+                'montant_ttc' => $montant_ttc,
+                'id_status_immo' => $id_status_immo,
+                'date_acquisition' => $date_acquisition,
+                'observation' => $observation,
+                'fournisseur_id' => $fournisseur_id,
+                'bureau_id' => $bureau_id,
+                'etat' => $etat,
+                'code' => $code,
             ]); 
             $successCount++;
         }
