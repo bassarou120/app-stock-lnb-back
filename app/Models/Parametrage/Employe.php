@@ -38,11 +38,8 @@ class Employe extends Model
     ];
 
     public function getFullnameEmployeAttribute()
-{
-    return $this->nom . ' ' . $this->prenom;
-}
-
-
-
+    {
+        return $this->nom . ' ' . $this->prenom;
+    }
 
 }

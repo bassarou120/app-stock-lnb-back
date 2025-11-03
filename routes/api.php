@@ -281,3 +281,5 @@ Route::get('rapports/periodique/imprimer', [MouvementTicketController::class, 'i
 Route::get('rapports/periodiqueMontant/imprimer', [MouvementTicketController::class, 'imprimerRapportPeriodiqueMontant']);
 
 Route::get('/mouvements/demande-sortie/check-status-and-generate/{id}', [MouvementStockController::class, 'checkStatusAccorde']);
+
+Route::get('/rapports/getcodes', [ImmobilisationRapportController::class, 'getCodesImmoEtVehicule']);

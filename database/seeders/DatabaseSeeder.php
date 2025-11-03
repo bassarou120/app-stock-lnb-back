@@ -37,7 +37,7 @@ class DatabaseSeeder extends Seeder
             SousTypeImmoSeeder::class,
             GroupeTypeImmoSeeder::class,
             ModeleSeeder::class,
-            VoitureSeeder::class,
+            //VoitureSeeder::class,
             CommuneSeeder::class,
             CouponTicketSeeder::class,
             UserSeeder::class,
