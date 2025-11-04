@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Immobilisation;
 use App\Models\Transfert;
-use App\Models\vehicule;
+use App\Models\Vehicule;
 use App\Models\Parametrage\Bureau;
 use App\Models\Parametrage\Fournisseur;
 use App\Models\Intervention; // NOUVEAU: Importer le modèle Intervention
@@ -501,7 +501,7 @@ class ImmobilisationRapportController extends Controller
                 $compactData = ['interventions' => $data]; // Définir les données pour la vue
                 break;
 
-            case 'inventaire': 
+            case 'inventaire':
             // 2. Validation spécifique
             $validator = Validator::make($request->all(), [
                 'date_debut_acquisition' => 'required|date',
@@ -527,15 +527,15 @@ class ImmobilisationRapportController extends Controller
                 'modele', 'marque', 'sousTypeImmo', 'groupeTypeImmo', 'employe', 'bureau', 'fournisseur'
             ])->where('isdeleted', false)
               ->whereBetween('date_acquisition', [$dateDebut, $dateFin]);
-            $dataVehicule = $vehiculeQuery->get(); 
-            
+            $dataVehicule = $vehiculeQuery->get();
+
             // --- C. Normalisation et Fusion (LOGIQUE CLÉ) ---
-            
+
             // Normaliser les Immobilisations
             $immoArray = $dataImmo->map(function($immo) {
                 $data = $immo->toArray();
                 $data['type_actif'] = 'Immobilisation';
-                $data['immatriculation'] = null; 
+                $data['immatriculation'] = null;
                 $data['numero_chassis'] = null;
                 return $data;
             });
