@@ -49,6 +49,7 @@ use App\Http\Controllers\Api\SiteSettingController;
 use App\Http\Controllers\Article_ExoController;
 use App\Http\Controllers\CategorieSortieTicketController;
 use App\Http\Controllers\ExerciceMouvementTicketController;
+use App\Http\Controllers\SortiePatrimoineController;
 
 
 Route::get('/user', function (Request $request) {
@@ -283,3 +284,17 @@ Route::get('rapports/periodiqueMontant/imprimer', [MouvementTicketController::cl
 Route::get('/mouvements/demande-sortie/check-status-and-generate/{id}', [MouvementStockController::class, 'checkStatusAccorde']);
 
 Route::get('/rapports/getcodes', [ImmobilisationRapportController::class, 'getCodesImmoEtVehicule']);
+
+Route::get('/sortiepatrimoines', [SortiePatrimoineController::class, 'index']);
+Route::post('/sortiepatrimoines', [SortiePatrimoineController::class, 'store']);
+// 2. Route pour l'insertion MULTIPLE (Batch)
+Route::post('/sortiepatrimoines/batch', [SortiePatrimoineController::class, 'storeBatch']); // <-- Ajout de '/batch'
+
+Route::put('/sortiepatrimoines/{id}', [SortiePatrimoineController::class, 'update']);
+Route::delete('/sortiepatrimoines/{id}', [SortiePatrimoineController::class, 'destroy']);
+Route::get('/sortiepatrimoines/{id}', [SortiePatrimoineController::class, 'show']);
+
+// 4. Routes spécifiques à l'import/export
+Route::post('/sortiepatrimoines/import', [SortiePatrimoineController::class, 'importSortiePatrimoine']); // <-- Ajout pour la cohérence
+
+Route::get('immobilisations/designation-by-code/{code}', [ImmobilisationController::class, 'getDesignationByCode']);
