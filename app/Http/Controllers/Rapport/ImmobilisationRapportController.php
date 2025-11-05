@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Immobilisation;
 use App\Models\Transfert;
-use App\Models\vehicule;
+use App\Models\Vehicule;
 use App\Models\Parametrage\Bureau;
 use App\Models\Parametrage\Fournisseur;
 use App\Models\Intervention; // NOUVEAU: Importer le modèle Intervention
@@ -608,7 +608,7 @@ class ImmobilisationRapportController extends Controller
         return $pdf->download($filename);
     }
 
-    public function getCodesImmoEtVehicule(Request $request)
+/*     public function getCodesImmoEtVehicule(Request $request)
     {
         try {
             // 1. Récupérer les codes des immobilisations avec le champ 'type'
@@ -635,5 +635,129 @@ class ImmobilisationRapportController extends Controller
         } catch (\Exception $e) {
             return new PostResource(false, 'Erreur lors de la récupération des codes : ' . $e->getMessage());
         }
+    } */
+
+    /* public function getCodesImmoEtVehicule(Request $request)
+    {
+    try {
+        // --- 1. Requête Immobilisations : Code et Designation ---
+        $codesImmo = Immobilisation::select('id', 'code', 'designation')
+            ->addSelect(\DB::raw("'immobilisation' as type"))
+            ->addSelect(\DB::raw('designation as designation_complete')) 
+            ->get(); // Récupère la collection de modèles (avec les champs ajoutés)
+        
+        // Convertir la collection en un tableau PHP brut et conserver uniquement les colonnes nécessaires
+        $immoArray = $codesImmo->map(function ($immo) {
+            return [
+                'id' => $immo->id,
+                'code' => $immo->code,
+                'type' => $immo->type,
+                'designation_complete' => $immo->designation_complete,
+            ];
+        })->toArray(); // <-- Conversion en tableau PHP brut
+
+
+        // --- 2. Requête Véhicules : Code, Marque et Modèle pour construire la Designation ---
+        $codesVehicule = Vehicule::with(['marque', 'modele']) 
+            ->select('id', 'code', 'marque_id', 'modele_id')
+            ->where('isdeleted', false)
+            ->addSelect(\DB::raw("'vehicule' as type"))
+            ->get();
+        
+        // 3. Transformation des Véhicules et Fusion
+
+        // Transformer les véhicules et créer le tableau PHP brut
+        $vehiculeArray = $codesVehicule->map(function($vehicule) {
+            
+            $marque = optional($vehicule->marque)->libelle ?? 'N/A';
+            $modele = optional($vehicule->modele)->libelle_modele ?? 'N/A';
+            $designationComplete = $marque . ' - ' . $modele;
+
+            return [
+                'id' => $vehicule->id,
+                'code' => $vehicule->code,
+                'type' => $vehicule->type,
+                'designation_complete' => $designationComplete 
+            ];
+        })->toArray(); // <-- Conversion en tableau PHP brut
+
+        // 3b. Fusionner les deux tableaux bruts et reconvertir en Collection Laravel
+        $mergedArray = array_merge($immoArray, $vehiculeArray);
+        $codesCombinés = collect($mergedArray); // On reconvertit en collection pour l'envoi final
+
+        // 4. Renvoyer la collection combinée
+        $result = [
+            'codes' => $codesCombinés->values()
+        ];
+
+        return new PostResource(true, 'Liste combinée des codes/désignations récupérée avec succès.', $result);
+
+        } catch (\Exception $e) {
+            return new PostResource(false, 'Erreur lors de la récupération des codes : ' . $e->getMessage());
+        }
+    } */
+
+        public function getCodesImmoEtVehicule(Request $request)
+{
+    try {
+        // --- 1. Requête Immobilisations : Code et Designation ---
+        // CORRIGÉ : On sélectionne 'designation' en tant qu'alias 'designation_complete'
+        $codesImmo = Immobilisation::select('id', 'code')
+            ->selectRaw('designation as designation_complete') // Utilisation de selectRaw pour l'alias
+            ->addSelect(\DB::raw("'immobilisation' as type"))
+            ->get(); // Récupère la collection de modèles (avec les champs ajoutés)
+        
+        // Convertir la collection en un tableau PHP brut. 
+        // L'alias 'designation_complete' est maintenant directement accessible et correct.
+        $immoArray = $codesImmo->map(function ($immo) {
+            return [
+                'id' => $immo->id,
+                'code' => $immo->code,
+                'type' => $immo->type,
+                // On utilise l'alias correctement matérialisé
+                'designation_complete' => $immo->designation_complete, 
+            ];
+        })->toArray(); // <-- Conversion en tableau PHP brut
+
+
+        // --- 2. Requête Véhicules : Code, Marque et Modèle pour construire la Designation ---
+        $codesVehicule = Vehicule::with(['marque', 'modele']) 
+            ->select('id', 'code', 'marque_id', 'modele_id')
+            ->where('isdeleted', false)
+            ->addSelect(\DB::raw("'vehicule' as type"))
+            ->get();
+        
+        // 3. Transformation des Véhicules et Fusion
+
+        // Transformer les véhicules et créer le tableau PHP brut
+        $vehiculeArray = $codesVehicule->map(function($vehicule) {
+            
+            $marque = optional($vehicule->marque)->libelle ?? 'N/A';
+            $modele = optional($vehicule->modele)->libelle_modele ?? 'N/A';
+            $designationComplete = $marque . ' - ' . $modele;
+
+            return [
+                'id' => $vehicule->id,
+                'code' => $vehicule->code,
+                'type' => $vehicule->type,
+                // Le nom de la clé est uniforme ici aussi
+                'designation_complete' => $designationComplete 
+            ];
+        })->toArray(); // <-- Conversion en tableau PHP brut
+
+        // 3b. Fusionner les deux tableaux bruts et reconvertir en Collection Laravel
+        $mergedArray = array_merge($immoArray, $vehiculeArray);
+        $codesCombinés = collect($mergedArray); // On reconvertit en collection pour l'envoi final
+
+        // 4. Renvoyer la collection combinée
+        $result = [
+            'codes' => $codesCombinés->values()
+        ];
+
+        return new PostResource(true, 'Liste combinée des codes/désignations récupérée avec succès.', $result);
+
+    } catch (\Exception $e) {
+        return new PostResource(false, 'Erreur lors de la récupération des codes : ' . $e->getMessage());
     }
+}
 }
