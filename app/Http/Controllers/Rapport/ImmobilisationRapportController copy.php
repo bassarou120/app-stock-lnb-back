@@ -332,23 +332,25 @@ class ImmobilisationRapportController extends Controller
     /**
      * Génère le PDF pour les rapports (enregistrement, transfert ou intervention) en fonction des filtres.
      */
-public function imprimerRapportData(Request $request)
-{
-    $typeRapport = $request->input('id_type_rapport');
-    $viewName = '';
-    $filename = '';
-    $compactData = [];
+    public function imprimerRapportData(Request $request)
+    {
+        $typeRapport = $request->input('id_type_rapport');
+        $data = null;
+        $viewName = '';
+        $filename = '';
+        $compactData = []; // Initialiser $compactData
 
-    $validator = Validator::make($request->all(), [
-        'id_type_rapport' => 'required|string',
-    ]);
+        // Validation commune pour le type de rapport
+        $validator = Validator::make($request->all(), [
+            'id_type_rapport' => 'required|string',
+        ]);
 
-    if ($validator->fails()) {
-        return response()->json(['success' => false, 'message' => 'Type de rapport manquant pour l\'impression.'], 400);
-    }
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => 'Type de rapport manquant pour l\'impression.'], 400);
+        }
 
-    switch ($typeRapport) {
-        case 'enregistrement':
+        switch ($typeRapport) {
+           case 'enregistrement':
             $validator = Validator::make($request->all(), [
                 'code_immo' => 'nullable|string',
                 'date_debut_acquisition' => 'nullable|date',
@@ -361,7 +363,7 @@ public function imprimerRapportData(Request $request)
             $codeImmo = $request->input('code_immo');
             $dateDebutAcquisition = $request->input('date_debut_acquisition');
 
-            // 1. IMMOBILISATIONS (Filtre de date inclus)
+            // IMMOBILISATIONS
             $immoQuery = Immobilisation::with([
                 'vehicule', 'groupeTypeImmo', 'sousTypeImmo', 'statusImmo',
                 'employe', 'bureau', 'fournisseur'
@@ -376,7 +378,7 @@ public function imprimerRapportData(Request $request)
 
             $dataImmo = $immoQuery->latest()->get();
 
-            // 2. VEHICULES (Filtre de date inclus)
+            // VEHICULES
             $vehiculeQuery = Vehicule::with([
                 'modele', 'marque', 'sousTypeImmo', 'groupeTypeImmo','statusImmo', 'employe', 'bureau', 'fournisseur'
             ])->where('isdeleted', false);
@@ -390,17 +392,10 @@ public function imprimerRapportData(Request $request)
 
             $dataVehicule = $vehiculeQuery->get();
 
-            // 3. NORMALISATION & SYNCHRONISATION DES CHAMPS pour la vue unifiée
-
+            // NORMALISATION : garder les objets Eloquent
             $dataImmo->each(function ($immo) {
                 $immo->type_actif = 'Immobilisation';
                 $immo->designation = $immo->designation ?? $immo->nom ?? $immo->code;
-                $immo->etat = $immo->etat ?? '-';
-
-                // 🔑 CRUCIAL : Définir les champs spécifiques aux véhicules à NULL pour les Immos.
-                $immo->immatriculation = null;
-                $immo->numero_chassis = null;
-                $immo->statut_immo = optional($immo->statusImmo)->libelle_status_immo ?? 'N/A';
             });
 
             $dataVehicule->each(function ($vehicule) {
@@ -409,219 +404,195 @@ public function imprimerRapportData(Request $request)
                     (optional($vehicule->marque)->libelle ?? 'N/A') .
                     ' - ' .
                     (optional($vehicule->modele)->libelle_modele ?? 'N/A');
-
-                $vehicule->statut_immo = optional($vehicule->statusImmo)->libelle_status_immo ?? 'N/A';
-
-                $vehicule->etat = $vehicule->etat ?? '-';
-                $vehicule->montant_ttc = $vehicule->montant_ttc ?? 0;
+                    $vehicule->status_immo = (optional($vehicule->statusImmo)->libelle_status_immo ?? 'N/A');
             });
 
-            // 4. Fusion & tri
-            $merged = $dataImmo->concat($dataVehicule)->sortByDesc('created_at')->values();
+            // Fusion & tri
+            $merged = $dataImmo->merge($dataVehicule)->sortByDesc('created_at')->values();
 
-            $viewName = 'pdf.rapport.rapport_unifie_immobilisations';
-            $filename = 'rapport_enregistrement_immobilisations_unifie.pdf';
-            $compactData = ['immobilisations' => $merged, 'typeRapport' => $typeRapport];
+            $viewName = 'pdf.rapport.rapport_immobilisations';
+            $filename = 'rapport_enregistrement_immobilisations.pdf';
+            $compactData = ['immobilisations' => $merged];
             break;
-                case 'transfert':
-                    // Validation spécifique pour l'impression du rapport de transfert (dates obligatoires)
-                    $validator = Validator::make($request->all(), [
-                        'date_debut' => 'required|date',
-                        'date_fin' => 'required|date|after_or_equal:date_debut',
-                        'old_bureau_id' => 'nullable|exists:bureaus,id',
-                        'bureau_id' => 'nullable|exists:bureaus,id',
-                        'old_employe_id' => 'nullable|exists:employes,id',
-                        'employe_id' => 'nullable|exists:employes,id',
-                    ]);
+            case 'transfert':
+                // Validation spécifique pour l'impression du rapport de transfert (dates obligatoires)
+                $validator = Validator::make($request->all(), [
+                    'date_debut' => 'required|date',
+                    'date_fin' => 'required|date|after_or_equal:date_debut',
+                    'old_bureau_id' => 'nullable|exists:bureaus,id',
+                    'bureau_id' => 'nullable|exists:bureaus,id',
+                    'old_employe_id' => 'nullable|exists:employes,id',
+                    'employe_id' => 'nullable|exists:employes,id',
+                ]);
 
-                    if ($validator->fails()) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Les dates de début et de fin sont obligatoires et valides pour le rapport de transfert.',
-                            'errors' => $validator->errors()
-                        ], 422);
-                    }
+                if ($validator->fails()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Les dates de début et de fin sont obligatoires et valides pour le rapport de transfert.',
+                        'errors' => $validator->errors()
+                    ], 422);
+                }
 
-                    $query = Transfert::with([
-                        'immobilisation',
-                        'old_bureau',
-                        'bureau',
-                        'old_employe',
-                        'employe',
-                    ])->whereBetween('date_mouvement', [$request->date_debut, $request->date_fin]);
+                $query = Transfert::with([
+                    'immobilisation',
+                    'old_bureau',
+                    'bureau',
+                    'old_employe',
+                    'employe',
+                ])->whereBetween('date_mouvement', [$request->date_debut, $request->date_fin]);
 
-                    if ($request->filled('old_bureau_id')) {
-                        $query->where('old_bureau_id', $request->old_bureau_id);
-                    }
-                    if ($request->filled('bureau_id')) {
-                        $query->where('bureau_id', $request->bureau_id);
-                    }
-                    if ($request->filled('old_employe_id')) {
-                        $query->where('old_employe_id', $request->old_employe_id);
-                    }
-                    if ($request->filled('employe_id')) {
-                        $query->where('employe_id', $request->employe_id);
-                    }
+                if ($request->filled('old_bureau_id')) {
+                    $query->where('old_bureau_id', $request->old_bureau_id);
+                }
+                if ($request->filled('bureau_id')) {
+                    $query->where('bureau_id', $request->bureau_id);
+                }
+                if ($request->filled('old_employe_id')) {
+                    $query->where('old_employe_id', $request->old_employe_id);
+                }
+                if ($request->filled('employe_id')) {
+                    $query->where('employe_id', $request->employe_id);
+                }
 
-                    $data = $query->latest()->get(); // Pas de pagination pour le PDF
-                    $viewName = 'pdf.rapport.rapport_transferts'; // Chemin de la vue pour les transferts
-                    $filename = 'rapport_transferts_immobilisations.pdf';
-                    $compactData = ['transferts' => $data]; // Définir les données pour la vue
-                    break;
+                $data = $query->latest()->get(); // Pas de pagination pour le PDF
+                $viewName = 'pdf.rapport.rapport_transferts'; // Chemin de la vue pour les transferts
+                $filename = 'rapport_transferts_immobilisations.pdf';
+                $compactData = ['transferts' => $data]; // Définir les données pour la vue
+                break;
 
-                case 'intervention': // NOUVEAU: Logique pour les rapports d'intervention
-                    // Validation spécifique pour l'impression du rapport d'intervention (dates obligatoires)
-                    $validator = Validator::make($request->all(), [
-                        'date_debut' => 'required|date',
-                        'date_fin' => 'required|date|after_or_equal:date_debut',
-                        'type_intervention_id' => 'nullable|exists:type_interventions,id',
-                        'immo_id' => 'nullable|exists:immobilisations,id',
-                    ]);
+            case 'intervention': // NOUVEAU: Logique pour les rapports d'intervention
+                // Validation spécifique pour l'impression du rapport d'intervention (dates obligatoires)
+                $validator = Validator::make($request->all(), [
+                    'date_debut' => 'required|date',
+                    'date_fin' => 'required|date|after_or_equal:date_debut',
+                    'type_intervention_id' => 'nullable|exists:type_interventions,id',
+                    'immo_id' => 'nullable|exists:immobilisations,id',
+                ]);
 
-                    if ($validator->fails()) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Les dates de début et de fin sont obligatoires et valides pour le rapport d\'intervention.',
-                            'errors' => $validator->errors()
-                        ], 422);
-                    }
+                if ($validator->fails()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Les dates de début et de fin sont obligatoires et valides pour le rapport d\'intervention.',
+                        'errors' => $validator->errors()
+                    ], 422);
+                }
 
-                    $query = Intervention::with([
-                        'typeIntervention',
-                        'immobilisation',
-                    ])->whereBetween('date_intervention', [$request->date_debut, $request->date_fin]);
+                $query = Intervention::with([
+                    'typeIntervention',
+                    'immobilisation',
+                ])->whereBetween('date_intervention', [$request->date_debut, $request->date_fin]);
 
-                    if ($request->filled('type_intervention_id')) {
-                        $query->where('type_intervention_id', $request->type_intervention_id);
-                    }
+                if ($request->filled('type_intervention_id')) {
+                    $query->where('type_intervention_id', $request->type_intervention_id);
+                }
 
-                    if ($request->filled('immo_id')) {
-                        $query->where('immo_id', $request->immo_id);
-                    }
+                if ($request->filled('immo_id')) {
+                    $query->where('immo_id', $request->immo_id);
+                }
 
-                    $data = $query->latest()->get(); // Pas de pagination pour le PDF
-                    $viewName = 'pdf.rapport.rapport_interventions'; // Chemin de la vue pour les interventions
-                    $filename = 'rapport_interventions_immobilisations.pdf';
-                    $compactData = ['interventions' => $data]; // Définir les données pour la vue
-                    break;
+                $data = $query->latest()->get(); // Pas de pagination pour le PDF
+                $viewName = 'pdf.rapport.rapport_interventions'; // Chemin de la vue pour les interventions
+                $filename = 'rapport_interventions_immobilisations.pdf';
+                $compactData = ['interventions' => $data]; // Définir les données pour la vue
+                break;
 
-                case 'inventaire':
-                    $validator = Validator::make($request->all(), [
-                        'date_debut_acquisition' => 'required|date',
-                        'date_fin_acquisition' => 'required|date|after_or_equal:date_debut_acquisition',
-                    ]);
+            case 'inventaire':
+            $validator = Validator::make($request->all(), [
+                'date_debut_acquisition' => 'required|date',
+                'date_fin_acquisition' => 'required|date|after_or_equal:date_debut_acquisition',
+            ]);
 
-                    if ($validator->fails()) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Validation échouée.',
-                            'errors' => $validator->errors()
-                        ], 422);
-                    }
-
-                    $dateDebut = $request->input('date_debut_acquisition');
-                    $dateFin = $request->input('date_fin_acquisition');
-
-                    // 1️⃣ IMMOBILISATIONS
-                    $immoQuery = Immobilisation::with([
-                        'vehicule', 'groupeTypeImmo', 'sousTypeImmo', 'statusImmo',
-                        'employe', 'bureau', 'fournisseur'
-                    ])->whereBetween('date_acquisition', [$dateDebut, $dateFin]);
-
-                    $dataImmo = $immoQuery->latest()->get();
-
-                    // 2️⃣ VEHICULES
-                    $vehiculeQuery = Vehicule::with([
-                        'modele', 'marque', 'sousTypeImmo', 'groupeTypeImmo', 'statusImmo',
-                        'employe', 'bureau', 'fournisseur'
-                    ])
-                        ->where('isdeleted', false)
-                        ->whereBetween('date_acquisition', [$dateDebut, $dateFin]);
-
-                    $dataVehicule = $vehiculeQuery->get();
-
-                    // 3️⃣ NORMALISATION DES CHAMPS
-                    $dataImmo->each(function ($immo) {
-                        $immo->type_actif = 'Immobilisation';
-                        $immo->designation = $immo->designation ?? $immo->nom ?? $immo->code;
-                        $immo->etat = $immo->etat ?? '-';
-                        $immo->montant_ttc = $immo->montant_ttc ?? 0;
-                        $immo->immatriculation = null;
-                        $immo->numero_chassis = null;
-                        $immo->statut_immo = optional($immo->statusImmo)->libelle_status_immo ?? 'N/A';
-                    });
-
-                    $dataVehicule->each(function ($vehicule) {
-                        $vehicule->type_actif = 'Vehicule';
-                        $vehicule->designation =
-                            (optional($vehicule->marque)->libelle ?? 'N/A') .
-                            ' - ' .
-                            (optional($vehicule->modele)->libelle_modele ?? 'N/A');
-                        $vehicule->statut_immo = optional($vehicule->statusImmo)->libelle_status_immo ?? 'N/A';
-                        $vehicule->etat = $vehicule->etat ?? '-';
-                        $vehicule->montant_ttc = $vehicule->montant_ttc ?? 0;
-                    });
-
-                    // 4️⃣ FUSION & TRI — même logique que pour 'enregistrement'
-                    $merged = $dataImmo->concat($dataVehicule)->sortByDesc('created_at')->values();
-
-                    // 5️⃣ GÉNÉRATION DU PDF
-                    $viewName = 'pdf.rapport.rapport_unifie_immobilisations';
-                    $filename = 'fiche_inventaire_immobilisations_unifie.pdf';
-                    $compactData = [
-                        'immobilisations' => $merged,
-                        'typeRapport' => $typeRapport
-                    ];
-                    break;
-
-
-                case 'bureau': // NOUVEAU: Logique pour le rapport par bureau (PDF)
-                    // Validation spécifique pour l'impression du rapport par bureau
-                    $validator = Validator::make($request->all(), [
-                        'date_debut_bureau' => 'required|date',
-                        'date_fin_bureau' => 'required|date|after_or_equal:date_debut_bureau',
-                        'bureau_id' => 'nullable|exists:bureaus,id',
-                    ]);
-
-                    if ($validator->fails()) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Les dates de début et de fin sont obligatoires pour le rapport par bureau.',
-                            'errors' => $validator->errors()
-                        ], 422);
-                    }
-
-                    $query = Immobilisation::with([
-                        'vehicule', 'groupeTypeImmo', 'sousTypeImmo', 'statusImmo',
-                        'employe', 'bureau', 'fournisseur'
-                    ])->whereBetween('date_acquisition', [$request->date_debut_bureau, $request->date_fin_bureau]);
-
-                    if ($request->filled('bureau_id')) {
-                        $query->where('bureau_id', $request->bureau_id);
-                    }
-
-                    $data = $query->latest()->get(); // Pas de pagination pour le PDF
-                    $viewName = 'pdf.rapport.rapport_bureau'; // <-- Chemin de la vue pour le rapport bureau
-                    $filename = 'rapport_immobilisations_par_bureau.pdf';
-                    $compactData = ['immobilisations' => $data]; // Données passées à la vue
-                    break;
-
-
-
-
-                default:
-                    return response()->json(['success' => false, 'message' => 'Type de rapport non valide pour l\'impression.'], 400);
+            if ($validator->fails()) {
+                return response()->json(['success' => false, 'message' => 'Validation échouée.', 'errors' => $validator->errors()], 422);
             }
 
-            // S'assurer que $compactData est défini avant d'appeler loadView
-            if (empty($compactData)) {
-                // Cela ne devrait pas arriver si tous les cases sont couverts, mais c'est une sécurité
-                return response()->json(['success' => false, 'message' => 'Erreur interne: Données du rapport non préparées pour la vue PDF.'], 500);
-            }
+            $dateDebut = $request->input('date_debut_acquisition');
+            $dateFin = $request->input('date_fin_acquisition');
 
-            $pdf = \Pdf::loadView($viewName, $compactData);
+            // IMMOBILISATIONS
+            $immoQuery = Immobilisation::with([
+                'vehicule', 'groupeTypeImmo', 'sousTypeImmo', 'statusImmo',
+                'employe', 'bureau', 'fournisseur'
+            ])->whereBetween('date_acquisition', [$dateDebut, $dateFin]);
+            $dataImmo = $immoQuery->latest()->get();
 
-            return $pdf->download($filename);
+            // VEHICULES
+            $vehiculeQuery = Vehicule::with([
+                'modele', 'marque', 'sousTypeImmo', 'groupeTypeImmo','statusImmo', 'employe', 'bureau', 'fournisseur'
+            ])
+                ->where('isdeleted', false)
+                ->whereBetween('date_acquisition', [$dateDebut, $dateFin]);
+            $dataVehicule = $vehiculeQuery->get();
+
+            // NORMALISATION : sans casser les objets
+            $dataImmo->each(function ($immo) {
+                $immo->type_actif = 'Immobilisation';
+                $immo->designation = $immo->designation ?? $immo->nom ?? $immo->code;
+            });
+
+            $dataVehicule->each(function ($vehicule) {
+                $vehicule->type_actif = 'Vehicule';
+                $vehicule->designation =
+                    (optional($vehicule->marque)->libelle ?? 'N/A') .
+                    ' - ' .
+                    (optional($vehicule->modele)->libelle_modele ?? 'N/A');
+                    $vehicule->status_immo = (optional($vehicule->statusImmo)->libelle_status_immo ?? 'N/A');
+            });
+
+            $merged = $dataImmo->merge($dataVehicule)->sortByDesc('created_at')->values();
+
+            $viewName = 'pdf.rapport.fiche_inventaire';
+            $filename = 'fiche_inventaire_immobilisations.pdf';
+            $compactData = ['immobilisations' => $merged];
+            break;
+
+            case 'bureau': // NOUVEAU: Logique pour le rapport par bureau (PDF)
+                // Validation spécifique pour l'impression du rapport par bureau
+                $validator = Validator::make($request->all(), [
+                    'date_debut_bureau' => 'required|date',
+                    'date_fin_bureau' => 'required|date|after_or_equal:date_debut_bureau',
+                    'bureau_id' => 'nullable|exists:bureaus,id',
+                ]);
+
+                if ($validator->fails()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Les dates de début et de fin sont obligatoires pour le rapport par bureau.',
+                        'errors' => $validator->errors()
+                    ], 422);
+                }
+
+                $query = Immobilisation::with([
+                    'vehicule', 'groupeTypeImmo', 'sousTypeImmo', 'statusImmo',
+                    'employe', 'bureau', 'fournisseur'
+                ])->whereBetween('date_acquisition', [$request->date_debut_bureau, $request->date_fin_bureau]);
+
+                if ($request->filled('bureau_id')) {
+                    $query->where('bureau_id', $request->bureau_id);
+                }
+
+                $data = $query->latest()->get(); // Pas de pagination pour le PDF
+                $viewName = 'pdf.rapport.rapport_bureau'; // <-- Chemin de la vue pour le rapport bureau
+                $filename = 'rapport_immobilisations_par_bureau.pdf';
+                $compactData = ['immobilisations' => $data]; // Données passées à la vue
+                break;
+
+
+
+
+            default:
+                return response()->json(['success' => false, 'message' => 'Type de rapport non valide pour l\'impression.'], 400);
+        }
+
+        // S'assurer que $compactData est défini avant d'appeler loadView
+        if (empty($compactData)) {
+            // Cela ne devrait pas arriver si tous les cases sont couverts, mais c'est une sécurité
+            return response()->json(['success' => false, 'message' => 'Erreur interne: Données du rapport non préparées pour la vue PDF.'], 500);
+        }
+
+        $pdf = \Pdf::loadView($viewName, $compactData);
+
+        return $pdf->download($filename);
     }
 
 /*     public function getCodesImmoEtVehicule(Request $request)
