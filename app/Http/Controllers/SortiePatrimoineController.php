@@ -8,7 +8,8 @@ use App\Http\Resources\PostResource;
 use App\Models\Vehicule;
 use App\Models\Immobilisation;
 use App\Models\Exercice;
-use Illuminate\Support\Facades\DB; 
+use Illuminate\Support\Facades\DB;
+use App\Models\Parametrage\StatusImmo;
 
 class SortiePatrimoineController extends Controller
 {
@@ -19,7 +20,7 @@ class SortiePatrimoineController extends Controller
     {
         // 1. Trouver l'exercice ouvert
         $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
-        
+
         if (!$exerciceOuvert) {
             return response()->json([
                 'success' => false,
@@ -115,40 +116,62 @@ class SortiePatrimoineController extends Controller
             'sorties.*.designation_immo' => 'required|string|max:50',
             'sorties.*.type_immo' => 'required|string|max:50',
             'sorties.*.valeur' => 'required|numeric|min:0',
-            'sorties.*.date_sortie' => 'required|date_format:Y-m-d', // Assurez-vous du format
+            'sorties.*.date_sortie' => 'required|date_format:Y-m-d',
             'sorties.*.observation' => 'nullable|string',
         ]);
 
-        // 3. Préparation des données pour l'insertion
-        $sortiesToInsert = [];
-        $timestamp = now(); // Pour les colonnes created_at et updated_at
+        // 3. Récupérer l'ID du statut "Sortie de patrimoine"
+        $statusSortie = StatusImmo::where('libelle_status_immo', 'Sortie de patrimoine')->first();
 
-        foreach ($validatedData['sorties'] as $sortie) {
-            $sortiesToInsert[] = [
-                'code_immo'        => $sortie['code_immo'],
-                'designation_immo' => $sortie['designation_immo'],
-                'type_immo'        => $sortie['type_immo'],
-                'valeur'          => $sortie['valeur'],
-                'date_sortie'      => $sortie['date_sortie'],
-                'observation'      => $sortie['observation'] ?? null,
-                'exercice_id'      => $exerciceId, // <-- Ajout de l'ID de l'exercice ouvert
-                'isdeleted'        => false,
-                'created_at'       => $timestamp,
-                'updated_at'       => $timestamp,
-            ];
+        if (!$statusSortie) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Le statut "Sortie de patrimoine" n\'existe pas. Veuillez le créer dans la table status_immo.'
+            ], 404);
         }
 
-        // 4. Insertion multiple (Batch Insert)
-        // C'est la méthode la plus rapide pour insérer plusieurs lignes
+        // 4. Préparation des données pour insertion
+        $sortiesToInsert = [];
+        $timestamp = now();
+
         DB::beginTransaction();
         try {
+            foreach ($validatedData['sorties'] as $sortie) {
+
+                // Insertion dans la table SortiePatrimoine
+                $sortiesToInsert[] = [
+                    'code_immo'        => $sortie['code_immo'],
+                    'designation_immo' => $sortie['designation_immo'],
+                    'type_immo'        => $sortie['type_immo'],
+                    'valeur'           => $sortie['valeur'],
+                    'date_sortie'      => $sortie['date_sortie'],
+                    'observation'      => $sortie['observation'] ?? null,
+                    'exercice_id'      => $exerciceId,
+                    'isdeleted'        => false,
+                    'created_at'       => $timestamp,
+                    'updated_at'       => $timestamp,
+                ];
+
+                // === Mise à jour du statut selon le type d'immo ===
+                if (strtolower($sortie['type_immo']) === 'vehicule') {
+                    Vehicule::where('code', $sortie['code_immo'])
+                        ->update(['id_status_immo' => $statusSortie->id]);
+                } else {
+                    Immobilisation::where('code', $sortie['code_immo'])
+                        ->update(['id_status_immo' => $statusSortie->id]);
+                }
+            }
+
+            // Insertion en masse
             SortiePatrimoine::insert($sortiesToInsert);
+
             DB::commit();
-            
+
             return new PostResource(true, count($sortiesToInsert) . ' sorties de patrimoine enregistrées avec succès.', null);
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de l\'enregistrement multiple des sorties.',
@@ -156,6 +179,7 @@ class SortiePatrimoineController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Display the specified resource.
@@ -173,7 +197,7 @@ class SortiePatrimoineController extends Controller
                 'message' => 'Sortie de patrimoine non trouvée.'
             ], 404);
         }
-        
+
         // 3. (Optionnel mais recommandé) Vérifier si l'enregistrement n'est pas "supprimé"
         // Si vous voulez interdire l'affichage des sorties logiquement supprimées
         if ($sortiePatrimoine->isdeleted) {
@@ -182,11 +206,11 @@ class SortiePatrimoineController extends Controller
                 'message' => 'Cette sortie de patrimoine a été supprimée et ne peut pas être consultée.'
             ], 404);
         }
-        
+
         // 4. Retourner la réponse
         // Si vous avez des relations (comme la relation avec l'Exercice), vous pouvez la charger ici :
         // $sortiePatrimoine->load('exercice');
-        
+
         return new PostResource(true, 'Détails de la sortie de patrimoine.', $sortiePatrimoine);
     }
 
@@ -213,7 +237,7 @@ class SortiePatrimoineController extends Controller
                 'message' => 'Sortie de patrimoine non trouvée.'
             ], 404);
         }
-        
+
         // Vous pouvez également ajouter ici une vérification pour s'assurer que l'exercice est ouvert si nécessaire,
         // mais la mise à jour des données existantes n'est généralement pas bloquée par l'état de l'exercice.
 
@@ -250,7 +274,7 @@ class SortiePatrimoineController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id)
+/*     public function destroy($id)
     {
         // 1. Trouver l'enregistrement
         $sortiePatrimoine = SortiePatrimoine::find($id);
@@ -268,24 +292,93 @@ class SortiePatrimoineController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Cette sortie de patrimoine est déjà marquée comme supprimée.'
-            ], 400); // 400 Bad Request ou 409 Conflict
+            ], 400);
         }
 
-        // 3. Mise à jour de la colonne 'isdeleted'
         try {
+            // 3. Marquer comme supprimée
             $sortiePatrimoine->isdeleted = true;
             $sortiePatrimoine->save();
 
-            // 4. Retourner la réponse
-            return new PostResource(true, 'Sortie de patrimoine supprimée logiquement avec succès.', null);
+            // 4. Récupérer le code immo
+            $codeImmo = $sortiePatrimoine->code_immo;
+
+            // 5. Chercher si c’est un véhicule ou un immobilisation
+            $vehicule = Vehicule::where('code_vehicule', $codeImmo)->first();
+            $immobilisation = Immobilisation::where('code_immo', $codeImmo)->first();
+
+            // 6. Remettre le statut à "En magasin"
+            if ($vehicule) {
+                $vehicule->statut = 'En magasin';
+                $vehicule->save();
+            } elseif ($immobilisation) {
+                $immobilisation->statut = 'En magasin';
+                $immobilisation->save();
+            }
+
+            // 7. Retourner la réponse
+            return new PostResource(true, 'Sortie de patrimoine supprimée logiquement et statut remis à "En magasin".', null);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors de la suppression logique de la sortie de patrimoine.',
+                'message' => 'Erreur lors de la suppression logique.',
                 'error' => $e->getMessage()
             ], 500);
         }
+    } */
+
+public function destroy($id)
+{
+    // 1. Trouver l'enregistrement
+    $sortiePatrimoine = SortiePatrimoine::find($id);
+
+    if (!$sortiePatrimoine) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Sortie de patrimoine non trouvée.'
+        ], 404);
     }
+
+    try {
+        $codeImmo = $sortiePatrimoine->code_immo;
+
+        // 🔹 Récupérer l'ID du statut "En magasin"
+        $statusEnMagasin = StatusImmo::where('libelle_status_immo', 'En magasin')->first();
+
+        if (!$statusEnMagasin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Le statut "En magasin" est introuvable.'
+            ], 500);
+        }
+
+        // 🔹 Vérifier si c’est un véhicule ou une immobilisation
+        $vehicule = Vehicule::where('code', $codeImmo)->first();
+        $immobilisation = Immobilisation::where('code', $codeImmo)->first();
+
+        if ($vehicule) {
+            $vehicule->id_status_immo = $statusEnMagasin->id;
+            $vehicule->save();
+        } elseif ($immobilisation) {
+            $immobilisation->id_status_immo = $statusEnMagasin->id;
+            $immobilisation->save();
+        }
+
+        // 🔹 Supprimer l'entrée dans SortiePatrimoine
+        $sortiePatrimoine->delete();
+
+        return new PostResource(true, 'Sortie de patrimoine annulée, actif remis en magasin et retrait de la table SortiePatrimoine.', null);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Erreur lors de l’annulation de la sortie de patrimoine.',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
 
 }

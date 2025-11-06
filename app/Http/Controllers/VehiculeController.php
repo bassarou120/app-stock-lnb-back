@@ -23,13 +23,17 @@ class VehiculeController extends Controller
 {
      // Afficher la liste des véhicules
     public function index()
-     {
-         $vehicules = Vehicule::with(['modele', 'marque', 'sousTypeImmo', 'groupeTypeImmo'])
-         ->where('isdeleted', false)
-         ->latest()->paginate(1000);
+    {
+        $vehicules = Vehicule::with(['modele', 'marque', 'sousTypeImmo', 'groupeTypeImmo', 'statusImmo'])
+            ->where('isdeleted', false)
+            ->whereHas('statusImmo', function ($query) {
+                $query->where('libelle_status_immo', '!=', 'Sortie de patrimoine');
+            })
+            ->latest()
+            ->paginate(1000);
 
-         return new PostResource(true, 'Liste des véhicules', $vehicules);
-     } 
+        return new PostResource(true, 'Liste des véhicules', $vehicules);
+    }
 
      public function storeBatch(Request $request)
     {
