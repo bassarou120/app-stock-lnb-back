@@ -231,8 +231,8 @@
                 <td>{{ $immo->designation ?? '-' }}</td>
                 <td>{{ $immo->date_acquisition ? Carbon::parse($immo->date_acquisition)->format('d/m/Y') : '-' }}</td>
                 <td>{{ $immo->fournisseur->nom ?? '-' }}</td>
-                <td>{{ $immo->groupeTypeImmo->libelle ?? '-' }}</td>
-                <td>{{ $immo->sousTypeImmo->libelle ?? '-' }}</td>
+                <td>{{ $immo->libelle_groupe ?? '-' }}</td>
+                <td>{{ $immo->libelle_soustype ?? '-' }}</td>
                 <td>{{ $immo->statusImmo->libelle_status_immo ?? '-' }}</td>
                 <td>{{ $immo->bureau->libelle_bureau ?? '-' }}</td>
                 <td>{{ $immo->employe ? ($immo->employe->nom . ' ' . $immo->employe->prenom) : '-' }}</td>
