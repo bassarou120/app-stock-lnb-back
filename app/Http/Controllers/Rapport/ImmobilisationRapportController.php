@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Immobilisation;
 use App\Models\Transfert;
-use App\Models\vehicule;
+use App\Models\Vehicule;
 use App\Models\Parametrage\Bureau;
 use App\Models\Parametrage\Fournisseur;
 use App\Models\Intervention; // NOUVEAU: Importer le modèle Intervention
@@ -348,21 +348,20 @@ class ImmobilisationRapportController extends Controller
         }
 
         switch ($typeRapport) {
-            case 'enregistrement':
-            // 1. Validation spécifique
+           case 'enregistrement':
             $validator = Validator::make($request->all(), [
                 'code_immo' => 'nullable|string',
                 'date_debut_acquisition' => 'nullable|date',
             ]);
 
             if ($validator->fails()) {
-                return response()->json(['success' => false, 'message' => 'Validation échouée pour le rapport d\'enregistrement PDF.', 'errors' => $validator->errors()], 422);
+                return response()->json(['success' => false, 'message' => 'Validation échouée.', 'errors' => $validator->errors()], 422);
             }
 
             $codeImmo = $request->input('code_immo');
             $dateDebutAcquisition = $request->input('date_debut_acquisition');
 
-            // --- A. Requête IMMOBILISATIONS (Collection complète) ---
+            // IMMOBILISATIONS
             $immoQuery = Immobilisation::with([
                 'vehicule', 'groupeTypeImmo', 'sousTypeImmo', 'statusImmo',
                 'employe', 'bureau', 'fournisseur'
@@ -374,9 +373,10 @@ class ImmobilisationRapportController extends Controller
             if ($request->filled('date_debut_acquisition')) {
                 $immoQuery->whereDate('date_acquisition', '>=', $dateDebutAcquisition);
             }
-            $dataImmo = $immoQuery->latest()->get(); // Pas de pagination
 
-            // --- B. Requête VEHICULES (Collection complète) ---
+            $dataImmo = $immoQuery->latest()->get();
+
+            // VEHICULES
             $vehiculeQuery = Vehicule::with([
                 'modele', 'marque', 'sousTypeImmo', 'groupeTypeImmo', 'employe', 'bureau', 'fournisseur'
             ])->where('isdeleted', false);
@@ -387,42 +387,30 @@ class ImmobilisationRapportController extends Controller
             if ($request->filled('date_debut_acquisition')) {
                 $vehiculeQuery->whereDate('date_acquisition', '>=', $dateDebutAcquisition);
             }
+
             $dataVehicule = $vehiculeQuery->get();
 
-            // --- C. Normalisation et Fusion (LOGIQUE CLÉ) ---
+            // NORMALISATION : garder les objets Eloquent
+            $dataImmo->each(function ($immo) {
+                $immo->type_actif = 'Immobilisation';
+                $immo->designation = $immo->designation ?? $immo->nom ?? $immo->code;
+            });
 
-            // Normaliser les Immobilisations
-            $immoArray = $dataImmo->map(function($immo) {
-                $data = $immo->toArray();
-                $data['type_actif'] = 'Immobilisation';
-                $data['immatriculation'] = null;
-                $data['numero_chassis'] = null;
-                return $data;
-            }); // Ne pas faire ->toArray() tout de suite
+            $dataVehicule->each(function ($vehicule) {
+                $vehicule->type_actif = 'Vehicule';
+                $vehicule->designation =
+                    (optional($vehicule->marque)->libelle ?? 'N/A') .
+                    ' - ' .
+                    (optional($vehicule->modele)->libelle_modele ?? 'N/A');
+            });
 
-            // Normaliser les Véhicules
-            $vehiculeArray = $dataVehicule->map(function($vehicule) {
-                $data = $vehicule->toArray();
-                $data['type_actif'] = 'Vehicule';
-                $marque = optional($vehicule->marque)->libelle ?? 'N/A';
-                $modele = optional($vehicule->modele)->libelle_modele ?? 'N/A';
-                $data['designation'] = $marque . ' - ' . $modele;
-                return $data;
-            }); // Ne pas faire ->toArray() tout de suite
+            // Fusion & tri
+            $merged = $dataImmo->merge($dataVehicule)->sortByDesc('created_at')->values();
 
-            // Fusionner, trier et définir la variable $data finale
-            $data = collect($immoArray)
-            ->merge(collect($vehiculeArray))
-            ->sortByDesc('created_at')
-            ->values();
-
-
-            // --- D. Définition des variables finales pour l'impression ---
-            $viewName = 'pdf.rapport.rapport_immobilisations'; // Adaptez le nom de la vue
+            $viewName = 'pdf.rapport.rapport_immobilisations';
             $filename = 'rapport_enregistrement_immobilisations.pdf';
-            $compactData = ['immobilisations' => $data]; // Utilisation de $data pour la collection unifiée
+            $compactData = ['immobilisations' => $merged];
             break;
-
             case 'transfert':
                 // Validation spécifique pour l'impression du rapport de transfert (dates obligatoires)
                 $validator = Validator::make($request->all(), [
@@ -505,100 +493,87 @@ class ImmobilisationRapportController extends Controller
                 $compactData = ['interventions' => $data]; // Définir les données pour la vue
                 break;
 
-                case 'inventaire': 
-                    $validator = Validator::make($request->all(), [
-                        'date_debut_acquisition' => 'required|date',
-                        'date_fin_acquisition' => 'required|date|after_or_equal:date_debut_acquisition',
-                    ]);
-                
-                    if ($validator->fails()) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Validation échouée pour la fiche d\'inventaire PDF. Les dates d\'acquisition sont obligatoires.',
-                            'errors' => $validator->errors()
-                        ], 422);
-                    }
-                
-                    $dateDebut = $request->input('date_debut_acquisition');
-                    $dateFin = $request->input('date_fin_acquisition');
-                
-                    // --- A. IMMOBILISATIONS ---
-                    $immoQuery = Immobilisation::with([
-                        'vehicule', 'groupeTypeImmo', 'sousTypeImmo', 'statusImmo',
-                        'employe', 'bureau', 'fournisseur'
-                    ])->whereBetween('date_acquisition', [$dateDebut, $dateFin]);
-                    $dataImmo = $immoQuery->latest()->get();
-                
-                    // --- B. VEHICULES ---
-                    $vehiculeQuery = Vehicule::with([
-                        'modele', 'marque', 'sousTypeImmo', 'groupeTypeImmo', 'employe', 'bureau', 'fournisseur'
-                    ])->where('isdeleted', false)
-                      ->whereBetween('date_acquisition', [$dateDebut, $dateFin]);
-                    $dataVehicule = $vehiculeQuery->get(); 
-                
-                    // --- C. Normalisation ---
-                    $immoArray = $dataImmo->map(function($immo) {
-                        $data = $immo->toArray();
-                        $data['type_actif'] = 'Immobilisation';
-                        $data['immatriculation'] = null;
-                        $data['numero_chassis'] = null;
-                    
-                        // 1) tenter depuis la relation Eloquent
-                        $groupeLibelle = optional($immo->groupeTypeImmo)->libelle ?? null;
-                        $sousTypeLibelle = optional($immo->sousTypeImmo)->libelle ?? null;
-                    
-                        // 2) si pas trouvé, tenter depuis le tableau (différentes formes possibles)
-                        if (empty($groupeLibelle)) {
-                            $groupeLibelle = $data['groupe_type_immo']['libelle'] ?? ($data['groupeTypeImmo']['libelle'] ?? null);
-                        }
-                        if (empty($sousTypeLibelle)) {
-                            $sousTypeLibelle = $data['sous_type_immo']['libelle'] ?? ($data['sousTypeImmo']['libelle'] ?? null);
-                        }
-                    
-                        $data['libelle_groupe'] = $groupeLibelle ?? '-';
-                        $data['libelle_soustype'] = $sousTypeLibelle ?? '-';
-                    
-                        return $data;
-                    });
-                    
-                    $vehiculeArray = $dataVehicule->map(function($vehicule) {
-                        $data = $vehicule->toArray();
-                        $data['type_actif'] = 'Vehicule';
-                        $marque = optional($vehicule->marque)->libelle ?? 'N/A';
-                        $modele = optional($vehicule->modele)->libelle_modele ?? 'N/A';
-                        $data['designation'] = $marque . ' - ' . $modele;
-                    
-                        $groupeLibelle = optional($vehicule->groupeTypeImmo)->libelle ?? null;
-                        $sousTypeLibelle = optional($vehicule->sousTypeImmo)->libelle ?? null;
-                    
-                        if (empty($groupeLibelle)) {
-                            $groupeLibelle = $data['groupe_type_immo']['libelle'] ?? ($data['groupeTypeImmo']['libelle'] ?? null);
-                        }
-                        if (empty($sousTypeLibelle)) {
-                            $sousTypeLibelle = $data['sous_type_immo']['libelle'] ?? ($data['sousTypeImmo']['libelle'] ?? null);
-                        }
-                    
-                        $data['libelle_groupe'] = $groupeLibelle ?? '-';
-                        $data['libelle_soustype'] = $sousTypeLibelle ?? '-';
-                    
-                        return $data;
-                    });
-                    
-                
-                    // --- D. Fusion + Conversion récursive en objets ---
-                    $data = collect($immoArray)
-                        ->merge(collect($vehiculeArray))
-                        ->map(fn($item) => $this->arrayToObjectRecursive($item)) // ✅ Appel à la méthode privée
-                        ->sortByDesc('created_at')
-                        ->values();
-                
-                    // --- E. Envoi à la vue ---
-                    $viewName = 'pdf.rapport.fiche_inventaire';
-                    $filename = 'fiche_inventaire_immobilisations.pdf';
-                    $compactData = ['immobilisations' => $data];
-                    break;
-                
-                
+            case 'inventaire':
+            $validator = Validator::make($request->all(), [
+                'date_debut_acquisition' => 'required|date',
+                'date_fin_acquisition' => 'required|date|after_or_equal:date_debut_acquisition',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['success' => false, 'message' => 'Validation échouée.', 'errors' => $validator->errors()], 422);
+            }
+
+            $dateDebut = $request->input('date_debut_acquisition');
+            $dateFin = $request->input('date_fin_acquisition');
+
+            // IMMOBILISATIONS
+            $immoQuery = Immobilisation::with([
+                'vehicule', 'groupeTypeImmo', 'sousTypeImmo', 'statusImmo',
+                'employe', 'bureau', 'fournisseur'
+            ])->whereBetween('date_acquisition', [$dateDebut, $dateFin]);
+            $dataImmo = $immoQuery->latest()->get();
+
+            // VEHICULES
+            $vehiculeQuery = Vehicule::with([
+                'modele', 'marque', 'sousTypeImmo', 'groupeTypeImmo', 'employe', 'bureau', 'fournisseur'
+            ])
+                ->where('isdeleted', false)
+                ->whereBetween('date_acquisition', [$dateDebut, $dateFin]);
+            $dataVehicule = $vehiculeQuery->get();
+
+            // NORMALISATION : sans casser les objets
+            $dataImmo->each(function ($immo) {
+                $immo->type_actif = 'Immobilisation';
+                $immo->designation = $immo->designation ?? $immo->nom ?? $immo->code;
+            });
+
+            $dataVehicule->each(function ($vehicule) {
+                $vehicule->type_actif = 'Vehicule';
+                $vehicule->designation =
+                    (optional($vehicule->marque)->libelle ?? 'N/A') .
+                    ' - ' .
+                    (optional($vehicule->modele)->libelle_modele ?? 'N/A');
+            });
+
+            $merged = $dataImmo->merge($dataVehicule)->sortByDesc('created_at')->values();
+
+            $viewName = 'pdf.rapport.fiche_inventaire';
+            $filename = 'fiche_inventaire_immobilisations.pdf';
+            $compactData = ['immobilisations' => $merged];
+            break;
+
+            case 'bureau': // NOUVEAU: Logique pour le rapport par bureau (PDF)
+                // Validation spécifique pour l'impression du rapport par bureau
+                $validator = Validator::make($request->all(), [
+                    'date_debut_bureau' => 'required|date',
+                    'date_fin_bureau' => 'required|date|after_or_equal:date_debut_bureau',
+                    'bureau_id' => 'nullable|exists:bureaus,id',
+                ]);
+
+                if ($validator->fails()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Les dates de début et de fin sont obligatoires pour le rapport par bureau.',
+                        'errors' => $validator->errors()
+                    ], 422);
+                }
+
+                $query = Immobilisation::with([
+                    'vehicule', 'groupeTypeImmo', 'sousTypeImmo', 'statusImmo',
+                    'employe', 'bureau', 'fournisseur'
+                ])->whereBetween('date_acquisition', [$request->date_debut_bureau, $request->date_fin_bureau]);
+
+                if ($request->filled('bureau_id')) {
+                    $query->where('bureau_id', $request->bureau_id);
+                }
+
+                $data = $query->latest()->get(); // Pas de pagination pour le PDF
+                $viewName = 'pdf.rapport.rapport_bureau'; // <-- Chemin de la vue pour le rapport bureau
+                $filename = 'rapport_immobilisations_par_bureau.pdf';
+                $compactData = ['immobilisations' => $data]; // Données passées à la vue
+                break;
+
+
 
 
             default:
@@ -616,7 +591,7 @@ class ImmobilisationRapportController extends Controller
         return $pdf->download($filename);
     }
 
-    public function getCodesImmoEtVehicule(Request $request)
+/*     public function getCodesImmoEtVehicule(Request $request)
     {
         try {
             // 1. Récupérer les codes des immobilisations avec le champ 'type'
@@ -643,16 +618,129 @@ class ImmobilisationRapportController extends Controller
         } catch (\Exception $e) {
             return new PostResource(false, 'Erreur lors de la récupération des codes : ' . $e->getMessage());
         }
-    }
+    } */
 
-    private function arrayToObjectRecursive($array)
+    /* public function getCodesImmoEtVehicule(Request $request)
     {
-        // Si c’est un tableau, on convertit chaque élément
-        if (is_array($array)) {
-            return (object) array_map([$this, 'arrayToObjectRecursive'], $array);
-        }
+    try {
+        // --- 1. Requête Immobilisations : Code et Designation ---
+        $codesImmo = Immobilisation::select('id', 'code', 'designation')
+            ->addSelect(\DB::raw("'immobilisation' as type"))
+            ->addSelect(\DB::raw('designation as designation_complete'))
+            ->get(); // Récupère la collection de modèles (avec les champs ajoutés)
 
-        // Sinon, on renvoie la valeur telle quelle
-        return $array;
+        // Convertir la collection en un tableau PHP brut et conserver uniquement les colonnes nécessaires
+        $immoArray = $codesImmo->map(function ($immo) {
+            return [
+                'id' => $immo->id,
+                'code' => $immo->code,
+                'type' => $immo->type,
+                'designation_complete' => $immo->designation_complete,
+            ];
+        })->toArray(); // <-- Conversion en tableau PHP brut
+
+
+        // --- 2. Requête Véhicules : Code, Marque et Modèle pour construire la Designation ---
+        $codesVehicule = Vehicule::with(['marque', 'modele'])
+            ->select('id', 'code', 'marque_id', 'modele_id')
+            ->where('isdeleted', false)
+            ->addSelect(\DB::raw("'vehicule' as type"))
+            ->get();
+
+        // 3. Transformation des Véhicules et Fusion
+
+        // Transformer les véhicules et créer le tableau PHP brut
+        $vehiculeArray = $codesVehicule->map(function($vehicule) {
+
+            $marque = optional($vehicule->marque)->libelle ?? 'N/A';
+            $modele = optional($vehicule->modele)->libelle_modele ?? 'N/A';
+            $designationComplete = $marque . ' - ' . $modele;
+
+            return [
+                'id' => $vehicule->id,
+                'code' => $vehicule->code,
+                'type' => $vehicule->type,
+                'designation_complete' => $designationComplete
+            ];
+        })->toArray(); // <-- Conversion en tableau PHP brut
+
+        // 3b. Fusionner les deux tableaux bruts et reconvertir en Collection Laravel
+        $mergedArray = array_merge($immoArray, $vehiculeArray);
+        $codesCombinés = collect($mergedArray); // On reconvertit en collection pour l'envoi final
+
+        // 4. Renvoyer la collection combinée
+        $result = [
+            'codes' => $codesCombinés->values()
+        ];
+
+        return new PostResource(true, 'Liste combinée des codes/désignations récupérée avec succès.', $result);
+
+        } catch (\Exception $e) {
+            return new PostResource(false, 'Erreur lors de la récupération des codes : ' . $e->getMessage());
+        }
+    } */
+
+        public function getCodesImmoEtVehicule(Request $request)
+{
+    try {
+        // --- 1. Requête Immobilisations : Code et Designation ---
+        // CORRIGÉ : On sélectionne 'designation' en tant qu'alias 'designation_complete'
+        $codesImmo = Immobilisation::select('id', 'code')
+            ->selectRaw('designation as designation_complete') // Utilisation de selectRaw pour l'alias
+            ->addSelect(\DB::raw("'immobilisation' as type"))
+            ->get(); // Récupère la collection de modèles (avec les champs ajoutés)
+
+        // Convertir la collection en un tableau PHP brut.
+        // L'alias 'designation_complete' est maintenant directement accessible et correct.
+        $immoArray = $codesImmo->map(function ($immo) {
+            return [
+                'id' => $immo->id,
+                'code' => $immo->code,
+                'type' => $immo->type,
+                // On utilise l'alias correctement matérialisé
+                'designation_complete' => $immo->designation_complete,
+            ];
+        })->toArray(); // <-- Conversion en tableau PHP brut
+
+
+        // --- 2. Requête Véhicules : Code, Marque et Modèle pour construire la Designation ---
+        $codesVehicule = Vehicule::with(['marque', 'modele'])
+            ->select('id', 'code', 'marque_id', 'modele_id')
+            ->where('isdeleted', false)
+            ->addSelect(\DB::raw("'vehicule' as type"))
+            ->get();
+
+        // 3. Transformation des Véhicules et Fusion
+
+        // Transformer les véhicules et créer le tableau PHP brut
+        $vehiculeArray = $codesVehicule->map(function($vehicule) {
+
+            $marque = optional($vehicule->marque)->libelle ?? 'N/A';
+            $modele = optional($vehicule->modele)->libelle_modele ?? 'N/A';
+            $designationComplete = $marque . ' - ' . $modele;
+
+            return [
+                'id' => $vehicule->id,
+                'code' => $vehicule->code,
+                'type' => $vehicule->type,
+                // Le nom de la clé est uniforme ici aussi
+                'designation_complete' => $designationComplete
+            ];
+        })->toArray(); // <-- Conversion en tableau PHP brut
+
+        // 3b. Fusionner les deux tableaux bruts et reconvertir en Collection Laravel
+        $mergedArray = array_merge($immoArray, $vehiculeArray);
+        $codesCombinés = collect($mergedArray); // On reconvertit en collection pour l'envoi final
+
+        // 4. Renvoyer la collection combinée
+        $result = [
+            'codes' => $codesCombinés->values()
+        ];
+
+        return new PostResource(true, 'Liste combinée des codes/désignations récupérée avec succès.', $result);
+
+    } catch (\Exception $e) {
+        return new PostResource(false, 'Erreur lors de la récupération des codes : ' . $e->getMessage());
     }
+}
 }

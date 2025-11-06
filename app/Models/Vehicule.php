@@ -11,6 +11,8 @@ use App\Models\Parametrage\SousTypeImmo;
 use App\Models\Parametrage\Bureau;
 use App\Models\Parametrage\Fournisseur;
 use App\Models\Parametrage\Employe;
+use App\Models\Parametrage\StatusImmo;
+
 
 class Vehicule extends Model
 {
@@ -74,5 +76,10 @@ class Vehicule extends Model
     public function fournisseur()
     {
         return $this->belongsTo(Fournisseur::class);
+    }
+
+    public function statusImmo()
+    {
+        return $this->belongsTo(StatusImmo::class, 'id_status_immo');
     }
 }

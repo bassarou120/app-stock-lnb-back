@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\Immobilisation;
 use App\Http\Resources\PostResource;
@@ -16,8 +17,9 @@ use App\Models\Parametrage\TypeImmo;
 use App\Models\Parametrage\StatusImmo;
 use App\Models\Vehicule;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use Illuminate\Support\Facades\DB;
 use App\Models\Transfert;
+
+
 
 class ImmobilisationController extends Controller
 {
@@ -43,10 +45,9 @@ class ImmobilisationController extends Controller
  *     )
  * )
  */
-    public function index()
-    {
-
-        $immos = Immobilisation::with([
+public function index()
+{
+    $immos = Immobilisation::with([
             'vehicule',
             'groupeTypeImmo',
             'sousTypeImmo',
@@ -54,12 +55,17 @@ class ImmobilisationController extends Controller
             'employe',
             'bureau',
             'fournisseur'
-        ])->where('isdeleted', false)
+        ])
+        ->where('isdeleted', false)
+        ->whereHas('statusImmo', function ($query) {
+            $query->where('libelle_status_immo', '!=', 'Sortie de patrimoine');
+        })
         ->latest()
         ->paginate(100);
 
-        return new PostResource(true, 'Liste des immobilisations', $immos);
-    }
+    return new PostResource(true, 'Liste des immobilisations', $immos);
+}
+
 
     // Créer une nouvelle immobilisation
 
@@ -500,6 +506,65 @@ class ImmobilisationController extends Controller
         } catch (\Exception $e) {
             return new PostResource(false, 'Erreur lors de la récupération des codes : ' . $e->getMessage());
         }
+    }
+
+    public function getDesignationByCode($code)
+    {
+
+        $cleanCode = $code;
+        //dd("cest bon", $cleanCode);
+
+            // 1. Recherche dans la table des immobilisations
+            // CLÉ : On utilise DB::raw('UPPER(code)') pour s'assurer que la colonne est comparée en majuscules
+            $immobilisation = Immobilisation::where('code', $cleanCode) 
+            ->select('id', 'code', DB::raw("designation AS designation_complete"), DB::raw("'Immobilisation' as type"))
+            ->first();
+
+        if ($immobilisation) {
+            // Retourne la donnée dans le format uniforme attendu par Angular
+            return response()->json([
+                'success' => true,
+                'message' => 'Immobilisation trouvée.',
+                'data' => [
+                    'id' => $immobilisation->id,
+                    'code' => $immobilisation->code,
+                    'designation_complete' => $immobilisation->designation_complete, 
+                    'type' => $immobilisation->type,
+                ]
+            ]);
+        }
+
+        // 2. Recherche dans la table des véhicules (inchangée)
+        $vehicule = Vehicule::where('code', $cleanCode)
+            ->with(['marque', 'modele']) 
+            ->select('id', 'code', 'marque_id', 'modele_id', DB::raw("'Vehicule' as type"))
+            ->first();
+
+        if ($vehicule) {
+            
+            $marque = $vehicule->marque ? $vehicule->marque->libelle : 'Marque Inconnue'; 
+            $modele = $vehicule->modele ? $vehicule->modele->libelle_modele : 'Modèle Inconnu'; 
+            
+            $designation = trim($marque . ' - ' . $modele);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Véhicule trouvé.',
+                'data' => [
+                    'id' => $vehicule->id,
+                    'code' => $vehicule->code,
+                    'designation_complete' => $designation,
+                    'type' => $vehicule->type,
+                ]
+            ]);
+        }
+
+        // 3. Actif non trouvé
+        return response()->json([
+            'success' => false,
+            'message' => 'Aucun actif trouvé pour ce code.',
+            'data' => null
+        ], 404);
     }
 
 }

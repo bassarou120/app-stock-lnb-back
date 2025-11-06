@@ -149,7 +149,7 @@ class VoitureSeeder extends Seeder
                 'energie' => 'Essence',
                 'date_mise_en_service' => '2021-09-11',
                 'kilometrage' =>   100000,
-                'numero_chassis' => '1234567890',   
+                'numero_chassis' => '1234567890',
                 'id_sous_type_immo' => 1,
                 'id_groupe_type_immo' => 1
             ],
