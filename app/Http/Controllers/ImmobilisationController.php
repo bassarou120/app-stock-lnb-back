@@ -45,10 +45,9 @@ class ImmobilisationController extends Controller
  *     )
  * )
  */
-    public function index()
-    {
-
-        $immos = Immobilisation::with([
+public function index()
+{
+    $immos = Immobilisation::with([
             'vehicule',
             'groupeTypeImmo',
             'sousTypeImmo',
@@ -56,12 +55,17 @@ class ImmobilisationController extends Controller
             'employe',
             'bureau',
             'fournisseur'
-        ])->where('isdeleted', false)
+        ])
+        ->where('isdeleted', false)
+        ->whereHas('statusImmo', function ($query) {
+            $query->where('libelle_status_immo', '!=', 'Sortie de patrimoine');
+        })
         ->latest()
         ->paginate(100);
 
-        return new PostResource(true, 'Liste des immobilisations', $immos);
-    }
+    return new PostResource(true, 'Liste des immobilisations', $immos);
+}
+
 
     // Créer une nouvelle immobilisation
 

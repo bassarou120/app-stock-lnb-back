@@ -17,7 +17,9 @@ class StatusImmoSeeder extends Seeder
         $StatusImmos = [
             ['libelle_status_immo' => "En magasin"],
             ['libelle_status_immo' => "En service"],
-            // ['libelle_status_immo' => "En panne"],
+            ['libelle_status_immo' => "Sortie de patrimoine"],
+            ['libelle_status_immo' => "Au parc"],
+            ['libelle_status_immo' => "Au pool"],
         ];
 
         foreach ($StatusImmos as $StatusImmo) {
