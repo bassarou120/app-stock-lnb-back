@@ -49,7 +49,6 @@ use App\Http\Controllers\Api\SiteSettingController;
 use App\Http\Controllers\Article_ExoController;
 use App\Http\Controllers\CategorieSortieTicketController;
 use App\Http\Controllers\ExerciceMouvementTicketController;
-use App\Http\Controllers\SortiePatrimoineController;
 
 
 Route::get('/user', function (Request $request) {
@@ -185,14 +184,13 @@ Route::get('/rapports/transferts', [ImmobilisationRapportController::class, 'get
 Route::get('/rapports/interventions', [ImmobilisationRapportController::class, 'getRapportData']);
 
 Route::get('/rapports/immobilisations/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportImmos']);
+
 // Routes pour l'impression PDF des rapports
 Route::get('/rapports/immobilisations/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
 // Route pour l'impression PDF des rapports de transferts
 Route::get('/rapports/transferts/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
 // Route pour l'impression PDF des rapports d'interventions
 Route::get('/rapports/interventions/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
-// Route pour l'impression PDF des rapports de bureau
-Route::get('/rapports/bureau/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
 // Routes API pour les Rapports de Stock (Entrée et Sortie)
 Route::get('/rapports/stock', [StockRapportController::class, 'getRapportData']);
 Route::get('/rapports/stock/imprimer', [StockRapportController::class, 'imprimerRapportStock']);
@@ -260,7 +258,8 @@ Route::get('/view-file', [MouvementStockController::class, 'viewFile']);
 
 Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController::class, 'downloadGroupedFile']);
 
-Route::get('/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']);
+/* Route::post('/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']); */
+Route::match(['GET', 'POST'], '/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']);
 
 Route::get('/mouvements/demande-sortie/check-status-and-generate/{id}', [MouvementStockController::class, 'checkStatusAccorde']);
 
@@ -282,19 +281,3 @@ Route::get('rapports/periodique/imprimer', [MouvementTicketController::class, 'i
 Route::get('rapports/periodiqueMontant/imprimer', [MouvementTicketController::class, 'imprimerRapportPeriodiqueMontant']);
 
 Route::get('/mouvements/demande-sortie/check-status-and-generate/{id}', [MouvementStockController::class, 'checkStatusAccorde']);
-
-Route::get('/rapports/getcodes', [ImmobilisationRapportController::class, 'getCodesImmoEtVehicule']);
-
-Route::get('/sortiepatrimoines', [SortiePatrimoineController::class, 'index']);
-Route::post('/sortiepatrimoines', [SortiePatrimoineController::class, 'store']);
-// 2. Route pour l'insertion MULTIPLE (Batch)
-Route::post('/sortiepatrimoines/batch', [SortiePatrimoineController::class, 'storeBatch']); // <-- Ajout de '/batch'
-
-Route::put('/sortiepatrimoines/{id}', [SortiePatrimoineController::class, 'update']);
-Route::delete('/sortiepatrimoines/{id}', [SortiePatrimoineController::class, 'destroy']);
-Route::get('/sortiepatrimoines/{id}', [SortiePatrimoineController::class, 'show']);
-
-// 4. Routes spécifiques à l'import/export
-Route::post('/sortiepatrimoines/import', [SortiePatrimoineController::class, 'importSortiePatrimoine']); // <-- Ajout pour la cohérence
-
-Route::get('immobilisations/designation-by-code/{code}', [ImmobilisationController::class, 'getDesignationByCode']);

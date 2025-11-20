@@ -204,7 +204,7 @@
           République du Bénin<br/>
           LNB-Lotterie National du Bénin SA
         </td>
-        
+
             <td style="width: 50%; text-align: right;">
                 Modèle n°1<br/>
                 rapport N° {{ date('YmdHis') }}<br/>
@@ -213,7 +213,7 @@
 
       </tr>
       <tr>
-        
+
         <td colspan="2" style="text-align: center;">
         <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
           <h2>RAPPORT INDIVIDUEL</h2>
@@ -229,7 +229,7 @@
         <td style="width: 50%;">
           <strong>CRITERES D'EXPORTATION</strong><br/><br/>
           <strong style="font-size:11px;">Article :</strong> {{ $filterLabels['article'] ?? 'Tous' }}<br/>
-          
+
             <strong style="font-size:11px;">Fournisseur :</strong> {{ $filterLabels['fournisseur'] ?? 'Tous' }}<br/>
         </td>
         <td style="width: 50%;">
@@ -256,7 +256,7 @@
                 <th>Stock final</th>
                 <th>PU</th>
                 <th>Observations</th>
-            
+
           </tr>
         </thead>
         <tbody>

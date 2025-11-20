@@ -225,8 +225,8 @@
                 @foreach($rapportArticles as $index => $data)
                     <tr>
                         <td class="center-col">{{ $index + 1 }}</td>
-                        <td>{{ $data['article']['libelle'] ?? 'N/A' }}</td>
-                        <td>{{ $data['article']['code_article'] ?? 'N/A' }}</td>
+                        <td>{{ $data['article']['libelle'] ?? '-' }}</td>
+                        <td>{{ $data['article']['code_article'] ?? '-' }}</td>
                         <td class="numeric-col">{{ rtrim(rtrim(number_format($data['stock_actuel']['quantite'] ?? 0, 2, ',', ' '), '0'), ',') }}</td>
                         <td class="numeric-col">{{ rtrim(rtrim(number_format($data['stock_actuel']['prix_unitaire'] ?? 0, 2, ',', ' '), '0'), ',') }} F CFA</td>
                         <td class="numeric-col">{{ rtrim(rtrim(number_format($data['stock_actuel']['cmp'] ?? 0, 2, ',', ' '), '0'), ',') }} F CFA</td>

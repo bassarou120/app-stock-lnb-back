@@ -60,11 +60,11 @@
             @foreach($vehicules as $index => $vehicule)
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ $vehicule->immatriculation ?? 'N/A' }}</td>
-                    <td>{{ $vehicule->marque->libelle ?? 'N/A' }}</td>
+                    <td>{{ $vehicule->immatriculation ?? '-' }}</td>
+                    <td>{{ $vehicule->marque->libelle ?? '-' }}</td>
                     <td>{{ $vehicule->modele->libelle_modele }}</td>
                     <td>{{ $vehicule->numero_chassis }}</td>
-                    <td>{{ $vehicule->kilometrage ?? 'N/A' }}</td>
+                    <td>{{ $vehicule->kilometrage ?? '-' }}</td>
                     <td>{{ \Carbon\Carbon::parse($vehicule->date_mise_en_service)->format('d/m/Y') }}</td>
                 </tr>
             @endforeach

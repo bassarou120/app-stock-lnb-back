@@ -139,7 +139,7 @@
     <tbody>
         <tr>
             <td>1</td> {{-- Numéro de ligne pour le transfert unique --}}
-            <td>{{ $transfert->immobilisation->code ?? 'N/A' }}</td>
+            <td>{{ $transfert->immobilisation->code ?? '-' }}</td>
             <td>{{ $transfert->immobilisation->designation ?? 'Non défini' }}</td>
             <td>{{ $transfert->old_bureau->libelle_bureau ?? 'Magasin' }}</td>
             <td>{{ $transfert->bureau->libelle_bureau ?? 'Non défini' }}</td>

@@ -234,27 +234,27 @@
                     <tr>
                         <td>{{ $index + 1 }}</td>
                         @if($typeRapport === 'vehicule')
-                            <td>{{ $item->marque->libelle ?? 'N/A' }}</td>
-                            <td>{{ $item->modele->libelle_modele ?? 'N/A' }}</td>
-                            <td>{{ $item->immatriculation ?? 'N/A' }}</td>
-                            <td>{{ $item->numero_chassis ?? 'N/A' }}</td>
-                            <td>{{ $item->date_mise_en_service ? \Carbon\Carbon::parse($item->date_mise_en_service)->format('d/m/Y') : 'N/A' }}</td>
-                            <td>{{ $item->kilometrage ?? 'N/A' }}</td>
+                            <td>{{ $item->marque->libelle ?? '-' }}</td>
+                            <td>{{ $item->modele->libelle_modele ?? '-' }}</td>
+                            <td>{{ $item->immatriculation ?? '-' }}</td>
+                            <td>{{ $item->numero_chassis ?? '-' }}</td>
+                            <td>{{ $item->date_mise_en_service ? \Carbon\Carbon::parse($item->date_mise_en_service)->format('d/m/Y') : '-' }}</td>
+                            <td>{{ $item->kilometrage ?? '-' }}</td>
                         @elseif($typeRapport === 'intervention_vehicule')
-                            <td>{{ $item->date_intervention ? \Carbon\Carbon::parse($item->date_intervention)->format('d/m/Y') : 'N/A' }}</td>
-                            <td>{{ $item->vehicule->marque->libelle ?? 'N/A' }} - {{ $item->vehicule->modele->libelle_modele ?? 'N/A' }}</td>
-                            <td>{{ $item->vehicule->immatriculation ?? 'N/A' }}</td>
-                            <td>{{ $item->typeIntervention->libelle_type_intervention ?? 'N/A' }}</td>
-                            <td>{{ $item->titre ?? 'N/A' }}</td>
-                            <td>{{ number_format($item->montant, 2, ',', ' ') ?? 'N/A' }}</td>
-                            <td>{{ $item->observation ?? 'N/A' }}</td>
+                            <td>{{ $item->date_intervention ? \Carbon\Carbon::parse($item->date_intervention)->format('d/m/Y') : '-' }}</td>
+                            <td>{{ $item->vehicule->marque->libelle ?? '-' }} - {{ $item->vehicule->modele->libelle_modele ?? '-' }}</td>
+                            <td>{{ $item->vehicule->immatriculation ?? '-' }}</td>
+                            <td>{{ $item->typeIntervention->libelle_type_intervention ?? '-' }}</td>
+                            <td>{{ $item->titre ?? '-' }}</td>
+                            <td>{{ number_format($item->montant, 2, ',', ' ') ?? '-' }}</td>
+                            <td>{{ $item->observation ?? '-' }}</td>
                         @elseif($typeRapport === 'vehicule_intervention_expirante')
-                            <td>{{ $item->date_expiration ? \Carbon\Carbon::parse($item->date_expiration)->format('d/m/Y') : 'N/A' }}</td>
-                            <td>{{ $item->vehicule->marque->libelle ?? 'N/A' }} - {{ $item->vehicule->modele->libelle_modele ?? 'N/A' }}</td>
-                            <td>{{ $item->vehicule->immatriculation ?? 'N/A' }}</td>
-                            <td>{{ $item->typeIntervention->libelle_type_intervention ?? 'N/A' }}</td>
-                            <td>{{ $item->titre ?? 'N/A' }}</td>
-                            <td>{{ $item->observation ?? 'N/A' }}</td>
+                            <td>{{ $item->date_expiration ? \Carbon\Carbon::parse($item->date_expiration)->format('d/m/Y') : '-' }}</td>
+                            <td>{{ $item->vehicule->marque->libelle ?? '-' }} - {{ $item->vehicule->modele->libelle_modele ?? '-' }}</td>
+                            <td>{{ $item->vehicule->immatriculation ?? '-' }}</td>
+                            <td>{{ $item->typeIntervention->libelle_type_intervention ?? '-' }}</td>
+                            <td>{{ $item->titre ?? '-' }}</td>
+                            <td>{{ $item->observation ?? '-' }}</td>
                         @endif
                     </tr>
                     @endforeach

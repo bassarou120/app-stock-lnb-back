@@ -35,19 +35,19 @@ class ExerciceMouvementTicketController extends Controller
         ]);
 
         // Crée une nouvelle instance de l'association
-        $exerciceMouvementStock = ExerciceMouvementStock::create($request->all());
+        $exerciceMouvementTicket = ExerciceMouvementTicket::create($request->all());
 
-        return new PostResource(true, 'Association créée avec succès.', $exerciceMouvementStock);
+        return new PostResource(true, 'Association créée avec succès.', $exerciceMouvementTicket);
     }
 
     public function show($exerciceId, $mouvementId)
     {
         // Recherche l'entrée spécifique en utilisant les IDs des deux clés
-        $exerciceMouvementStock = ExerciceMouvementStock::where('id_exercice', $exerciceId)
+        $exerciceMouvementTicket = ExerciceMouvementTicket::where('id_exercice', $exerciceId)
                                                       ->where('id_mouvement', $mouvementId)
                                                       ->firstOrFail();
 
-        return new PostResource(true, 'Association trouvée.', $exerciceMouvementStock);
+        return new PostResource(true, 'Association trouvée.', $exerciceMouvementTicket);
     }
 
     public function update(Request $request, $id)
@@ -56,16 +56,16 @@ class ExerciceMouvementTicketController extends Controller
         // On suppose ici qu'il pourrait y avoir des champs supplémentaires à mettre à jour.
         // Si tu n'as pas d'autres champs, tu peux ignorer cette méthode ou la simplifier.
 
-        $exerciceMouvementStock = ExerciceMouvementStock::findOrFail($id);
-        $exerciceMouvementStock->update($request->all());
+        $exerciceMouvementTicket = ExerciceMouvementTicket::findOrFail($id);
+        $exerciceMouvementTicket->update($request->all());
 
-        return new PostResource(true, 'Association mise à jour avec succès.', $exerciceMouvementStock);
+        return new PostResource(true, 'Association mise à jour avec succès.', $exerciceMouvementTicket);
     }
 
     public function destroy($id)
     {
-        $exerciceMouvementStock = ExerciceMouvementStock::findOrFail($id);
-        $exerciceMouvementStock->delete();
+        $exerciceMouvementTicket = ExerciceMouvementTicket::findOrFail($id);
+        $exerciceMouvementTicket->delete();
 
         return new PostResource(true, 'Association supprimée avec succès.');
     }

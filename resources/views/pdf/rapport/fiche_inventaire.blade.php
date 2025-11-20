@@ -227,16 +227,16 @@
             @foreach($immobilisations as $index => $immo)
             <tr>
                 <td>{{ $index + 1 }}</td>
-                <td>{{ $immo->code ?? 'N/A' }}</td>
-                <td>{{ $immo->designation ?? 'N/A' }}</td>
-                <td>{{ $immo->date_acquisition ? Carbon::parse($immo->date_acquisition)->format('d/m/Y') : 'N/A' }}</td>
-                <td>{{ $immo->fournisseur->nom ?? 'N/A' }}</td>
-                <td>{{ $immo->groupeTypeImmo->libelle ?? 'N/A' }}</td>
-                <td>{{ $immo->sousTypeImmo->libelle ?? 'N/A' }}</td>
-                <td>{{ $immo->statusImmo->libelle_status_immo ?? 'N/A' }}</td>
-                <td>{{ $immo->bureau->libelle_bureau ?? 'N/A' }}</td>
-                <td>{{ $immo->employe ? ($immo->employe->nom . ' ' . $immo->employe->prenom) : 'N/A' }}</td>
-                <td>{{ $immo->observation ?? 'N/A' }}</td>
+                <td>{{ $immo->code ?? '-' }}</td>
+                <td>{{ $immo->designation ?? '-' }}</td>
+                <td>{{ $immo->date_acquisition ? Carbon::parse($immo->date_acquisition)->format('d/m/Y') : '-' }}</td>
+                <td>{{ $immo->fournisseur->nom ?? '-' }}</td>
+                <td>{{ $immo->groupeTypeImmo->libelle ?? '-' }}</td>
+                <td>{{ $immo->sousTypeImmo->libelle ?? '-' }}</td>
+                <td>{{ $immo->statusImmo->libelle_status_immo ?? '-' }}</td>
+                <td>{{ $immo->bureau->libelle_bureau ?? '-' }}</td>
+                <td>{{ $immo->employe ? ($immo->employe->nom . ' ' . $immo->employe->prenom) : '-' }}</td>
+                <td>{{ $immo->observation ?? '-' }}</td>
             </tr>
             @endforeach
         </tbody>
