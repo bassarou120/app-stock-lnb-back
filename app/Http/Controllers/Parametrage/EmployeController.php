@@ -109,22 +109,31 @@ class EmployeController extends Controller
 
     public function store(Request $request)
     {
+        // 0. Nettoyage des entrées : Convertir les chaînes vides en NULL
+        // Ceci est crucial pour la règle 'nullable' et pour la cohérence de la BDD.
+        $request->merge([
+            'telephone' => $request->telephone === '' ? null : $request->telephone,
+            'email' => $request->email === '' ? null : $request->email,
+        ]);
+
         // 1. Définition des règles de validation
         $rules = [
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
-            // 'unique:table,colonne'
+            // 'nullable' permet la valeur NULL
             'telephone' => [
                 'nullable',
                 'string',
                 'max:20',
-                'unique:employes,telephone',
+                // La règle UNIQUE passe si la valeur est NULL (comportement par défaut)
+                'unique:employes,telephone', 
             ],
             'email' => [
                 'nullable',
                 'string',
                 'email',
                 'max:255',
+                // La règle UNIQUE passe si la valeur est NULL
                 'unique:employes,email',
             ],
         ];
@@ -139,7 +148,7 @@ class EmployeController extends Controller
             'email.unique'     => "L'adresse email est déjà associée à un autre compte employé. Veuillez en saisir une nouvelle.",
             'email.email'      => 'Veuillez saisir une adresse email valide.',
             
-            // Messages génériques (si besoin)
+            // Messages génériques
             'nom.required'     => 'Le nom est obligatoire.',
             'prenom.required'  => 'Le prénom est obligatoire.',
         ];
@@ -149,7 +158,6 @@ class EmployeController extends Controller
 
         // 4. Gestion de l'échec de la validation
         if ($validator->fails()) {
-            // Retourne les messages d'erreur personnalisés (en français)
             return response()->json($validator->errors(), 422);
         }
 
@@ -157,8 +165,9 @@ class EmployeController extends Controller
         $employe = Employe::create([
             'nom' => $request->nom,
             'prenom' => $request->prenom,
-            'telephone' => $request->telephone ?? null,
-            'email' => $request->email ?? null,
+            // Les valeurs sont déjà NULL si elles étaient vides grâce au merge
+            'telephone' => $request->telephone,
+            'email' => $request->email,
         ]);
 
         // 6. Succès
