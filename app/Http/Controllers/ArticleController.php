@@ -26,18 +26,18 @@ class ArticleController extends Controller
     // Afficher la liste des articles
 
     /**
- * @OA\Get(
- *     path="/api/articles",
- *     tags={"Articles"},
- *     summary="Liste des articles avec leurs catégories et stocks",
- *     @OA\Response(
- *         response=200,
- *         description="Succès",
- *         @OA\JsonContent(ref="#/components/schemas/PostResourceResponse")
- *     )
- * )
- */
-/*     public function index()
+     * @OA\Get(
+     *     path="/api/articles",
+     *     tags={"Articles"},
+     *     summary="Liste des articles avec leurs catégories et stocks",
+     *     @OA\Response(
+     *         response=200,
+     *         description="Succès",
+     *         @OA\JsonContent(ref="#/components/schemas/PostResourceResponse")
+     *     )
+     * )
+     */
+    /*     public function index()
     {
         // Récupérer l'exercice ouvert
         $articles = Article::with(['categorie', 'stock'])
@@ -66,8 +66,8 @@ class ArticleController extends Controller
             // C'est la ligne magique ✨
             $query->where('id_exercice', $exerciceId);
         }])
-        ->where('isdeleted', false)
-        ->latest()->paginate(1000);
+            ->where('isdeleted', false)
+            ->latest()->paginate(1000);
 
         // 3. Retourner la réponse
         // Lorsque vous accédez à $article->stock->Qte_actuel, vous obtiendrez 20.
@@ -167,19 +167,28 @@ class ArticleController extends Controller
         try {
             foreach ($request->articles as $articleData) {
 
-                // Récupérer le dernier article créé
-                $lastArticle = Article::orderBy('id', 'desc')->first();
-                $lastNumber = $lastArticle ? (int) substr($lastArticle->code_article, 4, 5) : 0;
+                // Récupérer les 4 premières lettres du libellé (ou moins si le libellé est plus court)
+                $prefix = strtoupper(substr($articleData['libelle'], 0, 4));
+
+                // Compter combien d'articles ont déjà ce même préfixe cette année
+                $year = date('y');
+                $lastArticle = Article::where('code_article', 'like', "ART-{$prefix}-%-{$year}")->orderBy('id', 'desc')->first();
+
+                if ($lastArticle) {
+                    // Extraire le numéro de l'article précédent
+                    $parts = explode('-', $lastArticle->code_article);
+                    $lastNumber = (int) $parts[2]; // ART-PREFIX-NUM-YY → NUM est à l'index 2
+                } else {
+                    $lastNumber = 0;
+                }
 
                 // Incrémenter
-                $newNumber = str_pad($lastNumber + 1, 5, '0', STR_PAD_LEFT);
+                $newNumber = str_pad($lastNumber + 1, 2, '0', STR_PAD_LEFT);
 
-                // Année (2 derniers chiffres)
-                $year = date('y');
+                // Générer le code article
+                $codeArticle = "ART-{$prefix}-{$newNumber}-{$year}";
 
-                // Générer code article
-                $codeArticle = "ART-{$newNumber}-{$year}";
-
+                // Créer l'article
                 $article = Article::create([
                     'id_cat' => $articleData['id_cat'],
                     'libelle' => $articleData['libelle'],
@@ -193,8 +202,7 @@ class ArticleController extends Controller
                 Stock::create([
                     'id_Article' => $article->id,
                     'Qte_actuel' => 0,
-                    'id_exercice' => $exerciceOuvert->id, // lien stock → exercice
-                    //'prix_unitaire' => 0 // pour calcul CMP plus tard
+                    'id_exercice' => $exerciceOuvert->id,
                 ]);
 
                 // Ajouter une entrée dans la table article_exercice
@@ -221,6 +229,7 @@ class ArticleController extends Controller
                 'file' => $e->getFile()
             ], 500);
         }
+
 
         return new PostResource(true, count($articles) . ' articles créés et stocks initialisés avec succès', $articles);
     }
@@ -468,7 +477,7 @@ class ArticleController extends Controller
                 if ($index === 0) continue; // Ignorer la ligne d'en-tête
 
                 // NOUVELLE VÉRIFICATION : Ignorer les lignes entièrement vides
-                $nonEmptyCells = array_filter($row, function($cell) {
+                $nonEmptyCells = array_filter($row, function ($cell) {
                     return trim($cell) !== '';
                 });
 
@@ -577,7 +586,6 @@ class ArticleController extends Controller
                 'total_rows_processed' => $totalDataRows,
                 'ignored' => $ignoredRows
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Erreur lors de l\'importation des articles: ' . $e->getMessage() . ' à la ligne ' . $e->getLine());
