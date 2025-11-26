@@ -144,6 +144,7 @@ class ArticleController extends Controller
             'articles.*.libelle' => 'required|string|max:255',
             // 'articles.*.code_article' => 'required|string|max:255|unique:articles,code_article',
             'articles.*.description' => 'nullable|string|max:255',
+            'articles.*.demande_intermittent' => 'nullable|string|max:255',
             'articles.*.stock_alerte' => 'required|integer|min:0',
         ]);
 
@@ -185,6 +186,7 @@ class ArticleController extends Controller
                     'libelle' => $articleData['libelle'],
                     'code_article' => $codeArticle,
                     'description' => $articleData['description'],
+                    'demande_intermittent' => $articleData['demande_intermittent'],
                     'stock_alerte' => $articleData['stock_alerte'],
                     'id_exercice' => $exerciceOuvert->id
                 ]);
@@ -262,10 +264,12 @@ class ArticleController extends Controller
 
     public function update(Request $request, Article $article)
     {
+        // 1. Validation
         $validator = Validator::make($request->all(), [
             'id_cat' => 'required|exists:categorie_articles,id',
             'libelle' => 'required|string|max:255',
             'description' => 'nullable|string|max:255',
+            'demande_intermittent' => 'nullable|string|max:255',
             'stock_alerte' => 'required|integer|min:0',
         ]);
 
@@ -277,49 +281,54 @@ class ArticleController extends Controller
 
         DB::beginTransaction();
         try {
-            // Mise à jour de l'article
+            // 2. Mise à jour de l'article
             $article->update([
                 'id_cat' => $request->id_cat,
                 'libelle' => $request->libelle,
                 'description' => $request->description,
+                'demande_intermittent' => $request->demande_intermittent,
                 'stock_alerte' => $request->stock_alerte,
             ]);
 
-            // ======= Calcul CMP début et fin =======
-            // CMP début = basé sur le stock initial de l'exercice
-            $stockDebut = DB::table('stocks')
-                ->where('id_article', $article->id)
-                ->where('type', 'entrée') // uniquement les entrées (achats)
-                ->select(DB::raw('SUM(qte * prix_unitaire) as total'), DB::raw('SUM(qte) as total_qte'))
+            // 3. Calcul CMP début et fin
+            
+            // Remarque : 'id_Article' et 'Qte_actuel' sont sensibles à la casse (majuscules)
+            
+            // Récupération des données agrégées pour le CMP
+            $stockData = DB::table('stocks')
+                ->where('id_Article', $article->id)
+                ->select(
+                    // IMPORTANT : Utilisation des guillemets doubles pour les colonnes sensibles à la casse dans DB::raw()
+                    DB::raw('SUM("Qte_actuel" * cout_moyen_pondere) as total'),
+                    DB::raw('SUM("Qte_actuel") as total_qte')
+                )
                 ->first();
 
-            $cmpDebut = ($stockDebut && $stockDebut->total_qte > 0)
-                ? round($stockDebut->total / $stockDebut->total_qte, 2)
+            // Le CMP de début et de fin est calculé sur le stock actuel, donc c'est le même calcul ici
+            $totalQte = $stockData->total_qte ?? 0;
+            $totalCout = $stockData->total ?? 0;
+            
+            $cmp = ($totalQte > 0)
+                ? round($totalCout / $totalQte, 2)
                 : 0;
-
-            // CMP fin = basé sur toutes les entrées pendant l'exercice
-            $stockFin = DB::table('stocks')
-                ->where('id_article', $article->id)
-                ->where('type', 'entrée') // uniquement les entrées
-                ->select(DB::raw('SUM(qte * prix_unitaire) as total'), DB::raw('SUM(qte) as total_qte'))
-                ->first();
-
-            $cmpFin = ($stockFin && $stockFin->total_qte > 0)
-                ? round($stockFin->total / $stockFin->total_qte, 2)
-                : 0;
-
-            // Stock actuel
+                
+            $cmpDebut = $cmp;
+            $cmpFin = $cmp;
+            
+            // Stock actuel (quantité totale en stock pour l'article)
+            // Correction ici : Retrait des guillemets doubles de 'Qte_actuel' dans ->value()
             $stockActuel = DB::table('stocks')
-                ->where('id_article', $article->id)
+                ->where('id_Article', $article->id)
                 ->orderBy('id', 'desc')
-                ->value('Qte_actuel') ?? 0;
-
-            // Mise à jour de la table article_exercice
+                ->value('Qte_actuel') ?? 0; 
+                
+            // 4. Mise à jour de la table article_exercice
             DB::table('article_exercice')
                 ->where('id_article', $article->id)
                 ->update([
-                    'stock_debut_exercice' => $stockDebut->total_qte ?? 0,
-                    'stock_fin_exercice' => $stockActuel,
+                    // total_qte représente le stock actuel agrégé
+                    'stock_debut_exercice' => $totalQte, 
+                    'stock_fin_exercice' => $stockActuel, // Stock actuel de la dernière ligne (peut être ajusté si totalQte est préférable)
                     'cmp_debut_exercice' => $cmpDebut,
                     'cmp_fin_exercice' => $cmpFin,
                     'updated_at' => now(),
@@ -328,6 +337,13 @@ class ArticleController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
+            
+            // Journalisation de l'erreur pour le débogage côté serveur
+            Log::error('Erreur lors de la mise à jour de l\'article: ' . $e->getMessage(), [
+                'article_id' => $article->id,
+                'exception' => $e
+            ]);
+            
             return response()->json([
                 'error' => 'Une erreur est survenue lors de la mise à jour de l\'article.',
                 'message' => $e->getMessage(),
@@ -336,8 +352,10 @@ class ArticleController extends Controller
             ], 500);
         }
 
+        // 5. Réponse
         return new PostResource(true, 'Article mis à jour avec succès', $article);
     }
+
 
 
 
