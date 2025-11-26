@@ -3,12 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Rapport des Immobilisations</title>
-    <!-- Le lien vers style.css n'est pas utilisé par DomPDF pour les styles en ligne -->
-    <!-- <link rel="stylesheet" href="style.css"> -->
 
     <style>
-        /* Importer une police si nécessaire pour les accents et caractères spéciaux,
-           souvent DejaVu Sans est une bonne option pour DomPDF */
         @font-face {
             font-family: 'DejaVu Sans';
             src: url('{{ public_path("fonts/DejaVuSans.ttf") }}') format('truetype');
@@ -23,252 +19,159 @@
         }
 
         body {
-            font-family: 'DejaVu Sans', sans-serif; /* Utiliser DejaVu Sans pour une meilleure gestion des accents */
-            font-size: 10px; /* Taille de police plus petite pour plus de colonnes en paysage */
-            margin: 10mm; /* Marges réduites pour maximiser l'espace */
+            font-family: 'DejaVu Sans', sans-serif;
+            font-size: 10px;
+            margin: 10mm;
         }
 
         @page {
-            size: landscape; /* Orientation paysage */
-            margin: 8mm; /* Marges d'impression réduites */
+            size: landscape;
+            margin: 8mm;
         }
 
-        /* Styles spécifiques pour l'impression (DomPDF gère ceci automatiquement en grande partie) */
-        @media print {
-            body {
-                width: 100%;
-            }
-            table {
-                font-size: 9px; /* Encore plus petit pour l'impression si nécessaire */
-            }
-            .signatures {
-                flex-direction: row; /* Non applicable directement, mais c'est pour la flexbox */
-                justify-content: space-between;
-            }
+        .header, .title, table {
+            width: 100%;
         }
 
-        .header {
-            margin-bottom: 20px;
-        }
-
-        .header p {
-            margin: 2px 0;
-        }
-
-        .right {
-            text-align: right;
-        }
-
-        .title {
-            text-align: center;
-            margin-top: 15px;
-            margin-bottom: 10px;
-        }
-
-        h1 {
-            font-size: 20px; /* Réduit la taille pour le titre principal */
-            text-align: center;
-            text-decoration: underline;
-        }
-
-        h2 {
-            font-size: 15px; /* Réduit la taille pour le sous-titre */
-            text-align: center;
-            margin-top: 5px;
-        }
+        h1 { font-size: 20px; text-align: center; text-decoration: underline; }
+        h2 { font-size: 15px; text-align: center; margin-top: 5px; font-style: italic; }
 
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
-            table-layout: fixed; /* Pour que les largeurs de colonnes fonctionnent */
+            table-layout: fixed;
         }
-
-        table, th, td {
-            border: 1px solid black;
-        }
-
+        table, th, td { border: 1px solid black; }
         th, td {
-            padding: 4px; /* Rédduit le padding */
+            padding: 4px;
             text-align: center;
             vertical-align: middle;
-            word-wrap: break-word; /* Permet aux mots longs de se casser */
+            word-wrap: break-word;
         }
+        th { background-color: #f2f2f2; font-weight: bold; }
 
-        th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-        }
-
-        .note {
-            font-size: 10px; /* Taille de police pour la note */
-            margin-top: 10px;
-            text-align: right;
-        }
+        .note { font-size: 10px; margin-top: 10px; text-align: right; }
 
         .signatures {
             margin-top: 30px;
-            display: flex; /* Ceci est pour l'affichage HTML, DomPDF ne gère pas flexbox parfaitement pour les positions */
+            width: 100%;
+            display: flex;
             justify-content: space-between;
-            width: 100%; /* S'assurer que les signatures s'étendent */
         }
+        .signature-item { width: 30%; text-align: center; float: left; margin-right: 2%; }
+        .signature-item:last-child { margin-right: 0; }
 
-        .signature-item {
-            width: 30%; /* Répartir l'espace pour les 3 signatures */
-            text-align: center;
-            float: left; /* Pour DomPDF, utiliser float pour le positionnement horizontal */
-            margin-right: 2%; /* Espace entre les blocs de signature */
+        .no-data { text-align: center; margin-top: 20px; font-size: 14px; color: #cc0000; }
+
+        .software-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 12mm;
+            border-top: 1px solid #ccc;
+            background-color: #f9f9f9;
+            padding: 2mm 5mm;
+            font-size: 8pt;
+            color: #666;
+            display: table;
+            width: 100%;
+            z-index: 1000;
         }
-        .signature-item:last-child {
-            margin-right: 0;
-        }
-
-        .no-data {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 14px;
-            color: #cc0000;
-        }
-
-.software-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 12mm;
-    border-top: 1px solid #ccc;
-    background-color: #f9f9f9;
-    padding: 2mm 5mm;
-    font-size: 8pt;
-    color: #666;
-    display: table;
-    width: 100%;
-    z-index: 1000;
-}
-
-.software-info {
-    display: table-cell;
-    vertical-align: middle;
-    text-align: left;
-    width: 70%;
-}
-
-.software-logo {
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 2px;
-}
-
-.software-details {
-    font-style: italic;
-    line-height: 1.2;
-}
-
-.print-info {
-    display: table-cell;
-    vertical-align: middle;
-    text-align: right;
-    width: 30%;
-    font-size: 7pt;
-    line-height: 1.2;
-}
-
+        .software-info { display: table-cell; vertical-align: middle; text-align: left; width: 70%; }
+        .software-logo { font-weight: bold; color: #333; margin-bottom: 2px; }
+        .software-details { font-style: italic; line-height: 1.2; }
+        .print-info { display: table-cell; vertical-align: middle; text-align: right; width: 30%; font-size: 7pt; line-height: 1.2; }
 
     </style>
-
 </head>
 <body>
     @php use Carbon\Carbon; @endphp
 
-        <table width="100%" style="border-collapse: collapse; height: 80px; border: none;">
+    <table style="border: none; height: 80px;">
         <tr>
-            <td style="width: 70%; text-align: left; vertical-align: middle; border: none;">
-                <p style="margin: 2px 0;"><strong>République du Bénin</strong></p>
-                <p style="margin: 2px 0;">LNB - Lotterie Nationale du Bénin SA</p>
-                </td>
-                <td style="width: 30%; text-align: right; vertical-align: top; border: none;">
-                <p style="margin: 2px 0;">Rapport généré le: {{ Carbon::now()->format('d/m/Y H:i:s') }}</p>
-                <p class="right">Période d'Acquisition: Du {{ Carbon::parse(request()->date_debut_acquisition)->format('d/m/Y') }} au {{ Carbon::parse(request()->date_fin_acquisition)->format('d/m/Y') }}</p>
+            <td style="width: 70%; text-align: left; border: none; vertical-align: middle;">
+                <p><strong>République du Bénin</strong></p>
+                <p>LNB - Lotterie Nationale du Bénin SA</p>
+            </td>
+            <td style="width: 30%; text-align: right; border: none; vertical-align: top;">
+                <p>Rapport généré le: {{ Carbon::now()->format('d/m/Y H:i:s') }}</p>
+                @if(request()->filled('date_debut_acquisition') && request()->filled('date_fin_acquisition'))
+                    <p>Période d'Acquisition: Du {{ Carbon::parse(request()->date_debut_acquisition)->format('d/m/Y') }} au {{ Carbon::parse(request()->date_fin_acquisition)->format('d/m/Y') }}</p>
+                @endif
             </td>
         </tr>
-        </table>
-
-    <div style="width: 100%; margin-bottom: 10px;text-align: center;">
-        <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;">
-        <h1 style="font-size: 20px; margin: 10px 0; font-weight: bold;">
-            RAPPORT DES IMMOBILISATIONS
-        </h1>
-        <h2 style="font-style: italic;">
-            (LNB-Stock & Parc)
-        </h2>
-    </div>
-
-    @if($immobilisations->isEmpty())
-        <p class="no-data">Aucune immobilisation trouvée pour les critères de recherche spécifiés.</p>
-    @else
-
-    <table>
-        <thead>
-            <tr>
-                <th>N°</th>
-                <th>Code</th>
-                <th>Désignation</th>
-                <th>Date Acq.</th>
-                <th>Fournisseur</th>
-                <th>Groupe Type</th>
-                <th>Sous Type</th>
-                <th>Statut</th>
-                <th>Localisation</th>
-                <th>Affecté à</th>
-                <th>Observation</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($immobilisations as $index => $immo)
-            <tr>
-                <td>{{ $index + 1 }}</td>
-                <td>{{ $immo->code ?? '-' }}</td>
-                <td>{{ $immo->designation ?? '-' }}</td>
-                <td>{{ $immo->date_acquisition ? Carbon::parse($immo->date_acquisition)->format('d/m/Y') : '-' }}</td>
-                <td>{{ $immo->fournisseur->nom ?? '-' }}</td>
-                <td>{{ $immo->libelle_groupe ?? '-' }}</td>
-                <td>{{ $immo->libelle_soustype ?? '-' }}</td>
-                <td>{{ $immo->statusImmo->libelle_status_immo ?? '-' }}</td>
-                <td>{{ $immo->bureau->libelle_bureau ?? '-' }}</td>
-                <td>{{ $immo->employe ? ($immo->employe->nom . ' ' . $immo->employe->prenom) : '-' }}</td>
-                <td>{{ $immo->observation ?? '-' }}</td>
-            </tr>
-            @endforeach
-        </tbody>
     </table>
 
-    <p class="note">*État établi en fin de gestion et hors du but arrêté des écritures.</p>
-
-    <div class="signatures">
-        <div class="signature-item">Le Comptable des Matières</div>
-        <div class="signature-item">Le Magasinier / Fichiste</div>
-        <div class="signature-item">Nom et Prénoms des membres de la commission d’inventaire</div>
+    <div style="text-align: center; margin-bottom: 10px;">
+        <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;">
+        <h1>RAPPORT DES IMMOBILISATIONS</h1>
+        <h2>(LNB-Stock & Parc)</h2>
     </div>
 
+    @if($actifs->isEmpty())
+        <p class="no-data">Aucune immobilisation trouvée pour les critères de recherche spécifiés.</p>
+    @else
+        <table>
+            <thead>
+                <tr>
+                    <th>N°</th>
+                    <th>Code</th>
+                    <th>Désignation</th>
+                    <th>Valeur</th>
+                    <th>Date Acq.</th>
+                    <th>Fournisseur</th>
+                    <th>Groupe Type</th>
+                    <th>Sous Type</th>
+                    <th>Statut</th>
+                    <th>Localisation</th>
+                    <th>Affecté à</th>
+                    <th>Observation</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach($actifs as $item)
+            <tr>
+                <td>{{ $loop->iteration }}</td>
+                <td>{{ $item->code }}</td>
+                <td>{{ $item->designation }}</td>
+                <td>{{ $item->montant_ttc }}</td>
+                <td>{{ $item->date_acquisition ?? '-' }}</td>
+                <td>{{ $item->nom_fournisseur }}</td>
+                <td>{{ $item->libelle_groupe }}</td>
+                <td>{{ $item->libelle_soustype }}</td>
+                <td>{{ optional($item->status_immo)['libelle_status_immo'] ?? '-' }}</td>
+                <td>{{ $item->libelle_bureau }}</td>
+                <td>{{ $item->affecte_a }}</td>
+                <td>{{ $item->observation }}</td>
+            </tr>
+            @endforeach
+
+            </tbody>
+        </table>
+
+        <p class="note">*État établi en fin de gestion et hors du but arrêté des écritures.</p>
+
+        <div class="signatures">
+            <div class="signature-item">Le Comptable des Matières</div>
+            <div class="signature-item">Le Magasinier / Fichiste</div>
+            <div class="signature-item">Nom et Prénoms des membres de la commission d’inventaire</div>
+        </div>
     @endif
 
-<!-- Pied de page logiciel -->
-<div class="software-footer">
-    <div class="software-info">
-        <div class="software-logo">LNB- Gestion De Stock & Parc</div>
-        <div class="software-details">
-            Système de Gestion de Stock - Version 1.0 |
-            Développé pour LNB-Lotterie National du Bénin SA
+    <div class="software-footer">
+        <div class="software-info">
+            <div class="software-logo">LNB- Gestion De Stock & Parc</div>
+            <div class="software-details">
+                Système de Gestion de Stock - Version 1.0 | Développé pour LNB-Lotterie National du Bénin SA
+            </div>
+        </div>
+        <div class="print-info">
+            Document généré le {{ date('d/m/Y à H:i:s') }}<br>
+            Page générée par LNB- Gestion De Stock & Parc
         </div>
     </div>
-    <div class="print-info">
-        Document généré le {{ date('d/m/Y à H:i:s') }}<br>
-        <!-- Utilisateur: {{ auth()->user()->name ?? 'Système' }}<br> -->
-        Page générée par LNB- Gestion De Stock & Parc
-    </div>
-</div>
-<!-- Fin Pied de page logiciel -->
-
 
 </body>
 </html>

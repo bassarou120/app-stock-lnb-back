@@ -183,9 +183,9 @@ th, td {
           <td>{{ isset($immo['montant_ttc']) ? number_format($immo['montant_ttc'], 0, ',', ' ') : '-' }}</td>
           <td>{{ $immo['etat'] ?? '-' }}</td>
           <td>{{ $immo['observation'] ?? '-' }}</td>
-          <td>{{ $immo['groupe_type_immo']['libelle'] ?? '-' }}</td>
-          <td>{{ $immo['sous_type_immo']['libelle'] ?? '-' }}</td>
-          <td>{{ $immo['status_immo']['libelle_status_immo'] ?? '-' }}</td>
+          <td>{{ $immo->groupeTypeImmo->libelle ?? '-' }}</td>
+          <td>{{ $immo->sousTypeImmo->libelle ?? '-' }}</td>
+          <td>{{ $immo->statusImmo->libelle_status_immo ?? '-' }}</td>
           <td>
               @if(isset($immo['employe']))
                   {{ $immo['employe']['nom'] ?? '' }} {{ $immo['employe']['prenom'] ?? '' }}
