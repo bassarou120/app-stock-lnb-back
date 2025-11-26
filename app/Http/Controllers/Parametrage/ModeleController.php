@@ -22,7 +22,7 @@ class ModeleController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'libelle_modele' => 'required|string|max:255',
+            'libelle' => 'required|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -30,7 +30,7 @@ class ModeleController extends Controller
         }
 
         $modele = Modele::create([
-            'libelle_modele' => $request->libelle_modele,
+            'libelle_modele' => $request->libelle,
         ]);
 
         return new PostResource(true, 'Modèle créé avec succès', $modele);
@@ -40,7 +40,7 @@ class ModeleController extends Controller
     public function update(Request $request, Modele $modele)
     {
         $validator = Validator::make($request->all(), [
-            'libelle_modele' => 'required|string|max:255',
+            'libelle' => 'required|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -48,7 +48,7 @@ class ModeleController extends Controller
         }
 
         $modele->update([
-            'libelle_modele' => $request->libelle_modele,
+            'libelle_modele' => $request->libelle,
         ]);
 
         return new PostResource(true, 'Modèle mis à jour avec succès', $modele);

@@ -40,7 +40,7 @@
             font-size: 11pt;
         }
 
-        .table-section th, .table-section td, 
+        .table-section th, .table-section td,
         .coupon-details-section th, .coupon-details-section td { /* Ajout des styles pour le Tableau 2 */
             border: 1px solid black;
             padding: 4px;
@@ -52,16 +52,16 @@
         .table-section th, .coupon-details-section th {
             background-color: #f2f2f2;
         }
-        
+
         .text-right { text-align: right !important; }
         .text-left { text-align: left !important; }
         .fw-bold { font-weight: bold; }
-        
+
         .footer-section {
             /* Assure que la section reste ensemble et est fixée par DomPDF */
-            page-break-inside: avoid; 
+            page-break-inside: avoid;
         }
-        
+
         /* ... (Autres styles inchangés) ... */
         .footer-section table { table-layout: fixed; }
         .footer-section table td { width: 50%; padding: 0 4px; }
@@ -113,7 +113,7 @@
                 <td colspan="2" style="text-align: center;">
                     <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
                     {{-- Le titre du rapport est mis à jour pour mieux refléter les montants --}}
-                    <h2>Rapport Périodique des Mouvements de Tickets (Montants)</h2> 
+                    <h2>Rapport Périodique des Mouvements de Tickets (Montants)</h2>
                 </td>
             </tr>
         </table>
@@ -151,14 +151,14 @@
                             <td>{{ number_format($donnees['entrees'] ?? 0, 0, ',', ' ') }}</td>
                             <td>{{ number_format($donnees['retours'] ?? 0, 0, ',', ' ') }}</td>
                             {{-- Total Entrées = Acquis + Retours --}}
-                            <td>{{ number_format(($donnees['entrees'] ?? 0) + ($donnees['retours'] ?? 0), 0, ',', ' ') }}</td> 
-                            
+                            <td>{{ number_format(($donnees['entrees'] ?? 0) + ($donnees['retours'] ?? 0), 0, ',', ' ') }}</td>
+
                             {{-- Détail des Sorties par catégorie (Montants) --}}
                             <td>{{ number_format($donnees['sorties_par_categorie']['Dotation Agences'] ?? 0, 0, ',', ' ') }}</td>
                             <td>{{ number_format($donnees['sorties_par_categorie']['Dotation Chef Garage'] ?? 0, 0, ',', ' ') }}</td>
                             <td>{{ number_format($donnees['sorties_par_categorie']['Groupe Electrogène'] ?? 0, 0, ',', ' ') }}</td>
                             <td>{{ number_format($donnees['sorties_par_categorie']['Missions'] ?? 0, 0, ',', ' ') }}</td>
-                            
+
                             <td><b style="color: blue;">{{ number_format($donnees['stock_final'] ?? 0, 0, ',', ' ') }}</b></td>
                         </tr>
                     @endforeach
@@ -168,12 +168,12 @@
             <p>Aucune donnée de rapport périodique disponible.</p>
         @endif
     </div>
-    
+
     <div style="height: 15px;"></div> {{-- Petit espace --}}
 
     <div class="coupon-details-section">
         <h3 style="font-size: 13pt; margin-bottom: 5px;">Tableau 2: Détail Consolidé des Coupons (Montants Globaux)</h3>
-        
+
         @if(!empty($details_coupons_global) && is_array($details_coupons_global) && count($details_coupons_global) > 0)
             <table>
                 <thead>
