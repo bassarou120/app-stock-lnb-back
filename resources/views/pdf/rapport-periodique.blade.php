@@ -25,7 +25,7 @@
             border-collapse: collapse;
         }
 
-        .header-section, .table-section, .footer-section {
+        .header-section, .table-section, .footer-section, .coupon-details-section {
             margin-bottom: 10px;
         }
 
@@ -40,7 +40,8 @@
             font-size: 11pt;
         }
 
-        .table-section th, .table-section td {
+        .table-section th, .table-section td, 
+        .coupon-details-section th, .coupon-details-section td { /* Ajout des styles pour le Tableau 2 */
             border: 1px solid black;
             padding: 4px;
             text-align: center;
@@ -48,36 +49,24 @@
             font-size: 11pt;
         }
 
-        .table-section th {
+        .table-section th, .coupon-details-section th {
             background-color: #f2f2f2;
         }
-
+        
+        .text-right { text-align: right !important; }
+        .text-left { text-align: left !important; }
+        .fw-bold { font-weight: bold; }
+        
         .footer-section {
-            page-break-inside: avoid;
+            /* Assure que la section reste ensemble et est fixée par DomPDF */
+            page-break-inside: avoid; 
         }
-
-        .footer-section table {
-            table-layout: fixed;
-        }
-
-        .footer-section table td {
-            width: 50%;
-            padding: 0 4px;
-        }
-
-        .signatures-box {
-            padding: 6px 8px;
-            font-size: 11pt;
-            line-height: 1.4;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 110px;
-        }
-
-        small {
-            font-size: 7pt;
-        }
+        
+        /* ... (Autres styles inchangés) ... */
+        .footer-section table { table-layout: fixed; }
+        .footer-section table td { width: 50%; padding: 0 4px; }
+        .signatures-box { padding: 6px 8px; font-size: 11pt; line-height: 1.4; display: flex; flex-direction: column; justify-content: space-between; min-height: 110px; }
+        small { font-size: 7pt; }
 
         /* Styles pour le pied de page logiciel */
         .software-footer {
@@ -97,25 +86,12 @@
             z-index: 1000;
         }
 
-        .software-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        /* ... (Sous-styles du pied de page logiciel inchangés) ... */
+        .software-info { display: flex; align-items: center; gap: 10px; }
+        .software-logo { font-weight: bold; color: #333; }
+        .software-details { font-style: italic; }
+        .print-info { text-align: right; font-size: 7pt; }
 
-        .software-logo {
-            font-weight: bold;
-            color: #333;
-        }
-
-        .software-details {
-            font-style: italic;
-        }
-
-        .print-info {
-            text-align: right;
-            font-size: 7pt;
-        }
     </style>
 </head>
 <body>
@@ -136,14 +112,17 @@
             <tr>
                 <td colspan="2" style="text-align: center;">
                     <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
-                    <h2>Rapport d'Inventaire des Tickets</h2>
+                    {{-- Le titre du rapport est mis à jour pour mieux refléter les montants --}}
+                    <h2>Rapport Périodique des Mouvements de Tickets (Montants)</h2> 
                 </td>
             </tr>
         </table>
     </div>
 
     <div class="table-section">
-        @if(!empty($rapport) && is_array($rapport))
+        <h3 style="font-size: 13pt; margin-bottom: 5px;">Tableau 1: Mouvements Périodiques (XOF)</h3>
+        {{-- Remarque : J'utilise $rapport_periodique que nous avons défini de passer dans la fonction PHP --}}
+        @if(!empty($rapport_periodique) && is_array($rapport_periodique))
             <table>
                 <thead>
                     <tr>
@@ -164,30 +143,71 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($rapport as $donnees)
+                    {{-- Boucle sur les données du rapport périodique --}}
+                    @foreach($rapport_periodique as $donnees)
                         <tr>
-                            <td>{{ $donnees['periode'] }}</td>
-                            <td>{{ $donnees['stock_initial'] }}</td>
-                            <td>{{ $donnees['entrees'] }}</td>
-                            <td>{{ $donnees['retours'] }}</td>
-                            <td>{{ $donnees['entrees'] }}</td>
-                            <!-- <td>{{ $donnees['entrees'] + $donnees['retours'] }}</td> -->
-                            <td>{{ $donnees['sorties_par_categorie']['Dotation Agences'] ?? 0 }}</td>
-                            <td>{{ $donnees['sorties_par_categorie']['Dotation Chef Garage'] ?? 0 }}</td>
-                            <td>{{ $donnees['sorties_par_categorie']['Groupe Electrogène'] ?? 0 }}</td>
-                            <td>{{ $donnees['sorties_par_categorie']['Missions'] ?? 0 }}</td>
-                            <td>{{ $donnees['stock_final'] }}</td>
+                            <td class="text-left">{{ $donnees['periode'] }}</td>
+                            <td>{{ number_format($donnees['stock_initial'] ?? 0, 0, ',', ' ') }}</td>
+                            <td>{{ number_format($donnees['entrees'] ?? 0, 0, ',', ' ') }}</td>
+                            <td>{{ number_format($donnees['retours'] ?? 0, 0, ',', ' ') }}</td>
+                            {{-- Total Entrées = Acquis + Retours --}}
+                            <td>{{ number_format(($donnees['entrees'] ?? 0) + ($donnees['retours'] ?? 0), 0, ',', ' ') }}</td> 
+                            
+                            {{-- Détail des Sorties par catégorie (Montants) --}}
+                            <td>{{ number_format($donnees['sorties_par_categorie']['Dotation Agences'] ?? 0, 0, ',', ' ') }}</td>
+                            <td>{{ number_format($donnees['sorties_par_categorie']['Dotation Chef Garage'] ?? 0, 0, ',', ' ') }}</td>
+                            <td>{{ number_format($donnees['sorties_par_categorie']['Groupe Electrogène'] ?? 0, 0, ',', ' ') }}</td>
+                            <td>{{ number_format($donnees['sorties_par_categorie']['Missions'] ?? 0, 0, ',', ' ') }}</td>
+                            
+                            <td><b style="color: blue;">{{ number_format($donnees['stock_final'] ?? 0, 0, ',', ' ') }}</b></td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         @else
-            <p>Aucune donnée de rapport disponible.</p>
+            <p>Aucune donnée de rapport périodique disponible.</p>
         @endif
     </div>
-</div>
+    
+    <div style="height: 15px;"></div> {{-- Petit espace --}}
 
-<div class="footer-section">
+    <div class="coupon-details-section">
+        <h3 style="font-size: 13pt; margin-bottom: 5px;">Tableau 2: Détail Consolidé des Coupons (Montants Globaux)</h3>
+        
+        @if(!empty($details_coupons_global) && is_array($details_coupons_global) && count($details_coupons_global) > 0)
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Compagnie</th>
+                        <th style="width: 20%;">Valeur Coupon (XOF)</th>
+                        <th style="width: 25%;">Total Coupons Mouvements (Qté)</th>
+                        <th style="width: 25%;">Montant Total Mouvements (XOF)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($details_coupons_global as $detail)
+                        <tr>
+                            <td class="text-left">{{ $detail['nom_compagnie'] }}</td>
+                            <td class="text-right">{{ number_format($detail['valeur'] ?? 0, 0, ',', ' ') }}</td>
+                            <td class="text-right fw-bold">{{ number_format($detail['nombre_coupons'] ?? 0, 0, ',', ' ') }}</td>
+                            <td class="text-right fw-bold">{{ number_format($detail['montant_total'] ?? 0, 0, ',', ' ') }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr style="background-color: #e0e0e0;">
+                        <td colspan="2" class="text-right fw-bold">TOTAL GÉNÉRAL CONSOLIDÉ</td>
+                        <td class="text-right fw-bold">{{ number_format($totalCoupons ?? 0, 0, ',', ' ') }}</td>
+                        <td class="text-right fw-bold">{{ number_format($totalMontant ?? 0, 0, ',', ' ') }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        @else
+            <p>Aucun détail de coupon (mouvement) trouvé pour la période sélectionnée.</p>
+        @endif
+    </div>
+
+</div> <div class="footer-section">
     <table>
         <tr>
             <td>

@@ -970,21 +970,29 @@ class MouvementTicketController extends Controller
     {
         Log::info('Début du rapport périodique (montants).');
 
-        $annee = $request->input('annee');
-        $exercice = Exercice::where('id', $annee)->first();
+        $anneeId = $request->input('annee');
+        $exercice = Exercice::where('id', $anneeId)->first();
+        
+        if (!$exercice) {
+            Log::error('Erreur: Exercice invalide fourni.', ['id' => $anneeId]);
+            return response()->json(['error' => 'Veuillez fournir un exercice valide.'], 400);
+        }
+        
         $annee = $exercice->annee;
         $periode = $request->input('periode', 'mensuel'); // 'mensuel' par défaut
 
         Log::info('Paramètres de requête', ['annee' => $annee, 'periode' => $periode]);
 
-        if (empty($annee) || !is_numeric($annee)) {
-            Log::error('Erreur: Année invalide fournie.', ['annee' => $annee]);
-            return response()->json(['error' => 'Veuillez fournir une année valide.'], 400);
-        }
-
         $rapport = [];
         $totalEntreesAcc = 0;
         $previousStockFinal = 0;
+
+        // 💡 INITIALISATION POUR LE CUMUL DES DÉTAILS GLOBAUX (pour le Tableau 2)
+        $globalDetails = [
+            'entrees' => [],
+            'sorties' => [],
+            'retours' => [],
+        ];
 
         // Déterminer les plages
         $plages = [];
@@ -1099,6 +1107,18 @@ class MouvementTicketController extends Controller
             $stockFinal = $stockInitial + $entrees - $sorties + $retours;
             $totalEntreesAcc += $entrees;
 
+            // DÉTAILS DES MOUVEMENTS PAR COUPON (pour la période actuelle)
+            $detailsCoupons = [
+                'entrees' => $this->getCouponDetails($dateDebut, $dateFin, 'Entrée de Ticket'),
+                'sorties' => $this->getCouponDetails($dateDebut, $dateFin, 'Sortie de Ticket'),
+                'retours' => $this->getCouponDetailsRetours($dateDebut, $dateFin),
+            ];
+
+            // 💡 CUMULER LES DÉTAILS DE LA SOUS-PÉRIODE VERS LES TOTAUX GLOBAUX
+            $this->mergeCouponDetails($globalDetails['entrees'], $detailsCoupons['entrees']);
+            $this->mergeCouponDetails($globalDetails['sorties'], $detailsCoupons['sorties']);
+            $this->mergeCouponDetails($globalDetails['retours'], $detailsCoupons['retours']);
+
             Log::info('Calculs (montants) pour la période ' . $label, [
                 'entrees' => $entrees,
                 'sorties' => $sorties,
@@ -1117,11 +1137,20 @@ class MouvementTicketController extends Controller
                 'retours' => $retours,
                 'stock_final' => $stockFinal,
                 'total_entrees_cumulees' => $totalEntreesAcc,
+                'details_coupons' => $detailsCoupons, 
             ];
         }
 
+        // 💡 FINALISATION DES DÉTAILS POUR LE TABLEAU 2 (Consolidation globale)
+        $finalDetailsForTable2 = $this->aggregateFinalDetails($globalDetails);
+
         Log::info('Fin du rapport périodique (montants).');
-        return new PostResource(true, 'Rapport généré avec succès', $rapport);
+        
+        // RETOURNER LES DEUX JEUX DE DONNÉES (Tableau 1 et Tableau 2)
+        return new PostResource(true, 'Rapport généré avec succès', [
+            'rapport_periodique' => $rapport, 
+            'details_coupons_global' => $finalDetailsForTable2, 
+        ]);
     }
 
 
@@ -1162,38 +1191,165 @@ class MouvementTicketController extends Controller
 
     public function imprimerRapportPeriodiqueMontant(Request $request)
     {
-        Log::info("Début de la génération du PDF du rapport périodique.");
+    Log::info("Début de la génération du PDF du rapport périodique (Montant).");
 
-        // Récupérer l'année et la période depuis la requête
-        $anneeId = $request->input('annee');
-        $exercice = Exercice::where('id', $anneeId)->first();
+    // --- 1. Validation de l'exercice et récupération des paramètres ---
+    $anneeId = $request->input('annee');
+    // NOTE: Assurez-vous que la classe Exercice est bien importée
+    $exercice = Exercice::where('id', $anneeId)->first(); 
 
-        if (!$exercice) {
-            Log::error('Erreur: Année invalide fournie.', ['anneeId' => $anneeId]);
-            return response()->json(['error' => 'Veuillez fournir une année valide.'], 400);
-        }
-
-        $annee = $exercice->annee;
-        $periode = $request->input('periode', 'mensuel'); // valeur par défaut
-
-        // Réutiliser la fonction rapportperiodique pour calculer le rapport
-        $rapportResource = $this->rapportperiodiqueMontant(new Request([
-            'annee' => $anneeId,
-            'periode' => $periode
-        ]));
-
-        // Extraire les données du rapport
-        $rapport = $rapportResource->response()->getData(true)['data'];
-
-        $titre = "Rapport Périodique " . ucfirst($periode) . " - Année " . $annee;
-
-        // Générer le PDF à partir d'une vue Blade
-        $pdf = PDF::loadView('pdf.rapport-periodique', compact('rapport', 'titre'));
-
-        Log::info("PDF généré, envoi de la réponse.");
-
-        return $pdf->download('rapport-periodique-' . $annee . '-' . $periode . '.pdf');
+    if (!$exercice) {
+        Log::error('Erreur: Année invalide fournie.', ['anneeId' => $anneeId]);
+        return response()->json(['error' => 'Veuillez fournir une année valide.'], 400);
     }
+
+    $annee = $exercice->annee;
+    $periode = $request->input('periode', 'mensuel'); 
+
+    // --- 2. Réutilisation de la logique de calcul (rapportperiodiqueMontant) ---
+    
+    // Simuler une requête pour la méthode de calcul du rapport
+    $calculRequest = new Request([
+        'annee' => $anneeId,
+        'periode' => $periode
+    ]);
+    
+    // Exécuter la méthode de calcul du rapport. 
+    // Assurez-vous que cette méthode est appelée sur l'instance courante du contrôleur ($this)
+    $rapportResource = $this->rapportperiodiqueMontant($calculRequest);
+
+    // --- 3. Extraction des données des deux tableaux ---
+    
+    // Récupérer le contenu JSON de la réponse, puis extraire la clé 'data'
+    $responseData = $rapportResource->response()->getData(true)['data'];
+
+    // Extraction des deux tableaux
+    $rapport_periodique = $responseData['rapport_periodique'] ?? [];
+    $details_coupons_global = $responseData['details_coupons_global'] ?? [];
+    
+    // Calcul des totaux globaux (pour le pied de page du 2e tableau dans le PDF)
+    $totalCoupons = array_sum(array_column($details_coupons_global, 'nombre_coupons'));
+    $totalMontant = array_sum(array_column($details_coupons_global, 'montant_total'));
+
+    // --- 4. Préparation du titre et génération du PDF ---
+
+    $titre = "Rapport Périodique " . ucfirst($periode) . " (Montant) - Année " . $annee;
+
+    // Générer le PDF à partir d'une vue Blade. 
+    // Nous passons maintenant les deux ensembles de données et les totaux.
+    $pdf = PDF::loadView('pdf.rapport-periodique', compact(
+        'rapport_periodique', 
+        'details_coupons_global', 
+        'titre',
+        'annee',
+        'periode',
+        'totalCoupons',
+        'totalMontant'
+    ));
+    
+    // Facultatif : Définir la taille/orientation si nécessaire (ex: Paysage)
+    // $pdf->setPaper('a4', 'landscape');
+
+    Log::info("PDF généré, envoi de la réponse.");
+
+    return $pdf->download('rapport-periodique-montant-' . $annee . '-' . $periode . '.pdf');
+}
+
+
+    //25 11 2025
+    private function getCouponDetails($dateDebut, $dateFin, $typeMouvement)
+    {
+        return DB::table('mouvement_tickets as m')
+            ->join('type_mouvements as t', 'm.id_type_mouvement', '=', 't.id')
+            ->join('coupon_tickets as c', 'm.coupon_ticket_id', '=', 'c.id')
+            
+            // Correction de la JOINTURE: Utiliser m.compagnie_petrolier_id
+            ->join('compagnie_petroliers as co', 'm.compagnie_petrolier_id', '=', 'co.id')
+            
+            ->select(
+                // CORRECTION de la colonne: Utiliser 'co.libelle' au lieu de 'co.nom_compagnie'
+                'co.libelle as nom_compagnie',
+                'c.valeur',
+                DB::raw('SUM(m.qte) as nombre_coupons'),
+                DB::raw('SUM(m.qte * c.valeur) as montant_total')
+            )
+            ->where('t.libelle_type_mouvement', $typeMouvement)
+            ->whereBetween('m.date', [$dateDebut, $dateFin])
+            ->groupBy('co.libelle', 'c.valeur') // CORRECTION: Grouper par 'co.libelle'
+            ->orderBy('co.libelle')            // CORRECTION: Trier par 'co.libelle'
+            ->get()
+            ->toArray();
+    }
+
+    private function getCouponDetailsRetours($dateDebut, $dateFin)
+    {
+        return DB::table('retour_tickets as r')
+            ->join('coupon_tickets as c', 'r.coupon_ticket_id', '=', 'c.id')
+            
+            // Correction de la JOINTURE: Utiliser r.compagnie_petrolier_id
+            ->join('compagnie_petroliers as co', 'r.compagnie_petrolier_id', '=', 'co.id')
+            
+            ->select(
+                // CORRECTION de la colonne: Utiliser 'co.libelle' au lieu de 'co.nom_compagnie'
+                'co.libelle as nom_compagnie',
+                'c.valeur',
+                DB::raw('SUM(r.qte) as nombre_coupons'),
+                DB::raw('SUM(r.qte * c.valeur) as montant_total')
+            )
+            ->whereBetween('r.created_at', [$dateDebut, $dateFin])
+            ->groupBy('co.libelle', 'c.valeur') // CORRECTION: Grouper par 'co.libelle'
+            ->orderBy('co.libelle')            // CORRECTION: Trier par 'co.libelle'
+            ->get()
+            ->toArray();
+    }
+
+    private function mergeCouponDetails(array &$globalArray, array $newDetails)
+    {
+        foreach ($newDetails as $item) {
+            // CORRECTION: Convertir l'objet stdClass en tableau associatif PHP
+            // Si $item est déjà un tableau (array), cette conversion n'aura pas d'effet.
+            // Si $item est un objet stdClass (résultat de DB::table()->get()), il sera converti.
+            $item = (array) $item; 
+            
+            // Clé unique basée sur la Compagnie et la Valeur du coupon
+            $key = $item['nom_compagnie'] . '|' . $item['valeur'];
+
+            if (!isset($globalArray[$key])) {
+                $globalArray[$key] = [
+                    'nom_compagnie' => $item['nom_compagnie'],
+                    'valeur' => $item['valeur'],
+                    'nombre_coupons' => 0,
+                    'montant_total' => 0.0,
+                ];
+            }
+            
+            $globalArray[$key]['nombre_coupons'] += $item['nombre_coupons'];
+            $globalArray[$key]['montant_total'] += $item['montant_total'];
+        }
+    }
+
+    private function aggregateFinalDetails(array $globalDetails): array
+    {
+        $combined = [];
+
+        // Cumul des entrées, sorties et retours dans un seul tableau
+        // pour obtenir la liste de TOUS les coupons impliqués.
+        $this->mergeCouponDetails($combined, array_values($globalDetails['entrees']));
+        $this->mergeCouponDetails($combined, array_values($globalDetails['sorties']));
+        $this->mergeCouponDetails($combined, array_values($globalDetails['retours']));
+        
+        // Convertir en liste simple (tableau indexé) et trier par compagnie
+        $finalList = array_values($combined);
+        usort($finalList, function($a, $b) {
+            return strcmp($a['nom_compagnie'], $b['nom_compagnie']);
+        });
+
+        return $finalList;
+    }
+
+
+    //fin 25 11 2025
+
 
     private function determinerPlages($periode)
     {

@@ -84,7 +84,7 @@ class EmployeController extends Controller
  * )
  */
 
-    public function store(Request $request)
+/*     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'nom' => 'required|string|max:255',
@@ -105,7 +105,67 @@ class EmployeController extends Controller
         ]);
 
         return new PostResource(true, 'Employe créé avec succès', $employe);
+    } */
+
+    public function store(Request $request)
+    {
+        // 1. Définition des règles de validation
+        $rules = [
+            'nom' => 'required|string|max:255',
+            'prenom' => 'required|string|max:255',
+            // 'unique:table,colonne'
+            'telephone' => [
+                'nullable',
+                'string',
+                'max:20',
+                'unique:employes,telephone',
+            ],
+            'email' => [
+                'nullable',
+                'string',
+                'email',
+                'max:255',
+                'unique:employes,email',
+            ],
+        ];
+        
+        // 2. Définition des messages personnalisés en français
+        $messages = [
+            // Règle d'unicité pour le téléphone
+            'telephone.unique' => 'Le numéro de téléphone que vous avez saisi est déjà utilisé par un autre employé.',
+            'telephone.max'    => 'Le numéro de téléphone ne peut dépasser 20 caractères.',
+            
+            // Règle d'unicité pour l'email
+            'email.unique'     => "L'adresse email est déjà associée à un autre compte employé. Veuillez en saisir une nouvelle.",
+            'email.email'      => 'Veuillez saisir une adresse email valide.',
+            
+            // Messages génériques (si besoin)
+            'nom.required'     => 'Le nom est obligatoire.',
+            'prenom.required'  => 'Le prénom est obligatoire.',
+        ];
+
+        // 3. Création du validateur avec les règles ET les messages
+        $validator = Validator::make($request->all(), $rules, $messages);
+
+        // 4. Gestion de l'échec de la validation
+        if ($validator->fails()) {
+            // Retourne les messages d'erreur personnalisés (en français)
+            return response()->json($validator->errors(), 422);
+        }
+
+        // 5. Création de l'employé
+        $employe = Employe::create([
+            'nom' => $request->nom,
+            'prenom' => $request->prenom,
+            'telephone' => $request->telephone ?? null,
+            'email' => $request->email ?? null,
+        ]);
+
+        // 6. Succès
+        return new PostResource(true, 'Employé créé avec succès', $employe);
     }
+
+
 
  /**
  * @OA\Put(
