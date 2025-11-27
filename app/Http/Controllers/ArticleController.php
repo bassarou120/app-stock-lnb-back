@@ -138,13 +138,17 @@ class ArticleController extends Controller
 
     public function storeBatch(Request $request)
     {
+        // 1️⃣ Validation des données
         $validator = Validator::make($request->all(), [
             'articles' => 'required|array',
             'articles.*.id_cat' => 'required|exists:categorie_articles,id',
             'articles.*.libelle' => 'required|string|max:255',
-            // 'articles.*.code_article' => 'required|string|max:255|unique:articles,code_article',
+            // Règle d'unicité commentée dans l'original. Normalement, elle devrait être présente.
+            // Cependant, la logique de génération du code unique est faite dans le code ci-dessous.
+            // On s'assure de l'unicité via le verrouillage DB (lockForUpdate).
             'articles.*.description' => 'nullable|string|max:255',
             'articles.*.stock_alerte' => 'required|integer|min:0',
+            // Note: 'articles.*.code_article' n'est pas requis car il est généré par le serveur
         ]);
 
         if ($validator->fails()) {
@@ -153,7 +157,7 @@ class ArticleController extends Controller
 
         $articles = [];
 
-        // Récupérer l'exercice ouvert
+        // 2️⃣ Récupérer l'exercice ouvert
         $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
         if (!$exerciceOuvert) {
             return response()->json([
@@ -162,37 +166,44 @@ class ArticleController extends Controller
             ], 400);
         }
 
-        // Utilisation d'une transaction pour garantir l'intégrité des données
+        // 3️⃣ Transaction avec gestion des erreurs
         DB::beginTransaction();
         try {
             foreach ($request->articles as $articleData) {
 
-                // Récupérer les 4 premières lettres du libellé (ou moins si le libellé est plus court)
-                $prefix = strtoupper(substr($articleData['libelle'], 0, 4));
+                // 4️⃣ LOGIQUE DE GÉNÉRATION DU CODE SÉQUENTIEL AVEC VERROUILLAGE
 
-                // Compter combien d'articles ont déjà ce même préfixe cette année
+                // Récupérer les 4 premières lettres du libellé
+                $prefix = strtoupper(substr($articleData['libelle'], 0, 4));
                 $year = date('y');
-                $lastArticle = Article::where('code_article', 'like', "ART-{$prefix}-%-{$year}")->orderBy('id', 'desc')->first();
+
+                // Verrouiller la table 'articles' pour la requête en cours (Pessimistic Locking)
+                // Ceci empêche deux transactions concurrentes d'obtenir le même 'lastArticle'
+                $lastArticle = Article::where('code_article', 'like', "ART-{$prefix}-%-{$year}")
+                    ->orderBy('id', 'desc')
+                    ->lockForUpdate() // <-- L'ajout CRITIQUE pour la sécurité
+                    ->first();
 
                 if ($lastArticle) {
                     // Extraire le numéro de l'article précédent
                     $parts = explode('-', $lastArticle->code_article);
-                    $lastNumber = (int) $parts[2]; // ART-PREFIX-NUM-YY → NUM est à l'index 2
+                    // Assurez-vous que l'index 2 existe et est numérique
+                    $lastNumber = isset($parts[2]) && is_numeric($parts[2]) ? (int) $parts[2] : 0;
                 } else {
                     $lastNumber = 0;
                 }
 
-                // Incrémenter
+                // Incrémenter et formater sur 2 chiffres (e.g., 01, 02, 10...)
                 $newNumber = str_pad($lastNumber + 1, 2, '0', STR_PAD_LEFT);
 
-                // Générer le code article
+                // Générer le code article final
                 $codeArticle = "ART-{$prefix}-{$newNumber}-{$year}";
 
-                // Créer l'article
+                // 5️⃣ Création des enregistrements
                 $article = Article::create([
                     'id_cat' => $articleData['id_cat'],
                     'libelle' => $articleData['libelle'],
-                    'code_article' => $codeArticle,
+                    'code_article' => $codeArticle, // Code unique généré
                     'description' => $articleData['description'],
                     'stock_alerte' => $articleData['stock_alerte'],
                     'id_exercice' => $exerciceOuvert->id
@@ -205,7 +216,7 @@ class ArticleController extends Controller
                     'id_exercice' => $exerciceOuvert->id,
                 ]);
 
-                // Ajouter une entrée dans la table article_exercice
+                // Ajouter une entrée dans la table article_exercice (liaison N:N)
                 DB::table('article_exercice')->insert([
                     'id_article' => $article->id,
                     'id_exercice' => $exerciceOuvert->id,
@@ -222,15 +233,17 @@ class ArticleController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
+            // Utiliser Log::error pour le débogage et masquer les détails trop techniques
+            \Log::error('Erreur dans storeBatch: ' . $e->getMessage() . ' à la ligne ' . $e->getLine());
+
             return response()->json([
-                'error' => 'Une erreur est survenue',
-                'message' => $e->getMessage(),
-                'line' => $e->getLine(),
-                'file' => $e->getFile()
+                'success' => false,
+                'error' => 'Une erreur critique est survenue lors de l\'enregistrement du lot.',
+                'message_debug' => $e->getMessage(), // Fournir le message d'erreur si nécessaire
             ], 500);
         }
 
-
+        // 6️⃣ Réponse de succès
         return new PostResource(true, count($articles) . ' articles créés et stocks initialisés avec succès', $articles);
     }
 
