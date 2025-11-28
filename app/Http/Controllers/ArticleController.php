@@ -144,7 +144,7 @@ class ArticleController extends Controller
             'articles.*.libelle' => 'required|string|max:255',
             // 'articles.*.code_article' => 'required|string|max:255|unique:articles,code_article',
             'articles.*.description' => 'nullable|string|max:255',
-            'articles.*.demande_intermittent' => 'nullable|string|max:255',
+            //'articles.*.demande_intermittent' => 'nullable|string|max:255',
             'articles.*.stock_alerte' => 'required|integer|min:0',
         ]);
 
@@ -186,7 +186,7 @@ class ArticleController extends Controller
                     'libelle' => $articleData['libelle'],
                     'code_article' => $codeArticle,
                     'description' => $articleData['description'],
-                    'demande_intermittent' => $articleData['demande_intermittent'],
+                    'demande_intermittent' => false,
                     'stock_alerte' => $articleData['stock_alerte'],
                     'id_exercice' => $exerciceOuvert->id
                 ]);
@@ -269,7 +269,7 @@ class ArticleController extends Controller
             'id_cat' => 'required|exists:categorie_articles,id',
             'libelle' => 'required|string|max:255',
             'description' => 'nullable|string|max:255',
-            'demande_intermittent' => 'nullable|string|max:255',
+            //'demande_intermittent' => 'nullable|string|max:255',
             'stock_alerte' => 'required|integer|min:0',
         ]);
 
@@ -286,14 +286,14 @@ class ArticleController extends Controller
                 'id_cat' => $request->id_cat,
                 'libelle' => $request->libelle,
                 'description' => $request->description,
-                'demande_intermittent' => $request->demande_intermittent,
+                //'demande_intermittent' => $request->demande_intermittent,
                 'stock_alerte' => $request->stock_alerte,
             ]);
 
             // 3. Calcul CMP début et fin
-            
+
             // Remarque : 'id_Article' et 'Qte_actuel' sont sensibles à la casse (majuscules)
-            
+
             // Récupération des données agrégées pour le CMP
             $stockData = DB::table('stocks')
                 ->where('id_Article', $article->id)
@@ -307,27 +307,27 @@ class ArticleController extends Controller
             // Le CMP de début et de fin est calculé sur le stock actuel, donc c'est le même calcul ici
             $totalQte = $stockData->total_qte ?? 0;
             $totalCout = $stockData->total ?? 0;
-            
+
             $cmp = ($totalQte > 0)
                 ? round($totalCout / $totalQte, 2)
                 : 0;
-                
+
             $cmpDebut = $cmp;
             $cmpFin = $cmp;
-            
+
             // Stock actuel (quantité totale en stock pour l'article)
             // Correction ici : Retrait des guillemets doubles de 'Qte_actuel' dans ->value()
             $stockActuel = DB::table('stocks')
                 ->where('id_Article', $article->id)
                 ->orderBy('id', 'desc')
-                ->value('Qte_actuel') ?? 0; 
-                
+                ->value('Qte_actuel') ?? 0;
+
             // 4. Mise à jour de la table article_exercice
             DB::table('article_exercice')
                 ->where('id_article', $article->id)
                 ->update([
                     // total_qte représente le stock actuel agrégé
-                    'stock_debut_exercice' => $totalQte, 
+                    'stock_debut_exercice' => $totalQte,
                     'stock_fin_exercice' => $stockActuel, // Stock actuel de la dernière ligne (peut être ajusté si totalQte est préférable)
                     'cmp_debut_exercice' => $cmpDebut,
                     'cmp_fin_exercice' => $cmpFin,
@@ -337,13 +337,13 @@ class ArticleController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             // Journalisation de l'erreur pour le débogage côté serveur
             Log::error('Erreur lors de la mise à jour de l\'article: ' . $e->getMessage(), [
                 'article_id' => $article->id,
                 'exception' => $e
             ]);
-            
+
             return response()->json([
                 'error' => 'Une erreur est survenue lors de la mise à jour de l\'article.',
                 'message' => $e->getMessage(),

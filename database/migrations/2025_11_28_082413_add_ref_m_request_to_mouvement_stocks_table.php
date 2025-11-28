@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('articles', function (Blueprint $table) {
-            $table->boolean('demande_intermittent')->default(false);
+        Schema::table('mouvement_stocks', function (Blueprint $table) {
+            $table->string('ref_m_request')->nullable()->after('numero_fiche_demande');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('articles', function (Blueprint $table) {
-            $table->dropColumn('demande_intermittent');
+        Schema::table('mouvement_stocks', function (Blueprint $table) {
+            $table->dropColumn('ref_m_request');
         });
     }
 };

@@ -1080,7 +1080,8 @@ class MouvementStockController extends Controller
                 "id_employe" => $employeId,
                 "statut" => 'En attente',
                 "code_mouvement" => $code_mouvement,
-                'id_exercice' => $exerciceOuvert->id
+                'id_exercice' => $exerciceOuvert->id,
+                "ref_m_request" => null,
             ]);
 
             $mouvements[] = $mouvement;
