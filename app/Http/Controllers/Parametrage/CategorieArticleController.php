@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\Parametrage\CategorieArticle;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class CategorieArticleController extends Controller
 {
@@ -14,6 +18,13 @@ class CategorieArticleController extends Controller
     public function index()
     {
         $categories = CategorieArticle::latest()->where('isdeleted', false)->paginate(1000);
+        LogJournalisation::create([
+            "action"      => "Consultation de la liste des catégories d'articles",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Liste des catégories d\'articles', $categories);
     }
 
@@ -34,6 +45,14 @@ class CategorieArticleController extends Controller
             'libelle_categorie_article' => $request->libelle_categorie_article,
             // 'valeur' => $request->valeur,
             // 'taux' => $request->taux,
+        ]);
+
+        LogJournalisation::create([
+            "action"      => "Création d'une nouvelle catégorie d'article",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
         ]);
 
         return new PostResource(true, 'Catégorie d\'article créée avec succès', $categorie);
@@ -58,6 +77,14 @@ class CategorieArticleController extends Controller
             // 'taux' => $request->taux,
         ]);
 
+        LogJournalisation::create([
+            "action"      => "Mise à jour d'une catégorie d'article",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
+
         return new PostResource(true, 'Catégorie d\'article mise à jour avec succès', $categorie_article);
     }
 
@@ -66,6 +93,13 @@ class CategorieArticleController extends Controller
     {
         $categorie_article->isdeleted = true;
         $categorie_article->save();
+        LogJournalisation::create([
+            "action"      => "Suppression de la catégorie d'article : " . $categorie_article->libelle_categorie_article,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Catégorie d\'article supprimée avec succès', null);
     }
 }

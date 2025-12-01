@@ -9,6 +9,10 @@ use Illuminate\Http\Request;
 use App\Models\Parametrage\Fournisseur;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class FournisseurController extends Controller
 {
@@ -16,6 +20,13 @@ class FournisseurController extends Controller
     public function index()
     {
         $fournisseurs = Fournisseur::latest()->where('isdeleted', false)->paginate(100);
+        LogJournalisation::create([
+            "action"      => "Affichage de la liste des fournisseurs",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Liste des fournisseurs', $fournisseurs);
     }
 
@@ -37,7 +48,13 @@ class FournisseurController extends Controller
             'telephone' => $request->telephone,
             'adresse' => $request->adresse,
         ]);
-
+        LogJournalisation::create([
+            "action"      => "Création de fournisseur",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Fournisseur créé avec succès', $fournisseur);
     }
 
@@ -60,6 +77,13 @@ class FournisseurController extends Controller
             'adresse' => $request->adresse,
         ]);
 
+        LogJournalisation::create([
+            "action"      => "Mise à jour de fournisseur ID: " . $fournisseur->id,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Fournisseur mis à jour avec succès', $fournisseur);
     }
 
@@ -68,6 +92,13 @@ class FournisseurController extends Controller
     {
         $fournisseur->isdeleted = true;
         $fournisseur->save();
+        LogJournalisation::create([
+            "action"      => "Suppression de fournisseur ID: " . $fournisseur->id,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Fournisseur supprimé avec succès', null);
     }
 
@@ -77,6 +108,13 @@ class FournisseurController extends Controller
 
         $pdf = Pdf::loadView('pdf.fournisseurs', compact('fournisseurs'));
 
+        LogJournalisation::create([
+            "action"      => "Impression de la liste des fournisseurs",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return $pdf->download('liste_fournisseurs.pdf');
     }
 

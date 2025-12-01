@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\Parametrage\TypeIntervention;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class TypeInterventionController extends Controller
 {
@@ -16,6 +20,14 @@ class TypeInterventionController extends Controller
         $types = TypeIntervention::latest()
         ->where('isdeleted', false)
         ->paginate(100);
+
+        LogJournalisation::create([
+            "action"      => "Affichage de la liste des types d'intervention",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
 
         return new PostResource(true, 'Liste des types d\'intervention', $types);
     }
@@ -43,6 +55,14 @@ class TypeInterventionController extends Controller
             // 'date_expiration' => $request->date_expiration,
         ]);
 
+        LogJournalisation::create([
+            "action"      => "Création du type d'intervention : " . $type->libelle_type_intervention,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
+
         return new PostResource(true, 'Type d\'intervention créé avec succès', $type);
     }
 
@@ -68,7 +88,13 @@ class TypeInterventionController extends Controller
             'has_expiration_date' => $request->has_expiration_date,
             // 'date_expiration' => $request->date_expiration,
         ]);
-
+        LogJournalisation::create([
+            "action"      => "Mise à jour du type d'intervention : " . $type_intervention->libelle_type_intervention,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Type d\'intervention mis à jour avec succès', $type_intervention);
     }
 
@@ -77,6 +103,13 @@ class TypeInterventionController extends Controller
     {
         $type_intervention->isdeleted = true;
         $type_intervention->save();
+        LogJournalisation::create([
+            "action"      => "Suppression du type d'intervention : " . $type_intervention->libelle_type_intervention,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Type d\'intervention supprimé avec succès', null);
     }
 }

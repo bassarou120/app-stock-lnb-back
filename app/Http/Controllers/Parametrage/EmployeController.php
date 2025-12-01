@@ -8,6 +8,10 @@ use App\Models\Parametrage\Employe;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * @OA\Tag(
@@ -47,6 +51,13 @@ class EmployeController extends Controller
     public function index()
     {
         $employes = Employe::latest()->where('isdeleted', false)->paginate(500);
+        LogJournalisation::create([
+            "action"      => "Affichage de la liste des employés",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Liste des employés', $employes);
     }
 
@@ -170,6 +181,14 @@ class EmployeController extends Controller
             'email' => $request->email,
         ]);
 
+        LogJournalisation::create([
+            "action"      => "Création d'un employé",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
+
         // 6. Succès
         return new PostResource(true, 'Employé créé avec succès', $employe);
     }
@@ -235,6 +254,13 @@ class EmployeController extends Controller
             'telephone' => $request->telephone,
             'email' => $request->email,
         ]);
+        LogJournalisation::create([
+            "action"      => "Mise à jour d'un employé",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
 
         return new PostResource(true, 'Employé mis à jour avec succès', $employe);
     }
@@ -264,6 +290,13 @@ class EmployeController extends Controller
     {
         $employe->isdeleted = true;
         $employe->save();
+        LogJournalisation::create([
+            "action"      => "Suppression d'un employé",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Employe supprimé avec succès', null);
     }
 
@@ -287,7 +320,13 @@ class EmployeController extends Controller
         $employes = Employe::all()->where('isdeleted', false);
 
         $pdf = Pdf::loadView('pdf.employes', compact('employes'));
-
+        LogJournalisation::create([
+            "action"      => "Impression de la liste des employés",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return $pdf->download('liste_personnels.pdf');
     }
 }

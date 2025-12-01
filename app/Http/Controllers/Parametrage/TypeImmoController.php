@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\Parametrage\TypeImmo;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class TypeImmoController extends Controller
 {
@@ -14,6 +18,13 @@ class TypeImmoController extends Controller
     public function index()
     {
         $type_immos = TypeImmo::latest()->where('isdeleted', false)->paginate(100);
+        LogJournalisation::create([
+            "action"      => "Affichage de la liste des types d'immo",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Liste des types d\'immos', $type_immos);
     }
 
@@ -32,6 +43,14 @@ class TypeImmoController extends Controller
         $type_immo = TypeImmo::create([
             'libelle_typeImmo' => $request->libelle_typeImmo,
             'compte' => $request->compte,
+        ]);
+
+        LogJournalisation::create([
+            "action"      => "Création du type immo : " . $type_immo->libelle_typeImmo . " (Compte: " . $type_immo->compte . ", ID: " . $type_immo->id . ")",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
         ]);
 
         return new PostResource(true, 'Type d\'immo créé avec succès', $type_immo);
@@ -54,6 +73,14 @@ class TypeImmoController extends Controller
             'compte' => $request->compte,
         ]);
 
+        LogJournalisation::create([
+            "action"      => "Mise à jour du type immo : " . $type_immo->libelle_typeImmo . " (Compte: " . $type_immo->compte . ", ID: " . $type_immo->id . ")",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
+
         return new PostResource(true, 'Type d\'immo mis à jour avec succès', $type_immo);
     }
 
@@ -62,6 +89,13 @@ class TypeImmoController extends Controller
     {
         $type_immo->isdeleted = true;
         $type_immo->save();
+        LogJournalisation::create([
+            "action"      => "Suppression du type immo : " . $type_immo->libelle_typeImmo . " (Compte: " . $type_immo->compte . ", ID: " . $type_immo->id . ")",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Type d\'immo supprimé avec succès', null);
     }
 }

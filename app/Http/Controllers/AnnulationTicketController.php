@@ -9,6 +9,10 @@ use App\Models\Parametrage\StockTicket;
 use App\Models\Parametrage\TypeMouvement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class AnnulationTicketController extends Controller
 {
@@ -22,6 +26,15 @@ class AnnulationTicketController extends Controller
         ])
         ->where('isdeleted', false)
         ->latest()->paginate(1000);
+
+        // 📝 LOG → Consultation des annulations
+        LogJournalisation::create([
+            'action'     => 'Consultation des annulations de ticket',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(), // ID de l'utilisateur connecté
+            'date_action'=> now(),
+        ]);
 
         return new PostResource(true, 'Liste des annulations', $annulations);
     }
@@ -45,6 +58,15 @@ class AnnulationTicketController extends Controller
             "compagnie_petrolier_id" => $request->compagnie_petrolier_id,
             "coupon_ticket_id" => $request->coupon_ticket_id,
             "qte" => $request->qte,
+        ]);
+
+            // 📝 LOG → Création d'une annulation
+        LogJournalisation::create([
+            'action'     => 'Création d\'une annulation de ticket ID '.$annulation->id.' (qte: '.$request->qte.')',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
         ]);
 
         $stockTicket = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->where('compagnie_petrolier_id', $request->compagnie_petrolier_id)->where('isdeleted', false)->latest()->first();
@@ -80,6 +102,15 @@ class AnnulationTicketController extends Controller
         $annulationTicket->isdeleted = true;
         $annulationTicket->save();
 
+        // 📝 LOG → Suppression d'une annulation
+        LogJournalisation::create([
+            'action'     => 'Suppression d\'annulation de ticket ID '.$annulationTicket->id.' (qte: '.$quantite.')',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
+
         $stock = StockTicket::where('coupon_ticket_id', $couponTicketId)->latest()->first();
 
         if ($stock) {
@@ -104,6 +135,15 @@ class AnnulationTicketController extends Controller
                 ->latest()
                 ->paginate(1000);
 
+                // 📝 LOG → Consultation des mouvements de sortie non annulés
+                LogJournalisation::create([
+                    'action'     => 'Consultation des mouvements de sortie de ticket non annulés',
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->header('User-Agent'),
+                    'user_id'    => Auth::id(),
+                    'date_action'=> now(),
+                ]);
+
             return new PostResource(true, 'Liste des mouvements de sortie de Ticket non annulés', $mouvements);
         }
 
@@ -119,6 +159,15 @@ class AnnulationTicketController extends Controller
         if (!$mouvement) {
             return response()->json(['message' => 'Mouvement non trouvé'], 404);
         }
+
+        // 📝 LOG → Consultation d'un mouvement spécifique
+        LogJournalisation::create([
+            'action'     => 'Consultation du mouvement de ticket ID '.$idMouvement,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
 
         return response()->json([
             'compagnie_petrolier_id' => $mouvement->compagnie_petrolier_id,

@@ -7,12 +7,25 @@ use Illuminate\Http\Request;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Parametrage\Permission;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class PermissionController extends Controller
 {
     public function index()
     {
         $permissions = Permission::with(['role', 'module', 'fonctionnalite'])->where('isdeleted', false)->latest()->paginate(200);
+
+        LogJournalisation::create([
+            "action"      => "Affichage de la liste des permissions",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
+        
         return new PostResource(true, 'Liste des permissions', $permissions);
     }
 
@@ -39,6 +52,14 @@ class PermissionController extends Controller
             'is_active' => $request->is_active,
         ]);
 
+        LogJournalisation::create([
+            "action"      => "Création de permission",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
+        
         return new PostResource(true, 'Permission créée avec succès', $permission);
     }
 
@@ -65,6 +86,14 @@ class PermissionController extends Controller
             'is_active' => $request->is_active,
         ]);
 
+        LogJournalisation::create([
+            "action"      => "Mise à jour de permission ID: " . $permission->id,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
+
         return new PostResource(true, 'Permission mise à jour avec succès', $permission);
     }
 
@@ -73,6 +102,13 @@ class PermissionController extends Controller
     {
         $permission->isdeleted = true;
         $permission->save();
+        LogJournalisation::create([
+            "action"      => "Suppression de permission ID: " . $permission->id,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Permission supprimée avec succès', null);
     }
 

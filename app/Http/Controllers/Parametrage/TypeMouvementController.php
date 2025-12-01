@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\Parametrage\TypeMouvement;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class TypeMouvementController extends Controller
 {
@@ -14,6 +18,13 @@ class TypeMouvementController extends Controller
     public function index()
     {
         $typesMouvement = TypeMouvement::latest()->where('isdeleted', false)->paginate(100);
+        LogJournalisation::create([
+            "action"      => "Affichage de la liste des types de mouvement",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Liste des types de mouvement', $typesMouvement);
     }
 
@@ -33,7 +44,13 @@ class TypeMouvementController extends Controller
             'libelle_type_mouvement' => $request->libelle_type_mouvement,
             'valeur' => $request->valeur,
         ]);
-
+        LogJournalisation::create([
+            "action"      => "Création du type de mouvement : " . $typeMouvement->libelle_type_mouvement,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Type de mouvement créé avec succès', $typeMouvement);
     }
 
@@ -54,6 +71,13 @@ class TypeMouvementController extends Controller
             'valeur' => $request->valeur,
         ]);
 
+        LogJournalisation::create([
+            "action"      => "Mise à jour du type de mouvement : " . $typeMouvement->libelle_type_mouvement,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Type de mouvement mis à jour avec succès', $typeMouvement);
     }
 
@@ -62,6 +86,13 @@ class TypeMouvementController extends Controller
     {
         $typeMouvement->isdeleted = true;
         $typeMouvement->save();
+        LogJournalisation::create([
+            "action"      => "Suppression du type de mouvement : " . $typeMouvement->libelle_type_mouvement,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Type de mouvement supprimé avec succès', null);
     }
 }

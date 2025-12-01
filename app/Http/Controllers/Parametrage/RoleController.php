@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\Parametrage\Role;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class RoleController extends Controller
 {
@@ -14,6 +18,14 @@ class RoleController extends Controller
     public function index()
     {
         $roles = Role::latest()->where('isdeleted', false)->paginate(200);
+
+        LogJournalisation::create([
+            "action"      => "Affichage de la liste des rôles",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Liste des rôles', $roles);
     }
 
@@ -47,6 +59,14 @@ class RoleController extends Controller
         ]);
     }
 
+        LogJournalisation::create([
+            "action"      => "Création du rôle : " . $role->libelle_role . " (ID: " . $role->id . ")",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => auth()->id(), // ou Auth::id() si tu as importé Auth
+            "date_action" => now()
+        ]);
+
         return new PostResource(true, 'Rôle créé avec succès', $role);
     }
 
@@ -67,6 +87,14 @@ class RoleController extends Controller
             'libelle_role' => $request->libelle_role,
         ]);
 
+        LogJournalisation::create([
+            "action"      => "Mise à jour du rôle : " . $role->libelle_role . " (ID: " . $role->id . ")",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => auth()->id(), // ou Auth::id() si tu as importé Auth
+            "date_action" => now()
+        ]);
+
         return new PostResource(true, 'Rôle mis à jour avec succès', $role);
     }
 
@@ -75,6 +103,13 @@ class RoleController extends Controller
     {
         $role->isdeleted = true;
         $role->save();
+        LogJournalisation::create([
+            "action"      => "Suppression du rôle : " . $role->libelle_role . " (ID: " . $role->id . ")",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => auth()->id(), // ou Auth::id() si tu as importé Auth
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Rôle supprimé avec succès', null);
     }
 }

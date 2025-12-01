@@ -8,6 +8,11 @@ use App\Models\Parametrage\GroupeTypeImmo;
 use App\Models\Parametrage\SousTypeImmo;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
+
 
 class GroupeTypeImmoController extends Controller
 {
@@ -15,6 +20,15 @@ class GroupeTypeImmoController extends Controller
     public function index()
     {
         $groupe_type_immos = GroupeTypeImmo::latest()->where('isdeleted', false)->paginate(1000);
+
+        LogJournalisation::create([
+            "action"      => "Affichage de la liste des groupes de type immo",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
+
         return new PostResource(true, 'Liste des groupes de type immmo', $groupe_type_immos);
     }
 
@@ -33,6 +47,14 @@ class GroupeTypeImmoController extends Controller
         $groupe_type_immo = GroupeTypeImmo::create([
             'libelle' => $request->libelle,
             'compte' => $request->compte,
+        ]);
+
+        LogJournalisation::create([
+            "action"      => "Création de groupe de type immo",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
         ]);
 
         return new PostResource(true, 'Groupe de type immo créé avec succès', $groupe_type_immo);
@@ -55,6 +77,14 @@ class GroupeTypeImmoController extends Controller
             'compte' => $request->compte,
         ]);
 
+        LogJournalisation::create([
+            "action"      => "Mise à jour de groupe de type immo ID: " . $groupe_type_immo->id,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
+
         return new PostResource(true, 'Groupe de type immo mis à jour avec succès', $groupe_type_immo);
     }
 
@@ -63,6 +93,15 @@ class GroupeTypeImmoController extends Controller
     {
         $groupe_type_immo->isdeleted = true;
         $groupe_type_immo->save();
+        
+        LogJournalisation::create([
+            "action"      => "Suppression de groupe de type immo ID: " . $groupe_type_immo->id,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
+        
         return new PostResource(true, 'Groupe de type immo supprimé avec succès', null);
     }
 }

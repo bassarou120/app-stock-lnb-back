@@ -19,6 +19,10 @@ use Illuminate\Support\Facades\Response;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Models\Exercice;
 use Carbon\Carbon;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 
 class ArticleController extends Controller
@@ -68,6 +72,15 @@ class ArticleController extends Controller
         }])
             ->where('isdeleted', false)
             ->latest()->paginate(1000);
+
+        // 📝 LOG → Consultation du stock pour l'exercice ouvert
+        LogJournalisation::create([
+            'action'     => 'Consultation du stock pour l\'exercice ID: '.$exerciceId,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
 
         // 3. Retourner la réponse
         // Lorsque vous accédez à $article->stock->Qte_actuel, vous obtiendrez 20.
@@ -233,8 +246,24 @@ class ArticleController extends Controller
                 $articles[] = $article;
             }
             DB::commit();
+            // 📝 LOG → Création d'un lot d'articles
+            LogJournalisation::create([
+                'action'     => 'Création d\'un lot d\'articles (' . count($articles) . ' articles)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
+            // 📝 LOG → Création d'un lot d'articles
+            LogJournalisation::create([
+                'action'     => 'Echec de Création d\'articles',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
             // Utiliser Log::error pour le débogage et masquer les détails trop techniques
             \Log::error('Erreur dans storeBatch: ' . $e->getMessage() . ' à la ligne ' . $e->getLine());
 
@@ -357,9 +386,24 @@ class ArticleController extends Controller
                 ]);
 
             DB::commit();
+            // 📝 LOG → Mise à jour d'un article
+            LogJournalisation::create([
+                'action'     => 'Mise à jour de l\'article ID ' . $article->id . ' (Libellé: ' . $article->libelle . ')',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
-
+            // 📝 LOG → Mise à jour d'un article
+            LogJournalisation::create([
+                'action'     => 'Echec de la Mise à jour de l\'article ID ' . $article->id . ' (Libellé: ' . $article->libelle . ')',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
             // Journalisation de l'erreur pour le débogage côté serveur
             Log::error('Erreur lors de la mise à jour de l\'article: ' . $e->getMessage(), [
                 'article_id' => $article->id,
@@ -428,6 +472,14 @@ class ArticleController extends Controller
 
         $article->isdeleted = true;
         $article->save();
+        // 📝 LOG → Suppression d'article
+        LogJournalisation::create([
+            'action'     => 'Suppression de l\'article ID ' . $article->id . ' (Libellé: ' . $article->libelle . ')',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id() ?? null,
+            'date_action'=> now(),
+        ]);
 
         return new PostResource(true, 'Article supprimé avec succès', null);
     }
@@ -439,6 +491,14 @@ class ArticleController extends Controller
         $articles = Article::with(['categorie', 'stock'])
             ->where('isdeleted', false)
             ->get();
+                    // 📝 LOG → Impression du stock
+        LogJournalisation::create([
+            'action'     => 'Impression de l\'état du stock des articles',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id() ?? null,
+            'date_action'=> now(),
+        ]);
 
         $pdf = Pdf::loadView('pdf.articles', compact('articles'));
 
@@ -463,6 +523,15 @@ class ArticleController extends Controller
                 'Date de création'  => $article->created_at ? $article->created_at->format('Y-m-d') : '-',
             ];
         })->toArray();
+
+        // 📝 LOG → Export Excel des articles
+        LogJournalisation::create([
+            'action'     => 'Export Excel de l\'état du stock des articles',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id() ?? null,
+            'date_action'=> now(),
+        ]);
 
         // Générer le fichier Excel
         \Excel::create('etat_du_stock_' . $annee, function ($excel) use ($articles, $annee) {
@@ -611,6 +680,14 @@ class ArticleController extends Controller
                 $summary .= " Attention : " . count($ignoredRows) . " ligne(s) ont été ignorée(s).";
             }
 
+            LogJournalisation::create([
+                'action' => 'Début de l\'importation des articles via Excel',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id' => Auth::id() ?? null,
+                'date_action' => now(),
+            ]);
+
             return response()->json([
                 'message' => $summary,
                 'success_count' => $successCount,
@@ -619,6 +696,15 @@ class ArticleController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
+            LogJournalisation::create([
+                'action' => 'Échec de l\'importation des articles: ' . $e->getMessage(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id' => Auth::id() ?? null,
+                'date_action' => now(),
+            ]);
+
             Log::error('Erreur lors de l\'importation des articles: ' . $e->getMessage() . ' à la ligne ' . $e->getLine());
 
             return response()->json([

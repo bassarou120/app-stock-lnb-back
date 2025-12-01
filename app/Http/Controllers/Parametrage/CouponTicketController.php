@@ -8,12 +8,23 @@ use App\Models\Parametrage\CouponTicket;
 use App\Models\Parametrage\StockTicket;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class CouponTicketController extends Controller
 {
     // Afficher la liste des coupon_tickets
     public function index()
     {
+        LogJournalisation::create([
+            "action"      => "Consultation de la liste des coupon tickets",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
 
         $couponTickets = CouponTicket::where('isdeleted', false)
             ->latest()
@@ -30,6 +41,14 @@ class CouponTicketController extends Controller
             ->where('isdeleted', false)
             ->orderByDesc('created_at')
             ->get();
+
+        LogJournalisation::create([
+            "action"      => "Consultation de la liste des coupons avec compagnies",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
 
         return new PostResource(true, 'Liste des coupons avec compagnies', $stocks);
     }
@@ -53,6 +72,13 @@ class CouponTicketController extends Controller
         $couponTicket = CouponTicket::create([
             'libelle' => $request->libelle,
             'valeur' => $request->valeur,
+        ]);
+        LogJournalisation::create([
+            "action"      => "Création d'un nouveau coupon ticket",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
         ]);
 
         // Retourner la réponse formatée avec PostResource, indiquant que la création a réussi
@@ -79,6 +105,14 @@ class CouponTicketController extends Controller
             'valeur' => $request->valeur,
         ]);
 
+        LogJournalisation::create([
+            "action"      => "Modification d'un coupon ticket",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
+
         // Retourner la réponse formatée avec PostResource, indiquant que la mise à jour a réussi
         return new PostResource(true, 'Coupon ticket modifié avec succès', $couponTicket);
     }
@@ -89,8 +123,14 @@ class CouponTicketController extends Controller
         // Supprimer le coupon_ticket
         $couponTicket->isdeleted = true;
         $couponTicket->save();
+        LogJournalisation::create([
+            "action"      => "Suppression d'un coupon ticket",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         // Retourner la réponse formatée avec PostResource, indiquant que la suppression a réussi
-        return new PostResource(true, 'Coupons ticket supprimé avec succès', null);
+        return new PostResource(true, 'Coupon ticket supprimé avec succès', null);
     }
-
 }

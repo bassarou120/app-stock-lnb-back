@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\Parametrage\StatusImmo;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class StatusImmoController extends Controller
 {
@@ -14,6 +18,13 @@ class StatusImmoController extends Controller
     public function index()
     {
         $status_immos = StatusImmo::latest()->where('isdeleted', false)->paginate(100);
+        LogJournalisation::create([
+            "action"      => "Affichage de la liste des statuts immobiliers",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Liste des statuts immobiliers', $status_immos);
     }
 
@@ -30,6 +41,13 @@ class StatusImmoController extends Controller
 
         $status_immo = StatusImmo::create([
             'libelle_status_immo' => $request->libelle_status_immo,
+        ]);
+        LogJournalisation::create([
+            "action"      => "Création du statut immobilier : " . $status_immo->libelle_status_immo,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            "date_action" => now()
         ]);
 
         return new PostResource(true, 'Statut immobilier créé avec succès', $status_immo);
@@ -50,6 +68,13 @@ class StatusImmoController extends Controller
             'libelle_status_immo' => $request->libelle_status_immo,
         ]);
 
+        LogJournalisation::create([
+            "action"      => "Mise à jour du statut immobilier : " . $status_immo->libelle_status_immo,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Statut immobilier mis à jour avec succès', $status_immo);
     }
 
@@ -58,6 +83,14 @@ class StatusImmoController extends Controller
     {
         $status_immo->isdeleted = true;
         $status_immo->save();
+
+        LogJournalisation::create([
+            "action"      => "Suppression du statut immobilier : " . $status_immo->libelle_status_immo,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Statut immobilier supprimé avec succès', null);
     }
 }

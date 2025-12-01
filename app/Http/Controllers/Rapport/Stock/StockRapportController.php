@@ -14,7 +14,10 @@ use App\Models\Parametrage\Fournisseur;
 use App\Models\Employe;
 use Carbon\Carbon;
 use App\Models\Stock;
-
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 
 class StockRapportController extends Controller
@@ -109,6 +112,14 @@ class StockRapportController extends Controller
                 $stockActuel = $stockActuel + $entree - $sortie;
             }
 
+            LogJournalisation::create([
+                "action"      => "Consultation du rapport des stock",
+                "ip_address"  => request()->ip(),
+                "user_agent"  => request()->userAgent(),
+                "user_id"     => Auth::id(),
+                "date_action" => now()
+            ]);
+
             // Utiliser la même ressource pour le rapport individuel
             return new PostResource(true, 'Rapport individuel généré avec succès.', $rapportData);
 
@@ -167,219 +178,233 @@ class StockRapportController extends Controller
      * Génère un PDF du rapport des mouvements de stock.
      */
 
-public function imprimerRapportStock(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'id_type_rapport' => 'required|string|in:entree,sortie,individuel',
-        'date_debut' => 'required|date',
-        'date_fin' => 'required|date|after_or_equal:date_debut',
-        'id_Article' => 'nullable|exists:articles,id',
-        'id_fournisseur' => 'nullable|exists:fournisseurs,id',
-        'id_employe' => 'nullable|exists:employes,id',
-        'id_type_mouvement' => 'nullable|exists:type_mouvements,id',
-    ]);
+    public function imprimerRapportStock(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id_type_rapport' => 'required|string|in:entree,sortie,individuel',
+            'date_debut' => 'required|date',
+            'date_fin' => 'required|date|after_or_equal:date_debut',
+            'id_Article' => 'nullable|exists:articles,id',
+            'id_fournisseur' => 'nullable|exists:fournisseurs,id',
+            'id_employe' => 'nullable|exists:employes,id',
+            'id_type_mouvement' => 'nullable|exists:type_mouvements,id',
+        ]);
 
-    if ($validator->fails()) {
-        return response()->json($validator->errors(), 422);
-    }
-
-    // Cas spécial : rapport individuel
-    if ($request->id_type_rapport === 'individuel') {
-        $idArticle = $request->id_Article;
-        if (!$request->filled('id_Article')) {
-            return response()->json(['message' => 'L\'ID de l\'article est requis pour un rapport individuel.'], 422);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
         }
 
-        $dateDebut = $request->date_debut;
-        $dateFin = $request->date_fin;
+        // 🧾 LOG : capture du type demandé + période
+        LogJournalisation::create([
+            "action"      => "Demande d’impression du rapport stock (" . $request->id_type_rapport . ") du " . 
+                            Carbon::parse($request->date_debut)->format('d/m/Y') . " au " . 
+                            Carbon::parse($request->date_fin)->format('d/m/Y'),
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
 
-        // Calcul stock initial
-        $stockInitialEntrees = MouvementStock::where('id_Article', $idArticle)
-            ->where('date_mouvement', '<', $dateDebut)
-            ->whereHas('typeMouvement', function ($query) {
-                $query->where('libelle_type_mouvement', 'Entrée de Stock');
-            })
-            ->sum('qte');
-
-        $stockInitialSorties = MouvementStock::where('id_Article', $idArticle)
-            ->where('date_mouvement', '<', $dateDebut)
-            ->whereHas('typeMouvement', function ($query) {
-                $query->where('libelle_type_mouvement', 'Sortie de Stock');
-            })
-            ->sum('qte');
-
-        $stockInitial = $stockInitialEntrees - $stockInitialSorties;
-
-        // Mouvements pendant la période
-        $mouvements = MouvementStock::where('id_Article', $idArticle)
-            ->whereBetween('date_mouvement', [$dateDebut, $dateFin])
-            ->orderBy('date_mouvement', 'asc')
-            ->orderBy('created_at', 'asc')
-            ->with(['typeMouvement','fournisseur','employe','bureau','unite_de_mesure','article'])
-            ->get();
-
-        $rapportData = collect();
-        $stockActuel = $stockInitial;
-        $currentPU = 0;
-
-        foreach ($mouvements as $mouvement) {
-            $entree = 0;
-            $sortie = 0;
-            $libelleTypeMouvement = $mouvement->typeMouvement->libelle_type_mouvement;
-
-            if ($libelleTypeMouvement === 'Entrée de Stock') {
-                $entree = $mouvement->qte;
-                $currentPU = $mouvement->prixUnitaire;
-            } elseif ($libelleTypeMouvement === 'Sortie de Stock') {
-                $sortie = $mouvement->qte;
-                // si le PU n’est pas renseigné, on reprend le dernier PU d'entrée
-                if (empty($mouvement->prixUnitaire)) {
-                    $mouvement->prixUnitaire = $currentPU;
-                }
+        // Cas spécial : rapport individuel
+        if ($request->id_type_rapport === 'individuel') {
+            $idArticle = $request->id_Article;
+            if (!$request->filled('id_Article')) {
+                return response()->json(['message' => 'L\'ID de l\'article est requis pour un rapport individuel.'], 422);
             }
 
-            $observation = ($libelleTypeMouvement === 'Entrée de Stock')
-                ? ($mouvement->fournisseur->nom ?? '') . ' - ' . ($mouvement->observations ?? '')
-                : ($mouvement->employe->nom . ' ' . $mouvement->employe->prenom ?? $mouvement->bureau->libelle_bureau ?? '') . ' - ' . ($mouvement->observations ?? '');
-
-            $rapportData->push([
-                'date_mouvement' => $mouvement->date_mouvement,
-                'numero_bordereau' => $mouvement->numero_bordereau,
-                'stock_initial_ligne' => $stockActuel,
-                'entrees' => $entree,
-                'sorties' => $sortie,
-                'stock_final' => $stockActuel + $entree - $sortie,
-                'pu' => $mouvement->prixUnitaire ?? $currentPU,
-                'observations' => $observation,
-                'article' => $mouvement->article,
+            // ⚠ Ton log individuel reste, juste placé avant le retour
+            LogJournalisation::create([
+                "action"      => "Téléchargement du rapport individuel stock article : " . $idArticle,
+                "ip_address"  => request()->ip(),
+                "user_agent"  => request()->userAgent(),
+                "user_id"     => Auth::id(),
+                "date_action" => now()
             ]);
 
-            $stockActuel = $stockActuel + $entree - $sortie;
-        }
-        
-        // Calcule le stock final de la période
-        $stockFinalPeriod = $stockActuel;
+            $dateDebut = $request->date_debut;
+            $dateFin = $request->date_fin;
 
-        // Correction: Définir les variables pour la vue "rapport_individuel"
-        $reportTypeLabel = 'Individuelle';
-        $article = Article::find($idArticle);
+            $stockInitialEntrees = MouvementStock::where('id_Article', $idArticle)
+                ->where('date_mouvement', '<', $dateDebut)
+                ->whereHas('typeMouvement', function ($query) {
+                    $query->where('libelle_type_mouvement', 'Entrée de Stock');
+                })
+                ->sum('qte');
+
+            $stockInitialSorties = MouvementStock::where('id_Article', $idArticle)
+                ->where('date_mouvement', '<', $dateDebut)
+                ->whereHas('typeMouvement', function ($query) {
+                    $query->where('libelle_type_mouvement', 'Sortie de Stock');
+                })
+                ->sum('qte');
+
+            $stockInitial = $stockInitialEntrees - $stockInitialSorties;
+
+            $mouvements = MouvementStock::where('id_Article', $idArticle)
+                ->whereBetween('date_mouvement', [$dateDebut, $dateFin])
+                ->orderBy('date_mouvement', 'asc')
+                ->orderBy('created_at', 'asc')
+                ->with(['typeMouvement','fournisseur','employe','bureau','unite_de_mesure','article'])
+                ->get();
+
+            $rapportData = collect();
+            $stockActuel = $stockInitial;
+            $currentPU = 0;
+
+            foreach ($mouvements as $mouvement) {
+                $entree = 0;
+                $sortie = 0;
+                $libelleTypeMouvement = $mouvement->typeMouvement->libelle_type_mouvement;
+
+                if ($libelleTypeMouvement === 'Entrée de Stock') {
+                    $entree = $mouvement->qte;
+                    $currentPU = $mouvement->prixUnitaire;
+                } elseif ($libelleTypeMouvement === 'Sortie de Stock') {
+                    $sortie = $mouvement->qte;
+                    if (empty($mouvement->prixUnitaire)) {
+                        $mouvement->prixUnitaire = $currentPU;
+                    }
+                }
+
+                $observation = ($libelleTypeMouvement === 'Entrée de Stock')
+                    ? ($mouvement->fournisseur->nom ?? '') . ' - ' . ($mouvement->observations ?? '')
+                    : ($mouvement->employe->nom . ' ' . $mouvement->employe->prenom ?? $mouvement->bureau->libelle_bureau ?? '') . ' - ' . ($mouvement->observations ?? '');
+
+                $rapportData->push([
+                    'date_mouvement' => $mouvement->date_mouvement,
+                    'numero_bordereau' => $mouvement->numero_bordereau,
+                    'stock_initial_ligne' => $stockActuel,
+                    'entrees' => $entree,
+                    'sorties' => $sortie,
+                    'stock_final' => $stockActuel + $entree - $sortie,
+                    'pu' => $mouvement->prixUnitaire ?? $currentPU,
+                    'observations' => $observation,
+                    'article' => $mouvement->article,
+                ]);
+
+                $stockActuel = $stockActuel + $entree - $sortie;
+            }
+
+            $stockFinalPeriod = $stockActuel;
+            $reportTypeLabel = 'Individuelle';
+            $article = Article::find($idArticle);
+            $filterLabels = [
+                'date_debut' => Carbon::parse($dateDebut)->format('d/m/Y'),
+                'date_fin' => Carbon::parse($dateFin)->format('d/m/Y'),
+                'article' => $article ? ($article->code_article . ' - ' . $article->libelle) : 'Non trouvé',
+            ];
+
+            // ⬇ On laisse tout pareil jusqu’au PDF
+            $pdf = Pdf::loadView('pdf.rapport.rapport_individuel', compact('rapportData', 'stockInitial', 'stockFinalPeriod', 'reportTypeLabel', 'filterLabels', 'article'));
+
+            $filename = 'rapport_stock_individuel.pdf';
+
+            return response($pdf->output(), 200)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="'.$filename.'"');
+        }
+
+        // =========================
+        // Cas général (entrée/sortie)
+        // =========================
+        $query = MouvementStock::query();
+
+        $query->with([
+            'article',
+            'piecesJointes',
+            'article.categorie',
+            'article.stock',
+            'typeMouvement',
+            'fournisseur',
+            'employe',
+            'unite_de_mesure'
+        ]);
+
+        $query->whereBetween('date_mouvement', [$request->date_debut, $request->date_fin]);
+
+        if ($request->filled('id_type_mouvement')) {
+            $query->where('id_type_mouvement', $request->id_type_mouvement);
+        }
+
+        if ($request->id_type_rapport === 'entree') {
+            $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Entrée de Stock")->latest()->first();
+            if ($type_mouvement) {
+                $query->where('id_type_mouvement', $type_mouvement->id);
+            }
+            if ($request->filled('id_fournisseur')) {
+                $query->where('id_fournisseur', $request->id_fournisseur);
+            }
+            if ($request->filled('id_Article')) {
+                $query->where('id_Article', $request->id_Article);
+            }
+        } elseif ($request->id_type_rapport === 'sortie') {
+            $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Sortie de Stock")->latest()->first();
+            if ($type_mouvement) {
+                $query->where('id_type_mouvement', $type_mouvement->id);
+            }
+            $query->where('statut', '=', 'Accordé');
+            if ($request->filled('id_employe')) {
+                $query->where('id_employe', $request->id_employe);
+            }
+            if ($request->filled('id_Article')) {
+                $query->where('id_Article', $request->id_Article);
+            }
+        }
+
+        $mouvements = $query->latest()->get();
+
+        switch ($request->id_type_rapport) {
+            case 'entree':
+                $reportTypeLabel = 'd\'Entrée de Stock';
+                break;
+            case 'sortie':
+                $reportTypeLabel = 'de Sortie de Stock';
+                break;
+            case 'individuel':
+                $reportTypeLabel = 'de rapport individuel';
+                break;
+            default:
+                $reportTypeLabel = 'de Stock';
+                break;
+        }
+
         $filterLabels = [
-            'date_debut' => Carbon::parse($dateDebut)->format('d/m/Y'),
-            'date_fin' => Carbon::parse($dateFin)->format('d/m/Y'),
-            'article' => $article ? ($article->code_article . ' - ' . $article->libelle) : 'Non trouvé',
+            'date_debut' => Carbon::parse($request->date_debut)->format('d/m/Y'),
+            'date_fin' => Carbon::parse($request->date_fin)->format('d/m/Y'),
+            'article' => 'Tous',
+            'fournisseur' => 'Tous',
+            'employe' => 'Tous',
         ];
 
-        // On passe $rapportData, $stockInitial et $stockFinalPeriod à la vue
-        $pdf = Pdf::loadView('pdf.rapport.rapport_individuel', compact('rapportData', 'stockInitial', 'stockFinalPeriod', 'reportTypeLabel', 'filterLabels', 'article'));
-
-        $filename = 'rapport_stock_individuel.pdf';
-
-        return response($pdf->output(), 200)
-        ->header('Content-Type', 'application/pdf')
-        ->header('Content-Disposition', 'inline; filename="'.$filename.'"');
-    }
-
-    // =========================
-    // Cas général (entrée/sortie)
-    // =========================
-    $query = MouvementStock::query();
-
-    $query->with([
-        'article',
-        'piecesJointes',
-        'article.categorie',
-        'article.stock',
-        'typeMouvement',
-        'fournisseur',
-        'employe',
-        'unite_de_mesure'
-    ]);
-
-    $query->whereBetween('date_mouvement', [$request->date_debut, $request->date_fin]);
-
-    if ($request->filled('id_type_mouvement')) {
-        $query->where('id_type_mouvement', $request->id_type_mouvement);
-    }
-
-    if ($request->id_type_rapport === 'entree') {
-        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Entrée de Stock")->latest()->first();
-        if ($type_mouvement) {
-            $query->where('id_type_mouvement', $type_mouvement->id);
-        }
-        if ($request->filled('id_fournisseur')) {
-            $query->where('id_fournisseur', $request->id_fournisseur);
-        }
         if ($request->filled('id_Article')) {
-            $query->where('id_Article', $request->id_Article);
+            $article = Article::find($request->id_Article);
+            $filterLabels['article'] = $article ? ($article->code_article . ' - ' . $article->libelle) : 'Non trouvé';
         }
-    } elseif ($request->id_type_rapport === 'sortie') {
-        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Sortie de Stock")->latest()->first();
-        if ($type_mouvement) {
-            $query->where('id_type_mouvement', $type_mouvement->id);
+
+        if ($request->id_type_rapport === 'entree' && $request->filled('id_fournisseur')) {
+            $fournisseur = Fournisseur::find($request->id_fournisseur);
+            $filterLabels['fournisseur'] = $fournisseur ? $fournisseur->nom : 'Non trouvé';
         }
-        $query->where('statut', '=', 'Accordé');
-        if ($request->filled('id_employe')) {
-            $query->where('id_employe', $request->id_employe);
+
+        if ($request->id_type_rapport === 'sortie' && $request->filled('id_employe')) {
+            $employe = Employe::find($request->id_employe);
+            $filterLabels['employe'] = $employe ? ($employe->nom . ' ' . $employe->prenom) : 'Non trouvé';
         }
-        if ($request->filled('id_Article')) {
-            $query->where('id_Article', $request->id_Article);
-        }
+
+        // 🧾 LOG général avant téléchargement
+        LogJournalisation::create([
+            "action"      => "Téléchargement du rapport stock général : " . ucfirst($request->id_type_rapport),
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
+
+        $pdf = Pdf::loadView('pdf.rapport.rapport_stock', compact('mouvements', 'reportTypeLabel', 'filterLabels'));
+        $filename = 'rapport_stock_' . $request->id_type_rapport . '.pdf';
+
+        return $pdf->download($filename);
     }
-
-    $mouvements = $query->latest()->get();
-
-    $reportTypeLabel = '';
-    switch ($request->id_type_rapport) {
-        case 'entree':
-            $reportTypeLabel = 'd\'Entrée de Stock';
-            break;
-        case 'sortie':
-            $reportTypeLabel = 'de Sortie de Stock';
-            break;
-        case 'individuel':
-            $reportTypeLabel = 'de rapport individuel';
-            break;
-        default:
-            $reportTypeLabel = 'de Stock';
-            break;
-    }
-
-    $filterLabels = [
-        'date_debut' => Carbon::parse($request->date_debut)->format('d/m/Y'),
-        'date_fin' => Carbon::parse($request->date_fin)->format('d/m/Y'),
-        'article' => 'Tous',
-        'fournisseur' => 'Tous',
-        'employe' => 'Tous',
-    ];
-
-    if ($request->filled('id_Article')) {
-        $article = Article::find($request->id_Article);
-        $filterLabels['article'] = $article ? ($article->code_article . ' - ' . $article->libelle) : 'Non trouvé';
-    }
-
-    if ($request->id_type_rapport === 'entree' && $request->filled('id_fournisseur')) {
-        $fournisseur = Fournisseur::find($request->id_fournisseur);
-        $filterLabels['fournisseur'] = $fournisseur ? $fournisseur->nom : 'Non trouvé';
-    }
-
-    if ($request->id_type_rapport === 'individuel' && $request->filled('id_Article')) {
-        $article = Article::find($request->id_Article);
-        $filterLabels['article'] = $article ? ($article->code_article . ' - ' . $article->libelle) : 'Non trouvé';
-    }
-
-    if ($request->id_type_rapport === 'sortie' && $request->filled('id_employe')) {
-        $employe = Employe::find($request->id_employe);
-        $filterLabels['employe'] = $employe ? ($employe->nom . ' ' . $employe->prenom) : 'Non trouvé';
-    }
-
-    $pdf = Pdf::loadView('pdf.rapport.rapport_stock', compact('mouvements', 'reportTypeLabel', 'filterLabels'));
-
-    $filename = 'rapport_stock_' . $request->id_type_rapport . '.pdf';
-
-    return $pdf->download($filename);
-}
-
-
 
 
     /**
@@ -465,8 +490,16 @@ public function imprimerRapportStock(Request $request)
             'nombre_articles' => count($rapportArticles),
             'periode_analysee' => $dateDebut->format('d/m/Y') . ' au ' . $dateFin->format('d/m/Y')
         ];
-
-
+        
+        LogJournalisation::create([
+            "action"      => "Téléchargement du rapport d'état stock" .
+            ($idArticle ? " pour l'article ID {$idArticle}" : "") .
+                            " du " . $dateDebut->format('d/m/Y') . " au " . $dateFin->format('d/m/Y'),
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         // ✅ GÉNÉRER LE PDF
         $pdf = Pdf::loadView('pdf.rapport.rapport_etat_stock', compact('rapportArticles', 'filterLabels', 'statistiques'));
 
@@ -588,6 +621,16 @@ public function imprimerRapportStock(Request $request)
                 ->orWhere('libelle_type_mouvement', 'like', '%Sortie%')
                 ->orWhere('libelle_type_mouvement', 'like', '%SORTIE%');
         })->first();
+
+        LogJournalisation::create([
+            "action"      => "Génération du rapport complet pour l'article ID {$article->id} ({$article->libelle}) du " .
+                            Carbon::parse($dateDebut)->format('d/m/Y') . " au " .
+                            Carbon::parse($dateFin)->format('d/m/Y'),
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
 
         // ✅ 2. RÉCUPÉRER TOUS LES MOUVEMENTS DE L'ARTICLE (pour debug)
         $tousLesMouvements = MouvementStock::with(['typeMouvement', 'fournisseur', 'employe', 'bureau'])

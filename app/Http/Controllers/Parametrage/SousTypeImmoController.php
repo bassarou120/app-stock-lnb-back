@@ -8,6 +8,10 @@ use App\Models\Parametrage\SousTypeImmo;
 use App\Models\Parametrage\TypeImmo;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class SousTypeImmoController extends Controller
 {
@@ -15,6 +19,14 @@ class SousTypeImmoController extends Controller
     public function index()
     {
         $sous_type_immos = SousTypeImmo::with('typeImmo')->where('isdeleted', false)->latest()->paginate(100);
+
+        LogJournalisation::create([
+            "action"      => "Affichage de la liste des sous-types d'immo",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Liste des sous-types d\'immos', $sous_type_immos);
     }
 
@@ -35,6 +47,14 @@ class SousTypeImmoController extends Controller
             'id_type_immo' => $request->id_type_immo,
             'libelle' => $request->libelle,
             'compte' => $request->compte,
+        ]);
+
+        LogJournalisation::create([
+            "action"      => "Création du sous-type d'immo : " . $sous_type_immo->libelle,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            "date_action" => now()
         ]);
 
         return new PostResource(true, 'Sous-type d\'immo créé avec succès', $sous_type_immo);
@@ -59,6 +79,14 @@ class SousTypeImmoController extends Controller
             'compte' => $request->compte,
         ]);
 
+        LogJournalisation::create([
+            "action"      => "Mise à jour du sous-type d'immo : " . $sous_type_immo->libelle,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            "date_action" => now()
+        ]);
+
         return new PostResource(true, 'Sous-type d\'immo mis à jour avec succès', $sous_type_immo);
     }
 
@@ -67,6 +95,13 @@ class SousTypeImmoController extends Controller
     {
         $sous_type_immo->isdeleted = true;
         $sous_type_immo->save();
+        LogJournalisation::create([
+            "action"      => "Suppression du sous-type d'immo : " . $sous_type_immo->libelle,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Sous-type d\'immo supprimé avec succès', null);
     }
 }

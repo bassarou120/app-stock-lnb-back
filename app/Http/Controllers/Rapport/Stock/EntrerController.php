@@ -8,7 +8,10 @@ use App\Models\Article;
 use App\Models\MouvementStock;
 use App\Models\Parametrage\TypeMouvement;
 use App\Http\Resources\PostResource;
-
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class EntrerController extends Controller
 {
@@ -48,6 +51,13 @@ class EntrerController extends Controller
 
         // ✅ Exécute la requête
         $resultats = $query->latest()->paginate(1000);
+        LogJournalisation::create([
+            "action"      => "Consulatat du rapport des entrées de stock",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
 
         return new PostResource(true, 'Mouvements filtrés avec succès.', $resultats);
     }

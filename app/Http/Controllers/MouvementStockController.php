@@ -19,6 +19,9 @@ use App\Models\Parametrage\Bureau;
 use App\Models\Parametrage\Employe;
 
 use PDF;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
@@ -52,6 +55,14 @@ class MouvementStockController extends Controller
             ->where('isdeleted', false)
             ->latest()
             ->paginate(1000);
+
+            LogJournalisation::create([
+                'action'     => 'Consultation des mouvements "Entrée de Stock"',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => auth()->id(),
+                'date_action'=> now(),
+            ]);
 
             return new PostResource(true, 'Liste des mouvements', $mouvements);
         }
@@ -293,6 +304,15 @@ class MouvementStockController extends Controller
             // 9. Sauvegarder la mise à jour du stock
             $stock->save();
 
+            LogJournalisation::create([
+                'action'     => 'Création du mouvement de stock ' . $codeMouvement . 
+                ' (' . $typeMouvement->libelle_type_mouvement . ', Article: ' . $article->libelle . ', Qté: ' . $qte_mouvement . ')',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
+
             // 10. Commit de la transaction
             DB::commit();
 
@@ -300,6 +320,13 @@ class MouvementStockController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            LogJournalisation::create([
+                'action'     => 'Erreur création mouvement de stock : ' . $e->getMessage(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
             // Log de l'erreur
             Log::error('Erreur lors de la création du mouvement de stock: ' . $e->getMessage(), ['exception' => $e]);
             return new PostResource(false, 'Une erreur est survenue lors de la création du mouvement de stock.', null);
@@ -388,6 +415,14 @@ class MouvementStockController extends Controller
 
         // ÉTAPE 5: Recalculer le CMP pour tous les mouvements postérieurs (optionnel mais recommandé)
         $this->recalculerCMPPosterieur($request->id_Article, $mouvement->date_mouvement);
+
+        LogJournalisation::create([
+            'action' => "Mise à jour du mouvement de stock ID: {$mouvement->id} réussie",
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id' => Auth::id(),
+            'date_action' => now(),
+        ]);
 
         return new PostResource(true, 'Le mouvement d\'entrée de stock a été mis à jour avec succès !', $mouvement);
     }
@@ -534,6 +569,13 @@ class MouvementStockController extends Controller
         $mouvement->isdeleted = true;
         $mouvement->save();
 
+        LogJournalisation::create([
+            'action' => "Suppression du mouvement de stock ID: {$mouvement->id} réussie",
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id' => Auth::id(),
+            'date_action' => now(),
+        ]);
         return new PostResource(true, 'Mouvement supprimé avec succès ! CMP recalculé.', [
             'nouveau_stock' => $nouvelle_quantite,
             'nouveau_cmp' => round($nouveau_cmp, 2)
@@ -770,6 +812,14 @@ class MouvementStockController extends Controller
                 $stock->cout_moyen_pondere = round($nouveau_cmp, 2);
                 $stock->save();
 
+                LogJournalisation::create([
+                    'action' => "Création du mouvement de stock ID: {$mouvement->id} pour l'article {$article['id_Article']}",
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->header('User-Agent'),
+                    'user_id' => Auth::id(),
+                    'date_action' => now(),
+                ]);
+
                 // Stocker les informations pour le retour
                 $mouvements[] = $mouvement;
                 $resultats_cmp[] = [
@@ -819,6 +869,13 @@ class MouvementStockController extends Controller
         } catch (\Exception $e) {
             // Annuler la transaction en cas d'erreur
             DB::rollBack();
+            LogJournalisation::create([
+                'action' => 'Erreur création multiple mouvements stock: ' . $e->getMessage(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id' => Auth::id(),
+                'date_action' => now(),
+            ]);
 
             return response()->json([
                 'success' => false,
@@ -839,6 +896,13 @@ class MouvementStockController extends Controller
             ->latest()
             ->get();
 
+            LogJournalisation::create([
+                'action' => 'Impression de la liste des entrées de stock (PDF)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id' => Auth::id(),
+                'date_action' => now(),
+            ]);
 
         $pdf = \Pdf::loadView('pdf.mouvements_entrees', compact('mouvements'));
 
@@ -950,6 +1014,15 @@ class MouvementStockController extends Controller
             ];
         });
 
+        // 📝 JOURNALISATION : Enregistrement de l'action de consultation
+        LogJournalisation::create([
+            'action'     => 'Consultation de la liste des sorties de stock groupées',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
+
         return new PostResource(true, 'Liste des mouvements groupés', $formattedResult);
     }
 
@@ -970,6 +1043,15 @@ class MouvementStockController extends Controller
             ->where('isdeleted', false)
             ->latest()
             ->paginate(1000);
+
+            // 📝 JOURNALISATION : Consultation de la liste des sorties de stock
+            LogJournalisation::create([
+                'action'     => 'Consultation de la liste des sorties de stock (liste simple)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
 
             return new PostResource(true, 'Liste des mouvements', $mouvements);
         }
@@ -1013,7 +1095,14 @@ class MouvementStockController extends Controller
             ->where('isdeleted', false)
             ->latest()
             ->get();
-
+            // 📝 JOURNALISATION : Enregistrement de l'action d'impression
+            LogJournalisation::create([
+                'action'     => 'Impression de la liste des sorties de stock (PDF)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
 
             // Données pour le PDF
             $data = [
@@ -1028,6 +1117,15 @@ class MouvementStockController extends Controller
             return $pdf->download('liste_mouvements_sorties.pdf');
 
         } catch (\Exception $e) {
+
+            LogJournalisation::create([
+                'action'     => 'Erreur: Échec de l\'impression des sorties de stock',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(), // ID de l'utilisateur qui a tenté l'impression
+                'date_action'=> now(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la génération du PDF.'
@@ -1051,6 +1149,13 @@ class MouvementStockController extends Controller
         ]);
 
         if ($validator->fails()) {
+            LogJournalisation::create([
+                'action'     => 'Échec: Tentative de création de demande de Sortie de Stock Multiple (Validation échouée)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(), // Utilisateur connecté qui a fait la tentative
+                'date_action'=> now(),
+            ]);
             return response()->json($validator->errors(), 422);
         }
 
@@ -1065,12 +1170,26 @@ class MouvementStockController extends Controller
         $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
 
         if (!$exerciceOuvert) {
+            LogJournalisation::create([
+                'action'     => 'Échec: Création de demande de Sortie de Stock Multiple (Aucun exercice ouvert)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
             return response()->json(['error' => 'Aucun exercice ouvert trouvé.'], 422);
         }
 
         // Vérifier les doublons d'articles
         $codeArticles = array_column($request->articles, 'code_article');
         if (count($codeArticles) !== count(array_unique($codeArticles))) {
+            LogJournalisation::create([
+                'action'     => 'Échec: Création de demande de Sortie de Stock Multiple (Articles en double)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
             return response()->json([
                 'error' => "Un même article ne peut pas être ajouté plusieurs fois dans la demande."
             ], 422);
@@ -1079,6 +1198,13 @@ class MouvementStockController extends Controller
         // Type de mouvement
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Sortie de Stock")->latest()->first();
         if (!$type_mouvement) {
+            LogJournalisation::create([
+                'action'     => 'Échec: Création de demande de Sortie de Stock Multiple (Type de mouvement manquant)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
             return response()->json(['error' => "Le type de mouvement 'Sortie de Stock' n'existe pas."], 404);
         }
 
@@ -1164,6 +1290,13 @@ class MouvementStockController extends Controller
 
         // Vérifier si la validation échoue
         if ($validator->fails()) {
+            LogJournalisation::create([
+                'action'     => 'Échec: Tentative de création de demande de Sortie de Stock (Validation échouée)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
             return response()->json($validator->errors(), 422);
         }
 
@@ -1174,7 +1307,7 @@ class MouvementStockController extends Controller
             return response()->json(['error' => "Le type de mouvement 'Sortie de Stock' n'existe pas."], 404);
         }
 
-    $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
         // Vérifier la quantité disponible en stock
         $stock = Stock::where('id_Article', $request->id_Article)
               ->where('id_exercice', $exerciceOuvert->id)
@@ -1182,6 +1315,14 @@ class MouvementStockController extends Controller
               ->first();
 
         if (!$stock || $stock->Qte_actuel < $request->qteDemande) {
+            // ❌ LOG → Quantité insuffisante
+            LogJournalisation::create([
+                'action'     => 'Échec: Création de demande de Sortie de Stock (Stock insuffisant)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
             return response()->json(['error' => "Quantité insuffisante en stock."], 400);
         }
 
@@ -1198,6 +1339,15 @@ class MouvementStockController extends Controller
             "id_employe" => $request->id_personnel,
             "statut" => 'En attente',
             "id_exercice" => $exerciceOuvert->id
+        ]);
+
+        // ✅ LOG → Succès de la création
+        LogJournalisation::create([
+            'action'     => "Création de demande de Sortie de Stock (Article ID: {$request->id_Article}, Qté: {$request->qteDemande})",
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
         ]);
         return new PostResource(true, 'La sortie de stock a été enregistrée avec succès !', $mouvement);
     }
@@ -1232,6 +1382,13 @@ class MouvementStockController extends Controller
         }
 
         if (!$stock || $stock->Qte_actuel < $request->qteDemande) {
+            LogJournalisation::create([
+                'action'     => "Échec: Modification du mouvement de stock ID {$id} (Stock insuffisant)",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
             return response()->json(['error' => "Quantité insuffisante en stock."], 400);
         }
 
@@ -1273,6 +1430,13 @@ class MouvementStockController extends Controller
             }
         }
 
+        LogJournalisation::create([
+            'action'     => "Mise à jour du mouvement de stock ID {$id} [{$mouvement->code_mouvement}]{$affectationAction}. Détails affectation: " . implode('; ', $logDetails),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
         return new PostResource(true, 'Sortie de stock mise à jour avec succès !', $mouvement);
     }
 
@@ -1304,6 +1468,14 @@ class MouvementStockController extends Controller
 
 
             if (!$stock || $stock->Qte_actuel < $qte) {
+                LogJournalisation::create([
+                    'action'     => "Échec: {$logActionBase} (Stock insuffisant - Qté demandée: {$qte})",
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->header('User-Agent'),
+                    'user_id'    => Auth::id(),
+                    'date_action'=> now(),
+                ]);
+
                 return response()->json(['error' => 'Quantité insuffisante en stock.'], 400);
             }
 
@@ -1331,6 +1503,14 @@ class MouvementStockController extends Controller
         }
 
         $mouvementStock->save();
+
+        LogJournalisation::create([
+            'action'     => $logAction,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
 
         return response()->json([
             'message' => 'Demande mise à jour avec succès.',
@@ -1422,6 +1602,10 @@ class MouvementStockController extends Controller
 
         // Récupérer le nombre total de lignes dans le groupe.
         $nombreTotalLignes = MouvementStock::where('code_mouvement', $code)->count();
+        // Construction du message de journalisation
+        $logAction = "Validation groupée du code {$code} par l'utilisateur " . Auth::id() . ". ";
+        $logAction .= "Statut appliqué: {$statut}. ";
+        $logAction .= "Lignes traitées: {$nombreTraites}. ";
 
         // Si le statut est "Accordé" et qu'il n'y a pas d'erreurs, on met à jour
         // les lignes non encore traitées (celles qui ont été ignorées par la boucle `continue`).
@@ -1432,6 +1616,15 @@ class MouvementStockController extends Controller
         }
 
         if (!empty($errors)) {
+            $logAction .= "ATTENTION: Succès partiel/Échec. {$nombreRefusesParStock} ligne(s) refusée(s) pour stock insuffisant.";
+            LogJournalisation::create([
+                'action'     => $logAction,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
+
             return response()->json([
                 'message' => "Certaines demandes n'ont pas pu être traitées.",
                 'errors' => $errors,
@@ -1439,6 +1632,19 @@ class MouvementStockController extends Controller
                 'nombre_demandes_traitees' => $nombreTraites,
             ], 400);
         }
+
+        // ✅ LOG → Succès total
+        $logAction .= ($statut_lower === 'accordé') 
+        ? "Succès total. {$nombreAffectationsCrees} affectation(s) créée(s)." 
+        : "Succès total de la mise à jour du statut.";
+
+        LogJournalisation::create([
+            'action'     => $logAction,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
 
         return response()->json([
             'message' => "Toutes les demandes en attente pour le code {$code} ont été traitées avec succès.",
@@ -1464,6 +1670,14 @@ class MouvementStockController extends Controller
 
         $mouvement->isdeleted = true;
         $mouvement->save();
+
+        LogJournalisation::create([
+            'action'     => "Suppression logique (isdeleted=true) du mouvement de stock ID {$id} [Code: {$codeMouvement}]",
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
 
         return new PostResource(true, 'Sortie de stock supprimée avec succès !', null);
     }
@@ -1564,6 +1778,14 @@ class MouvementStockController extends Controller
 
         $pdf = PDF::loadView('pdf.demande_sortie', $data);
 
+        LogJournalisation::create([
+            'action'     => "Génération et impression de la fiche de demande (PDF) [Code: {$codeMouvement}, Fiche: {$numeroFiche}]",
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
+
         return $pdf->download('Fiche_Demande_Sortie_' . $codeMouvement . '_' . $numeroFiche . '.pdf');
     }
 
@@ -1593,6 +1815,14 @@ class MouvementStockController extends Controller
         ];
 
         $pdf = PDF::loadView('pdf.demande_sortie', $data);
+
+        LogJournalisation::create([
+            'action'     => "Génération et impression de la fiche de demande individuelle (PDF) [ID: {$id}, Fiche: {$numeroFiche}]",
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
 
         return $pdf->download('Fiche_Demande_Sortie_' . $mouvement->code_mouvement . '_' . $mouvement->id . '_' . $numeroFiche . '.pdf');
     }

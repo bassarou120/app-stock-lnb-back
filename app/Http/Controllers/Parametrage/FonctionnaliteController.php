@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\Parametrage\Fonctionnalite;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class FonctionnaliteController extends Controller
 {
@@ -14,6 +18,13 @@ class FonctionnaliteController extends Controller
     public function index()
     {
         $fonctionnalites = Fonctionnalite::with('module')->where('isdeleted', false)->latest()->paginate(200);
+        LogJournalisation::create([
+            "action"      => "Affichage de la liste des fonctionnalités",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Liste des fonctionnalités', $fonctionnalites);
     }
 
@@ -34,6 +45,14 @@ class FonctionnaliteController extends Controller
         $fonctionnalite = Fonctionnalite::create([
             'libelle_fonctionnalite' => $request->libelle_fonctionnalite,
             'module_id' => $request->module_id,
+        ]);
+
+        LogJournalisation::create([
+            "action"      => "Création de fonctionnalité",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
         ]);
 
         return new PostResource(true, 'Fonctionnalité créée avec succès', $fonctionnalite);
@@ -57,6 +76,13 @@ class FonctionnaliteController extends Controller
             'libelle_fonctionnalite' => $request->libelle_fonctionnalite,
             'module_id' => $request->module_id,
         ]);
+        LogJournalisation::create([
+            "action"      => "Mise à jour de fonctionnalité ID: " . $fonctionnalite->id,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
 
         return new PostResource(true, 'Fonctionnalité mise à jour avec succès', $fonctionnalite);
     }
@@ -66,6 +92,14 @@ class FonctionnaliteController extends Controller
     {
         $fonctionnalite->isdeleted = true;
         $fonctionnalite->save();
+
+        LogJournalisation::create([
+            "action"      => "Suppression de fonctionnalité ID: " . $fonctionnalite->id,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            "user_id"     => Auth::id(),
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Fonctionnalité supprimée avec succès', null);
     }
 }

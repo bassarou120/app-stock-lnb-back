@@ -9,7 +9,10 @@ use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\PostResource;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
-
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class InterventionVehiculeController extends Controller
 {
@@ -46,6 +49,14 @@ class InterventionVehiculeController extends Controller
         ->where('isdeleted', false)
         ->latest()->paginate(100);
 
+        LogJournalisation::create([
+            'action'     => 'Consultation de la liste des interventions de véhicules',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
+
         return new PostResource(true, 'Liste des interventions de véhicules', $interventions);
     }
 
@@ -56,6 +67,13 @@ class InterventionVehiculeController extends Controller
         ->where('isdeleted', false)
         ->paginate(100);
 
+        LogJournalisation::create([
+            'action'     => 'Consultation de la liste des interventions pour véhicules',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => auth()->id(),
+            'date_action'=> now(),
+        ]);
         return new PostResource(true, 'Liste des interventions immos', $interventions);
     }
 

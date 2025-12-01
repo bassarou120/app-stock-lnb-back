@@ -18,6 +18,10 @@ use App\Models\Parametrage\StatusImmo;
 use App\Models\Parametrage\Bureau;
 use App\Models\Parametrage\Employe;
 use App\Models\Parametrage\Fournisseur;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class VehiculeController extends Controller
 {
@@ -32,6 +36,14 @@ class VehiculeController extends Controller
             ->latest()
             ->paginate(1000);
 
+        // 📝 JOURNALISATION : Consultation de la liste des véhicules
+        LogJournalisation::create([
+            'action'     => 'Consultation de la liste des véhicules (Hors patrimoine sorti)',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
         return new PostResource(true, 'Liste des véhicules', $vehicules);
     }
 
@@ -65,6 +77,13 @@ class VehiculeController extends Controller
         ]);
 
         if ($validator->fails()) {
+            LogJournalisation::create([
+                'action'     => "Échec: Tentative de création de véhicules en masse (Validation échouée)",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
             return response()->json($validator->errors(), 422);
         }
 
@@ -106,15 +125,32 @@ class VehiculeController extends Controller
                 $vehicules[] = $vehicule;
             }
             DB::commit();
+            LogJournalisation::create([
+                'action'     => "Création de véhicule(s) en masse. Immatriculations",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
+
         } catch (\Illuminate\Database\QueryException $qe) {
-        DB::rollBack();
-        // Affiche l'erreur SQL exacte
-        return response()->json([
-            'status' => 'query_error',
-            'message' => $qe->getMessage(),
-            'sql' => $qe->getSql(),
-            'bindings' => $qe->getBindings()
-        ], 500);
+            DB::rollBack();
+
+            LogJournalisation::create([
+                'action'     => "Échec critique: La création de véhicules en masse a échoué. Transaction annulée.",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
+
+            // Affiche l'erreur SQL exacte
+            return response()->json([
+                'status' => 'query_error',
+                'message' => $qe->getMessage(),
+                'sql' => $qe->getSql(),
+                'bindings' => $qe->getBindings()
+            ], 500);
 
         }
 
@@ -169,6 +205,13 @@ class VehiculeController extends Controller
         }
 
         $vehicule->update($data);
+        LogJournalisation::create([
+            'action'     => $logMessage,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
 
         return new PostResource(true, 'vehicule mis à jour avec succès', $vehicule);
     }
@@ -176,13 +219,30 @@ class VehiculeController extends Controller
     // Supprimer un vehicule
     public function destroy(Vehicule $vehicule)
     {
+        $logMessage = "Suppression logique du véhicule ID {$vehicule->id} [Immatriculation: {$vehicule->immatriculation}].";
+        $carteGriseSupprimee = false;
         // Supprimer le fichier de la carte grise associé avant de supprimer l'enregistrement
         if ($vehicule->carte_grise && Storage::disk('public')->exists($vehicule->carte_grise)) {
             Storage::disk('public')->delete($vehicule->carte_grise);
+            $carteGriseSupprimee = true;
         }
 
         $vehicule->isdeleted = true;
         $vehicule->save();
+        // ✅ LOG → Succès de la suppression logique
+        if ($carteGriseSupprimee) {
+            $logMessage .= " Le fichier de la carte grise a été supprimé physiquement.";
+        } else {
+            $logMessage .= " Aucun fichier de carte grise n'était associé ou n'a été trouvé.";
+        }
+
+        LogJournalisation::create([
+            'action'     => $logMessage,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
         return new PostResource(true, 'vehicule supprimé avec succès', null);
     }
 
@@ -194,8 +254,16 @@ class VehiculeController extends Controller
                                     ->latest()
                                     ->get();
 
+        $nombreVehicules = $vehicules->count();
 
         $pdf = \Pdf::loadView('pdf.vehicule', compact('vehicules'));
+        LogJournalisation::create([
+            'action'     => "Impression de la liste des véhicules (PDF généré, {$nombreVehicules} enregistrements inclus).",
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
 
         return $pdf->download('liste_vehicules.pdf');
     }
@@ -332,6 +400,13 @@ class VehiculeController extends Controller
         ]);
 
         if ($validator->fails()) {
+            LogJournalisation::create([
+                'action'     => "Échec: Tentative d'importation de véhicules (Validation échouée - Fichier requis/format incorrect)",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
@@ -485,6 +560,15 @@ class VehiculeController extends Controller
                 $summary .= " Attention : " . count($ignoredRows) . " ligne(s) ont été ignorée(s).";
             }
 
+            $logAction = "Importation réussie du fichier. {$successCount} créé(s) / {$totalRows} traité(s) / " . count($ignoredRows) . " ignoré(s).";
+            LogJournalisation::create([
+                'action'     => $logAction,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
+
             $response = [
                 'message' => $summary,
                 'success_count' => $successCount,
@@ -496,6 +580,15 @@ class VehiculeController extends Controller
 
         } catch (\Exception $e) {
             // En cas d'erreur de lecture de fichier ou autre
+            // ❌ LOG → Échec général du traitement
+            $logAction = "Échec critique: L'importation du fichier a échoué. Erreur: {$e->getMessage()}";
+            LogJournalisation::create([
+                'action'     => $logAction,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
             return response()->json([
                 'error' => 'Erreur lors de l\'importation du fichier.',
                 'details' => $e->getMessage()

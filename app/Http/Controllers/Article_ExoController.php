@@ -7,7 +7,10 @@ use App\Models\ArticleExercice;
 use App\Models\Article;
 use App\Models\Exercice;
 use App\Http\Resources\PostResource;
-
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class Article_ExoController extends Controller
 {
@@ -18,6 +21,15 @@ class Article_ExoController extends Controller
     {
         // Récupère toutes les entrées de la table pivot
         $articleExercices = ArticleExercice::all();
+
+        // 📝 LOG → Consultation de la liste des articles
+        LogJournalisation::create([
+            'action'     => 'Consultation de la liste des articles',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
 
         // Retourne la vue avec les données
         return new PostResource(true, 'Liste des articles', $articleExercices);
@@ -30,6 +42,15 @@ class Article_ExoController extends Controller
         $articlesExercices = ArticleExercice::with(['article', 'exercice'])
         ->orderBy('id_exercice', 'desc')
         ->get();
+
+        // 📝 LOG → Consultation de la liste complète des articles_exercices
+        LogJournalisation::create([
+            'action'     => 'Consultation de la liste complète des articles_exercices',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
 
         // Return the data as a JSON response.
         return new PostResource(true, 'Liste complète des articles_exercices', $articlesExercices);
@@ -58,6 +79,14 @@ class Article_ExoController extends Controller
 
         // Crée une nouvelle instance de l'association
         $articleExercice = ArticleExercice::create($request->all());
+        // 📝 LOG → Création d'une nouvelle association Article ↔ Exercice
+        LogJournalisation::create([
+            'action'     => 'Création de l\'association Article-Exercice ID Article: '.$request->id_article.' / ID Exercice: '.$request->id_exercice,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
 
         // Redirection avec un message de succès
         return redirect()->route('article_exercice.index')->with('success', 'Association créée avec succès.');
@@ -74,6 +103,15 @@ class Article_ExoController extends Controller
         $articleExercice = ArticleExercice::where('id_article', $article->id)
                                           ->where('id_exercice', $exercice->id)
                                           ->firstOrFail();
+
+        // 📝 LOG → Consultation d'une association Article ↔ Exercice spécifique
+        LogJournalisation::create([
+            'action'     => 'Consultation de l\'association Article ID: '.$article->id.' ↔ Exercice ID: '.$exercice->id,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
 
         // Retourne la vue avec l'entrée spécifique
         return new PostResource(true, 'Liste des articles', $articleExercice);
@@ -107,6 +145,15 @@ class Article_ExoController extends Controller
 
         // Met à jour l'entrée avec les nouvelles données
         $articleExercice->update($request->all());
+
+        // 📝 LOG → Mise à jour d'une association Article ↔ Exercice
+        LogJournalisation::create([
+            'action'     => 'Mise à jour de l\'association Article ID: '.$article->id.' ↔ Exercice ID: '.$exercice->id,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
 
         // Redirection avec un message de succès
         // return redirect()->route('article_exercice.show', [$article, $exercice])->with('success', 'Association mise à jour avec succès.');
