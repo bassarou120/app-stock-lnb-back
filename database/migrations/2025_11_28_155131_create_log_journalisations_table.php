@@ -19,10 +19,9 @@ return new class extends Migration
             $table->string('user_agent')->nullable();
 
             // ✅ Clé étrangère UUID vers users
-            $table->uuid('user_id')->nullable();
-            $table->foreign('user_id')
-                ->references('id')
-                ->on('users')
+            $table->foreignId('user_id')
+                ->nullable() // Permettre la valeur NULL (pour la connexion échouée et on delete set null)
+                ->constrained('users') // Assurez-vous que c'est bien le nom de votre table utilisateurs
                 ->onUpdate('cascade')
                 ->onDelete('set null');
 

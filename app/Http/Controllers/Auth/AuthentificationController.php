@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use App\Http\Resources\PostResource;
 use App\Models\Exercice;
+use App\Models\LogJournalisation;
+
 
 class AuthentificationController extends Controller
 {
