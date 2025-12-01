@@ -36,12 +36,29 @@ class AuthentificationController extends Controller
         try {
             // Appeler la fonction d'enregistrement dans AuthService
             $this->authService->register($input);
+            // 📝 LOG → Utilisateur inscrit
+            LogJournalisation::create([
+                'action'     => 'Inscription',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => null, // toujours pas connecté
+                'date_action'=> now(),
+            ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Utilisateur enregistré avec succès!',
             ], 201); // Code HTTP 201 pour "created"
         } catch (\Exception $e) {
+            // 📝 LOG → Inscription échouée
+            LogJournalisation::create([
+                'action'     => 'Inscription échouée: ' . $e->getMessage(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => null, // toujours pas connecté
+                'date_action'=> now(),
+            ]);
+
             // Si une exception est lancée (par exemple, rôle inexistant), renvoyer une erreur
             Log::error('Erreur lors de l\'inscription: ' . $e->getMessage());
             return response()->json([
@@ -75,7 +92,7 @@ class AuthentificationController extends Controller
 
 
     //-------------------- fonction de login
-    public function login(LoginRequest $request)
+/*     public function login(LoginRequest $request)
     {
         $input = $request->all();
 
@@ -85,6 +102,14 @@ class AuthentificationController extends Controller
             // LogService::storeLogInfo("Connexion");
 
             $user = $result[1]['user'];
+            // 📝 LOG → Connexion réussie
+            LogJournalisation::create([
+                'action'     => 'Connexion',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $user->id,
+                'date_action'=> now(),
+            ]);
 
             if ($user->active == 1) {
                 return response()->json([
@@ -115,11 +140,72 @@ class AuthentificationController extends Controller
                 ], 403); // Code HTTP 403 pour "Forbidden"
             }
         }
+    } */
+
+    public function login(LoginRequest $request)
+    {
+        $input = $request->all();
+        $result = $this->authService->login($input);
+
+        if ($result[0]) {
+            $user = $result[1]['user'];
+
+            // 📝 LOG → Connexion réussie
+            LogJournalisation::create([
+                'action'     => 'Connexion',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $user->id,
+                'date_action'=> now(),
+            ]);
+
+            if ($user->active == 1) {
+                return response()->json([
+                    'success' => true,
+                    'data'    => $result[1],
+                    'message' => 'Utilisateur authentifié avec succès! 😁'
+                ], 200);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Compte inactif!',
+                'errors'  => ['failed' => 'Compte inactif, contactez un administrateur']
+            ], 403);
+        }
+
+        // ❌ erreurs identifiants
+        $messageBack = $result[1];
+
+        // 📝 LOG → Tentative échouée
+        LogJournalisation::create([
+            'action'     => 'Tentative connexion échouée',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => null,
+            'date_action'=> now(),
+        ]);
+
+        if ($messageBack === 'erreurs identifiants') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Identifiants incorrects!',
+                'errors'  => ['failed' => 'Identifiants incorrects']
+            ], 401);
+        }
+
+        if ($messageBack === 'inactif') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Compte inactif!',
+                'errors'  => ['failed' => 'Votre compte est inactif. Contactez un administrateur']
+            ], 403);
+        }
     }
 
     //-------------------- Fonction de déconnexion (logout)
 
-    public function logout(Request $request)
+/*     public function logout(Request $request)
     {
         try {
             // Récupérer le token de la requête
@@ -155,6 +241,63 @@ class AuthentificationController extends Controller
                 'message' => 'Une erreur est survenue lors de la déconnexion.',
                 'errors' => ['exception' => $e->getMessage()]
             ], 500); // Code HTTP 500 pour "Internal Server Error"
+        }
+    } */
+
+    public function logout(Request $request)
+    {
+        try {
+            $token = $request->bearerToken();
+
+            if ($token && $this->authService->logout($token)[0]) {
+
+                // 📝 LOG → Déconnexion
+                LogJournalisation::create([
+                    'action'     => 'Déconnexion',
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->header('User-Agent'),
+                    'user_id'    => Auth::id(),
+                    'date_action'=> now(),
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Utilisateur déconnecté avec succès! 😁'
+                ], 200);
+            }
+
+            // LOG → échec déconnexion
+            LogJournalisation::create([
+                'action'     => 'Tentative déconnexion échouée',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Échec de la déconnexion',
+                'errors'  => ['failed' => 'Erreur lors de la déconnexion']
+            ], 500);
+
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la déconnexion: ' . $e->getMessage());
+
+            // LOG → exception logout
+            LogJournalisation::create([
+                'action'     => 'Erreur déconnexion (exception)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de la déconnexion.',
+                'errors'  => ['exception' => $e->getMessage()]
+            ], 500);
         }
     }
 

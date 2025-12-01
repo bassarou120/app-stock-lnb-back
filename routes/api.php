@@ -50,6 +50,7 @@ use App\Http\Controllers\Article_ExoController;
 use App\Http\Controllers\CategorieSortieTicketController;
 use App\Http\Controllers\ExerciceMouvementTicketController;
 use App\Http\Controllers\SortiePatrimoineController;
+use App\Http\Controllers\LogJournalisationController;
 
 
 Route::get('/user', function (Request $request) {
@@ -298,3 +299,12 @@ Route::get('/sortiepatrimoines/{id}', [SortiePatrimoineController::class, 'show'
 Route::post('/sortiepatrimoines/import', [SortiePatrimoineController::class, 'importSortiePatrimoine']); // <-- Ajout pour la cohérence
 
 Route::get('immobilisations/designation-by-code/{code}', [ImmobilisationController::class, 'getDesignationByCode']);
+
+
+Route::prefix('logs')->group(function () {
+    Route::post('/', [LogJournalisationController::class, 'store']);
+    Route::get('/', [LogJournalisationController::class, 'index']);
+    Route::get('/{id}', [LogJournalisationController::class, 'show']);
+    Route::delete('/{id}', [LogJournalisationController::class, 'destroy']);
+});
+
