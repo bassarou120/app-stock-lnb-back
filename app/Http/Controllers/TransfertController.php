@@ -120,6 +120,66 @@ class TransfertController extends Controller
         return new PostResource(true, 'Transfert supprimé et immobilisation restaurée avec succès', null);
     }
 
+    public function update(Request $request, $id)
+{
+    $validator = Validator::make($request->all(), [
+        'immo_id' => 'required|exists:immobilisations,id',
+        'bureau_id' => 'required|exists:bureaus,id',
+        'employe_id' => 'nullable|exists:employes,id',
+        'etat' => 'nullable|string|max:100',
+        'date_mouvement' => 'required|date',
+        'observation' => 'nullable|string|max:255',
+        'date_mise_en_service' => 'nullable|date',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
+    }
+
+    $transfert = Transfert::find($id);
+    if (!$transfert) {
+        return response()->json(['message' => 'Transfert introuvable'], 404);
+    }
+
+    $immo = Immobilisation::findOrFail($request->immo_id);
+
+    // Sauvegarder les anciens avant modification
+    $oldBureau = $transfert->bureau_id;
+    $oldEmploye = $transfert->employe_id;
+
+    // Mise à jour du transfert
+    $transfert->update([
+        'bureau_id' => $request->bureau_id,
+        'employe_id' => $request->employe_id,
+        'date_mouvement' => $request->date_mouvement,
+        'observation' => $request->observation,
+    ]);
+
+    // Mise à jour de l’immobilisation
+    $immo->bureau_id = $request->bureau_id;
+    $immo->employe_id = $request->employe_id;
+
+    // Première mise en service ?
+    if (is_null($oldBureau) && is_null($oldEmploye)) {
+        $immo->date_mise_en_service = $request->date_mise_en_service;
+    }
+
+    // Déterminer le statut de l'immobilisation
+    if (is_null($request->employe_id)) {
+        $statusStock = StatusImmo::where('libelle_status_immo', 'En magasin')->first();
+        $immo->id_status_immo = $statusStock?->id;
+        $immo->etat = $request->etat;
+    } else {
+        $statusEnService = StatusImmo::where('libelle_status_immo', 'En service')->first();
+        $immo->id_status_immo = $statusEnService?->id;
+    }
+
+    $immo->save();
+
+    return new PostResource(true, 'Transfert modifié avec succès', $transfert);
+}
+
+
 
     public function getOldInfo($idImmo)
     {

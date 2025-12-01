@@ -159,111 +159,151 @@ class MouvementStockController extends Controller
         return new PostResource(true, 'Le mouvement d\'entrée de stock a été bien enregistré !', $mouvement);
     } */
 
-    public function storeEntreeStock(Request $request)
+    public function store(Request $request)
     {
-        // Validation
+        //define validation rules
         $validator = Validator::make($request->all(), [
-            "id_Article" => 'required|exists:articles,id',
-            "id_fournisseur" => 'required|exists:fournisseurs,id',
-            "id_unite_de_mesure" => 'required|exists:unite_de_mesures,id',
-            "description" => 'nullable|string|max:255',
-            "qte" => 'required|integer',
-            "prixUnitaire" => 'required|integer',
-            "date_mouvement" => 'required',
-            "piece_jointe_mouvement" => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            "id_type_mouvement" => 'required|exists:type_mouvements,id',
+            "id_article" => 'required|exists:articles,id',
+            "employe_id" => 'nullable|exists:employes,id',
+            "vehicule_id" => 'nullable|exists:vehicules,id',
+            "bureau_id" => 'nullable|exists:bureaux,id',
+            "qte_mouvement" => 'required|numeric|min:1',
+            "date_mouvement" => 'required|date',
+            "observation" => 'nullable|string',
+            "demandevalidesigne" => 'nullable',
+            // Valider la date
+            'date_mouvement' => 'required|date|before_or_equal:' . now()->format('Y-m-d'),
         ]);
 
+        //check if validation fails
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            return new PostResource(false, 'Échec de la validation', $validator->errors());
         }
 
-        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Entrée de Stock")->latest()->first();
-        if (!$type_mouvement) {
-             return response()->json(['error' => "Le type de mouvement 'Entrée de Stock' n'existe pas."], 404);
-        }
+        try {
+            DB::beginTransaction();
 
-        // Récupérer l'exercice ouvert
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-        if (!$exerciceOuvert) {
-            return response()->json(['error' => 'Aucun exercice ouvert trouvé.'], 400);
-        }
+            $id_type_mouvement = $request->id_type_mouvement;
+            $id_article = $request->id_article;
+            $qte_mouvement = $request->qte_mouvement;
+            $date_mouvement = $request->date_mouvement;
 
-        // GESTION DU STOCK ET CALCUL DU CMP
-        // On cherche le stock lié à l'article ET à l'exercice ouvert
-        $stock = Stock::where('id_Article', $request->id_Article)
-                      ->where('id_exercice', $exerciceOuvert->id)
-                      ->first();
-        
-        // Initialisation des variables pour le calcul du CMP
-        $ancienne_quantite = 0;
-        $ancien_cmp = 0;
-        $nouveau_cmp = 0;
+            // 1. Récupérer l'article et le stock associé à l'exercice en cours
+            $article = Article::find($id_article);
+            $exercice = Exercice::where('etat_exercice', true)->first();
+            $stock = Stock::where('id_article', $id_article)
+                            ->where('id_exercice', optional($exercice)->id)
+                            ->first();
 
-        if ($stock == null) {
-            // L'article a été créé mais n'a jamais eu de stock dans cet exercice (ne devrait pas arriver si storeBatch est utilisé)
-            $stock = Stock::create([
-                'id_Article' => $request->id_Article,
-                'Qte_actuel' => 0,
-                'cout_moyen_pondere' => 0,
-                'id_exercice' => $exerciceOuvert->id, // Ajouter l'id_exercice ici
+            if (!$article || !$stock) {
+                DB::rollBack();
+                return new PostResource(false, 'Article ou Stock non trouvé pour l\'exercice en cours.', null);
+            }
+
+            // 2. Vérifier si l'article est actif
+            if (!$article->isactif) {
+                DB::rollBack();
+                return new PostResource(false, 'L\'article n\'est pas actif et ne peut pas faire l\'objet d\'un mouvement.', null);
+            }
+
+            // 3. Récupérer le type de mouvement
+            $typeMouvement = TypeMouvement::find($id_type_mouvement);
+            if (!$typeMouvement) {
+                DB::rollBack();
+                return new PostResource(false, 'Type de mouvement non trouvé.', null);
+            }
+
+            // 4. Traitement des entrées (Entrée de Stock)
+            if ($typeMouvement->libelle_type_mouvement === 'Entrée de Stock') {
+
+                // Mettre à jour le stock
+                $stock->stock_fin_exercice += $qte_mouvement;
+
+            }
+            // 5. Traitement des sorties (Sortie de Stock)
+            elseif ($typeMouvement->libelle_type_mouvement === 'Sortie de Stock') {
+
+                // Vérifier la disponibilité du stock
+                if ($stock->stock_fin_exercice < $qte_mouvement) {
+                    DB::rollBack();
+                    return new PostResource(false, 'Stock insuffisant pour cette sortie.', [
+                        'stock_disponible' => $stock->stock_fin_exercice,
+                        'quantite_demandee' => $qte_mouvement
+                    ]);
+                }
+
+                // Mettre à jour le stock
+                $stock->stock_fin_exercice -= $qte_mouvement;
+
+            } else {
+                DB::rollBack();
+                return new PostResource(false, 'Type de mouvement non géré (doit être "Entrée de Stock" ou "Sortie de Stock").', null);
+            }
+
+
+            // --- LOGIQUE AJOUTÉE POUR LE CODE DE MOUVEMENT (MVT-00001-25) ---
+
+            // 6. Récupérer le dernier ID du mouvement pour obtenir le numéro d'ordre
+            $lastMouvement = MouvementStock::latest('id')->first();
+            $nextId = $lastMouvement ? $lastMouvement->id + 1 : 1;
+
+            // Formater le numéro d'ordre sur 5 chiffres (ex: 1 -> 00001)
+            $numeroOrdre = str_pad($nextId, 5, '0', STR_PAD_LEFT);
+
+            // Définir l'année de l'exercice (ou utiliser '25' comme dans l'exemple si c'est une constante)
+            $anneeExercice = $exercice ? substr($exercice->libelle_exercice, -2) : '25'; // Ex: '2025' -> '25'
+
+            // Construire le code de mouvement final
+            $codeMouvement = "MVT-{$numeroOrdre}-{$anneeExercice}";
+
+            // -----------------------------------------------------------------
+
+
+            // 7. Créer l'enregistrement du mouvement
+            $mouvementStock = MouvementStock::create([
+                "code_mouvement" => $codeMouvement, // Utilisation du nouveau code généré
+                "id_type_mouvement" => $id_type_mouvement,
+                "id_article" => $id_article,
+                "employe_id" => $request->employe_id,
+                "vehicule_id" => $request->vehicule_id,
+                "bureau_id" => $request->bureau_id,
+                "qte_mouvement" => $qte_mouvement,
+                "date_mouvement" => $date_mouvement,
+                "observation" => $request->observation,
+                "demandevalidesigne" => $request->demandevalidesigne,
+                "isdeleted" => false,
+                "id_exercice" => optional($exercice)->id,
+                "user_id" => Auth::id(), // Enregistrement de l'utilisateur
             ]);
 
-        } else {
-            // RÉAPPROVISIONNEMENT : Récupération des valeurs existantes
-            $ancienne_quantite = $stock->Qte_actuel;
-            // On prend l'ancien CMP depuis la table Stock
-            $ancien_cmp = $stock->cout_moyen_pondere ?? 0; 
+            // 8. Enregistrer le fichier si existant (Pièce Jointe)
+            if ($request->hasFile('demandevalidesigne')) {
+                $file = $request->file('demandevalidesigne');
+                $extension = $file->getClientOriginalExtension();
+                // Utiliser le code mouvement comme nom de fichier pour le groupe
+                $fileName = Str::slug($codeMouvement) . '.' . $extension;
+                $path = $file->storeAs('public/mouvements_stock_files', $fileName); // 'storage/mouvements_stock_files/MVT-00001-25.pdf'
+
+                // Mettre à jour le mouvement avec le chemin du fichier (version nettoyée)
+                $mouvementStock->demandevalidesigne = str_replace('public/', '', $path); // stocke 'mouvements_stock_files/MVT-00001-25.pdf'
+                $mouvementStock->save();
+            }
+
+            // 9. Sauvegarder la mise à jour du stock
+            $stock->save();
+
+            // 10. Commit de la transaction
+            DB::commit();
+
+            return new PostResource(true, 'Mouvement de stock créé avec succès.', $mouvementStock);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            // Log de l'erreur
+            Log::error('Erreur lors de la création du mouvement de stock: ' . $e->getMessage(), ['exception' => $e]);
+            return new PostResource(false, 'Une erreur est survenue lors de la création du mouvement de stock.', null);
         }
-
-        // Calcul du nouveau CMP
-        if ($ancienne_quantite <= 0) { // Utiliser <= pour couvrir 0 et les cas où le stock serait négatif (erreur)
-            // Premier stock ou stock épuisé : CMP = prix d'achat actuel
-            $nouveau_cmp = $request->prixUnitaire;
-        } else {
-            // Réapprovisionnement : CMP pondéré
-            $valeur_stock_existant = $ancienne_quantite * $ancien_cmp;
-            $valeur_nouvelle_entree = $request->qte * $request->prixUnitaire;
-            $quantite_totale = $ancienne_quantite + $request->qte;
-
-            // Protection contre la division par zéro (même si la condition précédente le couvre)
-            $nouveau_cmp = $quantite_totale > 0 
-                            ? ($valeur_stock_existant + $valeur_nouvelle_entree) / $quantite_totale
-                            : $request->prixUnitaire;
-        }
-
-
-        // Création du mouvement avec le CMP calculé
-        $mouvement = MouvementStock::create([
-            "id_Article" => $request->id_Article,
-            "id_fournisseur" => $request->id_fournisseur,
-            "id_unite_de_mesure" => $request->id_unite_de_mesure,
-            "description" => $request->description,
-            "id_type_mouvement" => $type_mouvement->id,
-            "qte" => $request->qte,
-            "prixUnitaire" => $request->prixUnitaire,
-            "cout_moyen_pondere" => round($nouveau_cmp, 2), // Le CMP calculé est enregistré
-            "date_mouvement" => $request->date_mouvement,
-            "id_exercice" => $exerciceOuvert->id, // Ajouter l'id_exercice au mouvement
-        ]);
-
-        // Si une pièce jointe est envoyée (inchangé)
-        if ($request->hasFile('piece_jointe_mouvement')) {
-            $file = $request->file('piece_jointe_mouvement');
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            $file->storeAs('piece_jointe_mouvement', $fileName, 'public');
-
-            PieceJointeMouvement::create([
-                'url' => 'storage/piece_jointe_mouvement/' . $fileName,
-                'id_mouvement_stock' => $mouvement->id
-            ]);
-        }
-
-        // Mise à jour du stock avec la nouvelle quantité et le nouveau CMP
-        $stock->Qte_actuel += $request->qte;
-        $stock->cout_moyen_pondere = round($nouveau_cmp, 2);
-        $stock->save(); // La table Stock a la bonne valeur
-
-        return new PostResource(true, 'Le mouvement d\'entrée de stock a été bien enregistré !', $mouvement);
     }
 
 

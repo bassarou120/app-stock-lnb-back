@@ -47,12 +47,11 @@ class SiteSettingController extends Controller
         ]);
 
         if ($validator->fails()) {
-            // Log les erreurs de validation
             \Log::warning('Validation échouée pour /site-settings/store:', $validator->errors()->toArray());
             return response()->json([
                 'message' => 'Validation Failed',
                 'errors' => $validator->errors()
-            ], 422); // Code 422: Unprocessable Entity
+            ], 422);
         }
 
         $data = $validator->validated();
@@ -74,9 +73,10 @@ class SiteSettingController extends Controller
                         \Log::info('Ancien logo supprimé: ' . $currentSetting->value);
                     }
                     $valueToStore = null; // Enregistre null en base de données
-                    $type = 'image_url'; // Le type redevient 'image_url' même si la valeur est null
+                    $type = 'image_url';
                 } else {
-                    // Décode l'image Base64
+                    // ... (logique de décodage et d'enregistrement du Base64) ...
+                    
                     list($mimeType, $base64Data) = explode(';', $value);
                     list(, $base64Data) = explode(',', $base64Data);
 
@@ -85,13 +85,11 @@ class SiteSettingController extends Controller
                         throw new \Exception('Failed to decode base64 image data.');
                     }
 
-                    // Détermine l'extension du fichier
                     $extension = explode('/', explode(':', $mimeType)[1])[1];
-                    if ($extension === 'jpeg') $extension = 'jpg'; // Correction pour jpeg
+                    if ($extension === 'jpeg') $extension = 'jpg';
 
-                    // Génère un nom de fichier unique et le chemin de stockage
                     $fileName = 'logo_' . Str::random(10) . '.' . $extension;
-                    $path = 'logos/' . $fileName; // Chemin relatif dans le dossier 'public' du stockage
+                    $path = 'logos/' . $fileName; 
 
                     // Supprime l'ancien logo si un nouveau est téléchargé
                     if ($currentSetting && $currentSetting->value && Storage::disk('public')->exists($currentSetting->value)) {
@@ -102,7 +100,7 @@ class SiteSettingController extends Controller
                     // Stocke le nouveau fichier image
                     Storage::disk('public')->put($path, $decodedImage);
                     $valueToStore = $path; // La valeur à stocker en DB est le chemin relatif
-                    $type = 'image_url'; // Le type enregistré est 'image_url' une fois stocké
+                    $type = 'image_url';
                     \Log::info('Nouveau logo enregistré: ' . $path);
                 }
             } else {
@@ -116,8 +114,30 @@ class SiteSettingController extends Controller
                 ['value' => $valueToStore, 'type' => $type] // Données à mettre à jour/créer
             );
 
+            // --- 💡 DÉBUT DE LA MODIFICATION : Préparation de la valeur de retour ---
+            $responseValue = $valueToStore;
+
+            // Si le paramètre mis à jour est le logo et qu'il a une valeur, 
+            // on retourne l'URL complète (ex: http://votreapp/storage/logos/logo.png)
+            if ($key === 'logo_url' && !empty($valueToStore)) {
+                // 'asset()' génère l'URL complète en incluant le domaine et le chemin 'storage/'
+                $responseValue = asset('storage/' . $valueToStore);
+            }
+            // --- FIN DE LA MODIFICATION ---
+
             \Log::info("Paramètre '{$key}' mis à jour/créé avec succès. Valeur: {$valueToStore}");
-            return response()->json($setting, 200); // Retourne le paramètre mis à jour
+            
+            // Retourne une structure de réponse claire (avec l'URL complète si c'est le logo)
+            return response()->json([
+                'success' => true,
+                'message' => "Paramètre '{$key}' mis à jour/créé avec succès.",
+                'data' => [
+                    'id' => $setting->id,
+                    'key' => $setting->key,
+                    'value' => $responseValue, // <-- Utilise l'URL complète si c'est le logo
+                    'type' => $setting->type
+                ]
+            ], 200);
 
         } catch (\Exception $e) {
             \Log::error('Erreur lors du traitement du paramètre ' . $key . ': ' . $e->getMessage(), ['exception' => $e]);
