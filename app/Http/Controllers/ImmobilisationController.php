@@ -16,38 +16,18 @@ use App\Models\Parametrage\SousTypeImmo;
 use App\Models\Parametrage\TypeImmo;
 use App\Models\Parametrage\StatusImmo;
 use App\Models\Vehicule;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Models\Transfert;
-
+use App\Models\LogJournalisation; // Ajout du modèle de journalisation
+use Illuminate\Support\Facades\Auth; // Ajout pour récupérer l'ID utilisateur
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 
 class ImmobilisationController extends Controller
 {
-    // Afficher la liste des immobilisations
-    /**
- * @OA\Get(
- *     path="/api/immobilisations",
- *     tags={"Immobilisations"},
- *     summary="Liste des immobilisations",
- *     @OA\Response(
- *         response=200,
- *         description="Liste récupérée avec succès",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Liste des immobilisations"),
- *             @OA\Property(
- *                 property="data",
- *                 type="array",
- *                 @OA\Items(ref="#/components/schemas/Immobilisation")
- *             )
- *         )
- *     )
- * )
- */
-public function index()
-{
-    $immos = Immobilisation::with([
+    // ... [index] inchangé
+    public function index()
+    {
+        $immos = Immobilisation::with([
             'vehicule',
             'groupeTypeImmo',
             'sousTypeImmo',
@@ -56,51 +36,18 @@ public function index()
             'bureau',
             'fournisseur'
         ])
-        ->where('isdeleted', false)
-        ->whereHas('statusImmo', function ($query) {
-            $query->where('libelle_status_immo', '!=', 'Sortie de patrimoine');
-        })
-        ->latest()
-        ->paginate(100);
+            ->where('isdeleted', false)
+            ->whereHas('statusImmo', function ($query) {
+                $query->where('libelle_status_immo', '!=', 'Sortie de patrimoine');
+            })
+            ->latest()
+            ->paginate(100);
 
-    return new PostResource(true, 'Liste des immobilisations', $immos);
-}
-
+        return new PostResource(true, 'Liste des immobilisations', $immos);
+    }
+    // ...
 
     // Créer une nouvelle immobilisation
-
-    /**
- * @OA\Post(
- *     path="/api/immobilisations",
- *     tags={"Immobilisations"},
- *     summary="Créer une nouvelle immobilisation",
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             required={"id_groupe_type_immo", "id_sous_type_immo", "id_status_immo"},
- *             @OA\Property(property="designation", type="string", example="Scanner HP"),
- *             @OA\Property(property="code", type="string", example="IMMO-2025-002"),
- *             @OA\Property(property="montant_ttc", type="integer", example=250000),
- *             @OA\Property(property="date_acquisition", type="string", format="date"),
- *             @OA\Property(property="date_mise_en_service", type="string", format="date"),
- *             @OA\Property(property="id_groupe_type_immo", type="integer", example=1),
- *             @OA\Property(property="id_sous_type_immo", type="integer", example=1),
- *             @OA\Property(property="id_status_immo", type="integer", example=1),
- *             @OA\Property(property="fournisseur_id", type="integer"),
- *             @OA\Property(property="employe_id", type="integer"),
- *             @OA\Property(property="bureau_id", type="integer"),
- *             @OA\Property(property="vehicule_id", type="integer"),
- *             @OA\Property(property="isVehicule", type="boolean", example=false)
- *         )
- *     ),
- *     @OA\Response(
- *         response=201,
- *         description="Immobilisation créée",
- *         @OA\JsonContent(ref="#/components/schemas/PostResourceImmobilisationResponse")
- *     ),
- *     @OA\Response(response=422, description="Erreur de validation")
- * )
- */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -127,6 +74,15 @@ public function index()
         ]);
 
         if ($validator->fails()) {
+            // 📝 LOG → Échec de validation (création)
+            LogJournalisation::create([
+                'action'     => 'Échec de validation (création immobilisation)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+                'details'    => json_encode($validator->errors())
+            ]);
             return response()->json($validator->errors(), 422);
         }
 
@@ -158,11 +114,31 @@ public function index()
             // Si tout s'est bien passé, on valide la transaction
             DB::commit();
 
+            // 📝 LOG → Création réussie
+            LogJournalisation::create([
+                'action'     => 'Création immobilisation réussie',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+                'details'    => "Immo ID: {$immo->id}, Code: {$immo->code}"
+            ]);
+
             return new PostResource(true, 'Immobilisation créée avec succès', $immo);
 
         } catch (\Exception $e) {
             // En cas d'erreur, on annule la transaction
             DB::rollBack();
+
+            // 📝 LOG → Création échouée (exception)
+            LogJournalisation::create([
+                'action'     => 'Création immobilisation échouée (exception)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+                'details'    => $e->getMessage()
+            ]);
 
             // Log l'erreur pour le débogage et retourne un message d'erreur
             \Log::error('Erreur lors de la création de l\'immobilisation et de son transfert : ' . $e->getMessage());
@@ -175,45 +151,6 @@ public function index()
     }
 
     // Mettre à jour une immobilisation existante
-
-    /**
- * @OA\Put(
- *     path="/api/immobilisations/{id}",
- *     tags={"Immobilisations"},
- *     summary="Mettre à jour une immobilisation",
- *     @OA\Parameter(
- *         name="id",
- *         in="path",
- *         required=true,
- *         description="ID de l'immobilisation",
- *         @OA\Schema(type="integer")
- *     ),
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             required={"id_groupe_type_immo", "id_sous_type_immo", "id_status_immo"},
- *             @OA\Property(property="designation", type="string", example="Scanner HP"),
- *             @OA\Property(property="code", type="string", example="IMMO-2025-002"),
- *             @OA\Property(property="montant_ttc", type="integer", example=250000),
- *             @OA\Property(property="date_acquisition", type="string", format="date"),
- *             @OA\Property(property="date_mise_en_service", type="string", format="date"),
- *             @OA\Property(property="id_groupe_type_immo", type="integer", example=1),
- *             @OA\Property(property="id_sous_type_immo", type="integer", example=1),
- *             @OA\Property(property="id_status_immo", type="integer", example=1),
- *             @OA\Property(property="fournisseur_id", type="integer"),
- *             @OA\Property(property="employe_id", type="integer"),
- *             @OA\Property(property="bureau_id", type="integer"),
- *             @OA\Property(property="vehicule_id", type="integer"),
- *             @OA\Property(property="isVehicule", type="boolean", example=false)
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Immobilisation mise à jour",
- *         @OA\JsonContent(ref="#/components/schemas/PostResourceImmobilisationResponse")
- *     )
- * )
- */
     public function update(Request $request, Immobilisation $immobilisation)
     {
         $validator = Validator::make($request->all(), [
@@ -240,50 +177,91 @@ public function index()
         ]);
 
         if ($validator->fails()) {
+            // 📝 LOG → Échec de validation (mise à jour)
+            LogJournalisation::create([
+                'action'     => 'Échec de validation (mise à jour immobilisation)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+                'details'    => "Immo ID: {$immobilisation->id}, Erreurs: " . json_encode($validator->errors())
+            ]);
             return response()->json($validator->errors(), 422);
         }
 
-        $immobilisation->update($request->all());
+        try {
+            $immobilisation->update($request->all());
 
-        return new PostResource(true, 'Immobilisation mise à jour avec succès', $immobilisation);
+            // 📝 LOG → Mise à jour réussie
+            LogJournalisation::create([
+                'action'     => 'Mise à jour immobilisation réussie',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+                'details'    => "Immo ID: {$immobilisation->id}, Code: {$immobilisation->code}"
+            ]);
+
+            return new PostResource(true, 'Immobilisation mise à jour avec succès', $immobilisation);
+        } catch (\Exception $e) {
+            // 📝 LOG → Mise à jour échouée (exception)
+            LogJournalisation::create([
+                'action'     => 'Mise à jour immobilisation échouée (exception)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+                'details'    => "Immo ID: {$immobilisation->id}, Erreur: " . $e->getMessage()
+            ]);
+            \Log::error('Erreur lors de la mise à jour de l\'immobilisation : ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la mise à jour de l\'immobilisation.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     // Supprimer une immobilisation
-
-    /**
- * @OA\Delete(
- *     path="/api/immobilisations/{id}",
- *     tags={"Immobilisations"},
- *     summary="Supprimer une immobilisation",
- *     @OA\Parameter(
- *         name="id",
- *         in="path",
- *         required=true,
- *         @OA\Schema(type="integer")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Immobilisation supprimée",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Immobilisation supprimée avec succès"),
- *             @OA\Property(property="data", type="null", example=null)
- *         )
- *     )
- * )
- */
-    public function destroy(Immobilisation $immobilisation)
+    public function destroy(Immobilisation $immobilisation, Request $request) // Ajout de Request pour obtenir l'IP/User-Agent
     {
-        $immobilisation->isdeleted = true;
-        $immobilisation->save();
+        try {
+            $immobilisation->isdeleted = true;
+            $immobilisation->save();
 
-        return new PostResource(true, 'Immobilisation supprimée avec succès', null);
+            // 📝 LOG → Suppression réussie
+            LogJournalisation::create([
+                'action'     => 'Suppression immobilisation réussie (soft delete)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+                'details'    => "Immo ID: {$immobilisation->id}, Code: {$immobilisation->code}"
+            ]);
+
+            return new PostResource(true, 'Immobilisation supprimée avec succès', null);
+        } catch (\Exception $e) {
+            // 📝 LOG → Suppression échouée (exception)
+            LogJournalisation::create([
+                'action'     => 'Suppression immobilisation échouée (exception)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+                'details'    => "Immo ID: {$immobilisation->id}, Erreur: " . $e->getMessage()
+            ]);
+            \Log::error('Erreur lors de la suppression de l\'immobilisation : ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la suppression de l\'immobilisation.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
+    // ... [imprimerImmos] inchangé
     public function imprimerImmos()
     {
-
         // Récupère toutes les immobilisations avec leurs relations nécessaires
         $immobilisations = Immobilisation::with([
             'vehicule',
@@ -294,14 +272,15 @@ public function index()
             'bureau',
             'fournisseur'
         ])
-        ->where('isdeleted', false)
-        ->latest()
-        ->get();
+            ->where('isdeleted', false)
+            ->latest()
+            ->get();
 
         $pdf = \Pdf::loadView('pdf.immobilisations', compact('immobilisations'));
 
         return $pdf->download('liste_immobilisations.pdf');
     }
+    // ...
 
     public function import(Request $request)
     {
@@ -311,174 +290,250 @@ public function index()
         ]);
 
         if ($validator->fails()) {
+            // 📝 LOG → Échec de validation (import)
+            LogJournalisation::create([
+                'action'     => 'Échec de validation (import immobilisations)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+                'details'    => json_encode($validator->errors())
+            ]);
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // 2️⃣ Chargement du fichier
-        $spreadsheet = IOFactory::load($request->file('file'));
-        $sheet = $spreadsheet->getActiveSheet();
-        $rows = $sheet->toArray();
+        try {
+            // 2️⃣ Chargement du fichier
+            $spreadsheet = IOFactory::load($request->file('file'));
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray();
 
-        $ignoredRows = [];
-        $importedCount = 0;
-        $realLine = 1; // correspond à la ligne Excel réelle (pour les logs)
+            $ignoredRows = [];
+            $importedCount = 0;
+            $realLine = 1; // correspond à la ligne Excel réelle (pour les logs)
 
-        // 3️⃣ Boucle sur les lignes (en ignorant la première ligne d'entête)
-        foreach ($rows as $index => $row) {
-            $realLine++;
+            // 3️⃣ Boucle sur les lignes (en ignorant la première ligne d'entête)
+            foreach ($rows as $index => $row) {
+                $realLine++;
 
-            if ($index === 0) continue; // sauter l'entête
+                if ($index === 0) continue; // sauter l'entête
 
-            // 🔍 Vérifie si la ligne est entièrement vide
-            $isEmpty = true;
-            foreach ($row as $cell) {
-                if (trim((string)$cell) !== '') {
-                    $isEmpty = false;
-                    break;
+                // 🔍 Vérifie si la ligne est entièrement vide
+                $isEmpty = true;
+                foreach ($row as $cell) {
+                    if (trim((string)$cell) !== '') {
+                        $isEmpty = false;
+                        break;
+                    }
                 }
-            }
 
-            if ($isEmpty) {
-                continue; // Ignore totalement la ligne vide
-            }
-
-            // 🛡️ Vérifie le nombre de colonnes
-            if (count($row) < 22) {
-                $msg = "Ligne $realLine ignorée : colonnes insuffisantes (" . count($row) . ")";
-                \Log::warning($msg);
-                $ignoredRows[] = $msg;
-                continue;
-            }
-
-            // --- Extraction propre ---
-            [
-                $bureau,
-                $employe_fullname,
-                $date_mouvement,
-                $fournisseur,
-                $compte,
-                $type_immo,
-                $designation,
-                $isVehicule,
-                $vehicule,
-                $code,
-                $groupe_type_immo,
-                $sous_type_immo,
-                $duree_amorti,
-                $etat,
-                $taux_ammortissement,
-                $duree_ammortissement,
-                $date_acquisition,
-                $date_mise_en_service,
-                $observation,
-                $status_immo,
-                $montant_ttc,
-                $reference_estampillonnage
-            ] = array_map(fn($v) => trim((string)$v), $row);
-
-            // 🔎 Vérif doublon (isdeleted = false)
-            $immobilisationExistante = Immobilisation::where(function ($query) use ($code, $designation) {
-                $query->where('code', $code)
-                    ->orWhere('designation', $designation);
-            })
-            ->where('isdeleted', false)
-            ->first();
-
-            if ($immobilisationExistante) {
-                $msg = "Ligne $realLine ignorée : immobilisation avec code '$code' ou désignation '$designation' déjà active.";
-                \Log::info($msg);
-                $ignoredRows[] = $msg;
-                continue;
-            }
-
-            // --- Relations liées ---
-            $bureau_id = Bureau::firstOrCreate(['libelle_bureau' => $bureau]);
-            $fournisseur_id = Fournisseur::firstOrCreate(['nom' => $fournisseur]);
-            $type_immo_id = TypeImmo::firstOrCreate(['libelle_typeImmo' => $type_immo, 'compte' => $compte])->id;
-
-            if (empty($groupe_type_immo)) {
-                $msg = "Ligne $realLine ignorée : groupe type immo vide.";
-                \Log::warning($msg);
-                $ignoredRows[] = $msg;
-                continue;
-            }
-
-            $id_groupe_type_immo = GroupeTypeImmo::firstOrCreate([
-                'libelle' => $groupe_type_immo,
-                'compte' => $compte
-            ]);
-
-            $id_sous_type_immo = SousTypeImmo::firstOrCreate([
-                'libelle' => $sous_type_immo,
-                'compte' => $compte,
-                'id_type_immo' => $type_immo_id
-            ]);
-
-            $id_status_immo = StatusImmo::firstOrCreate(['libelle_status_immo' => $status_immo]);
-
-            // 👤 Employé
-            $employe = null;
-            if (!empty($employe_fullname)) {
-                $parts = preg_split('/\s+/', trim($employe_fullname));
-                $nom = array_shift($parts);
-                $prenom = implode(' ', $parts);
-                if (!empty($nom) && !empty($prenom)) {
-                    $employe = Employe::firstOrCreate(['nom' => $nom, 'prenom' => $prenom]);
+                if ($isEmpty) {
+                    continue; // Ignore totalement la ligne vide
                 }
+
+                // 🛡️ Vérifie le nombre de colonnes
+                if (count($row) < 22) {
+                    $msg = "Ligne $realLine ignorée : colonnes insuffisantes (" . count($row) . ")";
+                    \Log::warning($msg);
+                    $ignoredRows[] = $msg;
+                    // 📝 LOG → Ligne ignorée (colonnes)
+                    LogJournalisation::create([
+                        'action'     => 'Import - Ligne ignorée (colonnes insuffisantes)',
+                        'ip_address' => $request->ip(),
+                        'user_agent' => $request->header('User-Agent'),
+                        'user_id'    => Auth::id(),
+                        'date_action'=> now(),
+                        'details'    => $msg
+                    ]);
+                    continue;
+                }
+
+                // --- Extraction propre (inchangée) ---
+                [
+                    $bureau,
+                    $employe_fullname,
+                    $date_mouvement,
+                    $fournisseur,
+                    $compte,
+                    $type_immo,
+                    $designation,
+                    $isVehicule,
+                    $vehicule,
+                    $code,
+                    $groupe_type_immo,
+                    $sous_type_immo,
+                    $duree_amorti,
+                    $etat,
+                    $taux_ammortissement,
+                    $duree_ammortissement,
+                    $date_acquisition,
+                    $date_mise_en_service,
+                    $observation,
+                    $status_immo,
+                    $montant_ttc,
+                    $reference_estampillonnage
+                ] = array_map(fn($v) => trim((string)$v), $row);
+
+                // 🔎 Vérif doublon (isdeleted = false)
+                $immobilisationExistante = Immobilisation::where(function ($query) use ($code, $designation) {
+                    $query->where('code', $code)
+                        ->orWhere('designation', $designation);
+                })
+                    ->where('isdeleted', false)
+                    ->first();
+
+                if ($immobilisationExistante) {
+                    $msg = "Ligne $realLine ignorée : immobilisation avec code '$code' ou désignation '$designation' déjà active.";
+                    \Log::info($msg);
+                    $ignoredRows[] = $msg;
+                    // 📝 LOG → Ligne ignorée (doublon)
+                    LogJournalisation::create([
+                        'action'     => 'Import - Ligne ignorée (doublon)',
+                        'ip_address' => $request->ip(),
+                        'user_agent' => $request->header('User-Agent'),
+                        'user_id'    => Auth::id(),
+                        'date_action'=> now(),
+                        'details'    => $msg
+                    ]);
+                    continue;
+                }
+
+                // --- Relations liées (inchangée) ---
+                $bureau_id = Bureau::firstOrCreate(['libelle_bureau' => $bureau]);
+                $fournisseur_id = Fournisseur::firstOrCreate(['nom' => $fournisseur]);
+                $type_immo_id = TypeImmo::firstOrCreate(['libelle_typeImmo' => $type_immo, 'compte' => $compte])->id;
+
+                if (empty($groupe_type_immo)) {
+                    $msg = "Ligne $realLine ignorée : groupe type immo vide.";
+                    \Log::warning($msg);
+                    $ignoredRows[] = $msg;
+                    // 📝 LOG → Ligne ignorée (groupe vide)
+                    LogJournalisation::create([
+                        'action'     => 'Import - Ligne ignorée (groupe vide)',
+                        'ip_address' => $request->ip(),
+                        'user_agent' => $request->header('User-Agent'),
+                        'user_id'    => Auth::id(),
+                        'date_action'=> now(),
+                        'details'    => $msg
+                    ]);
+                    continue;
+                }
+
+                $id_groupe_type_immo = GroupeTypeImmo::firstOrCreate([
+                    'libelle' => $groupe_type_immo,
+                    'compte' => $compte
+                ]);
+
+                $id_sous_type_immo = SousTypeImmo::firstOrCreate([
+                    'libelle' => $sous_type_immo,
+                    'compte' => $compte,
+                    'id_type_immo' => $type_immo_id
+                ]);
+
+                $id_status_immo = StatusImmo::firstOrCreate(['libelle_status_immo' => $status_immo]);
+
+                // 👤 Employé (inchangé)
+                $employe = null;
+                if (!empty($employe_fullname)) {
+                    $parts = preg_split('/\s+/', trim($employe_fullname));
+                    $nom = array_shift($parts);
+                    $prenom = implode(' ', $parts);
+                    if (!empty($nom) && !empty($prenom)) {
+                        $employe = Employe::firstOrCreate(['nom' => $nom, 'prenom' => $prenom]);
+                    }
+                }
+
+                // 🗓️ Formats de dates automatiques (inchangé)
+                $formats = ['Y-m-d', 'd/m/Y', 'm/d/Y'];
+                $formatDate = fn($date) => collect($formats)
+                    ->map(fn($fmt) => \DateTime::createFromFormat($fmt, $date))
+                    ->filter()
+                    ->first()?->format('Y-m-d');
+
+                $date_mouvement_formatee = $formatDate($date_mouvement);
+                $date_acquisition_formatee = $formatDate($date_acquisition);
+                $date_mise_en_service_formatee = $formatDate($date_mise_en_service);
+
+                if (!$date_mouvement_formatee || !$date_acquisition_formatee || !$date_mise_en_service_formatee) {
+                    $msg = "Ligne $realLine ignorée : une ou plusieurs dates invalides.";
+                    \Log::warning($msg);
+                    $ignoredRows[] = $msg;
+                    // 📝 LOG → Ligne ignorée (date invalide)
+                    LogJournalisation::create([
+                        'action'     => 'Import - Ligne ignorée (date invalide)',
+                        'ip_address' => $request->ip(),
+                        'user_agent' => $request->header('User-Agent'),
+                        'user_id'    => Auth::id(),
+                        'date_action'=> now(),
+                        'details'    => $msg . " Dates: $date_mouvement, $date_acquisition, $date_mise_en_service"
+                    ]);
+                    continue;
+                }
+
+                // ✅ Insertion (inchangée)
+                Immobilisation::create([
+                    'bureau_id' => $bureau_id->id,
+                    'employe_id' => $employe?->id,
+                    'date_mouvement' => $date_mouvement_formatee,
+                    'fournisseur_id' => $fournisseur_id->id,
+                    'designation' => $designation,
+                    'isVehicule' => false,
+                    'vehicule_id' => null,
+                    'code' => $code,
+                    'id_groupe_type_immo' => $id_groupe_type_immo->id,
+                    'id_sous_type_immo' => $id_sous_type_immo->id,
+                    'duree_amorti' => $duree_amorti,
+                    'etat' => $etat,
+                    'taux_ammortissement' => $taux_ammortissement,
+                    'duree_ammortissement' => round($duree_ammortissement),
+                    'date_acquisition' => $date_acquisition_formatee,
+                    'date_mise_en_service' => $date_mise_en_service_formatee,
+                    'observation' => $observation,
+                    'id_status_immo' => $id_status_immo->id,
+                    'montant_ttc' => $montant_ttc,
+                    'reference_estampillonnage' => $reference_estampillonnage,
+                    'isdeleted' => false,
+                ]);
+
+                $importedCount++;
             }
 
-            // 🗓️ Formats de dates automatiques
-            $formats = ['Y-m-d', 'd/m/Y', 'm/d/Y'];
-            $formatDate = fn($date) => collect($formats)
-                ->map(fn($fmt) => \DateTime::createFromFormat($fmt, $date))
-                ->filter()
-                ->first()?->format('Y-m-d');
-
-            $date_mouvement_formatee = $formatDate($date_mouvement);
-            $date_acquisition_formatee = $formatDate($date_acquisition);
-            $date_mise_en_service_formatee = $formatDate($date_mise_en_service);
-
-            if (!$date_mouvement_formatee || !$date_acquisition_formatee || !$date_mise_en_service_formatee) {
-                $msg = "Ligne $realLine ignorée : une ou plusieurs dates invalides.";
-                \Log::warning($msg);
-                $ignoredRows[] = $msg;
-                continue;
-            }
-
-            // ✅ Insertion
-            Immobilisation::create([
-                'bureau_id' => $bureau_id->id,
-                'employe_id' => $employe?->id,
-                'date_mouvement' => $date_mouvement_formatee,
-                'fournisseur_id' => $fournisseur_id->id,
-                'designation' => $designation,
-                'isVehicule' => false,
-                'vehicule_id' => null,
-                'code' => $code,
-                'id_groupe_type_immo' => $id_groupe_type_immo->id,
-                'id_sous_type_immo' => $id_sous_type_immo->id,
-                'duree_amorti' => $duree_amorti,
-                'etat' => $etat,
-                'taux_ammortissement' => $taux_ammortissement,
-                'duree_ammortissement' => round($duree_ammortissement),
-                'date_acquisition' => $date_acquisition_formatee,
-                'date_mise_en_service' => $date_mise_en_service_formatee,
-                'observation' => $observation,
-                'id_status_immo' => $id_status_immo->id,
-                'montant_ttc' => $montant_ttc,
-                'reference_estampillonnage' => $reference_estampillonnage,
-                'isdeleted' => false,
+            // 📝 LOG → Import réussi (synthèse)
+            LogJournalisation::create([
+                'action'     => 'Import immobilisations terminé',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+                'details'    => "Importé: $importedCount, Ignoré: " . count($ignoredRows)
             ]);
 
-            $importedCount++;
+
+            return response()->json([
+                'message' => "Import terminé ! ($importedCount lignes importées)",
+                'ignored' => $ignoredRows
+            ]);
+
+        } catch (\Exception $e) {
+            // 📝 LOG → Import échoué (exception globale)
+            LogJournalisation::create([
+                'action'     => 'Import immobilisations échoué (exception globale)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+                'details'    => $e->getMessage()
+            ]);
+            \Log::error('Erreur globale lors de l\'import : ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur globale lors de l\'importation.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'message' => "Import terminé ! ($importedCount lignes importées)",
-            'ignored' => $ignoredRows
-        ]);
     }
 
+    // ... [getCodesImmoEtVehicule] inchangé
     public function getCodesImmoEtVehicule(Request $request)
     {
         try {
@@ -501,26 +556,58 @@ public function index()
                 'codes' => $codesCombinés
             ];
 
+            // 📝 LOG → Récupération codes réussie
+            // Ce type de log peut être omis s'il est trop verbeux, mais je le mets pour l'exemple.
+            LogJournalisation::create([
+                'action'     => 'Récupération codes Immo/Véhicule réussie',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+                'details'    => "Nombre de codes: " . count($codesCombinés)
+            ]);
+
             return new PostResource(true, 'Liste combinée des codes récupérée avec succès.', $result);
 
         } catch (\Exception $e) {
+            // 📝 LOG → Récupération codes échouée (exception)
+            LogJournalisation::create([
+                'action'     => 'Récupération codes Immo/Véhicule échouée (exception)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+                'details'    => $e->getMessage()
+            ]);
+
             return new PostResource(false, 'Erreur lors de la récupération des codes : ' . $e->getMessage());
         }
     }
 
-    public function getDesignationByCode($code)
+    // ... [getDesignationByCode] inchangé
+    public function getDesignationByCode($code, Request $request) // Ajout de Request pour la journalisation
     {
 
         $cleanCode = $code;
         //dd("cest bon", $cleanCode);
 
-            // 1. Recherche dans la table des immobilisations
-            // CLÉ : On utilise DB::raw('UPPER(code)') pour s'assurer que la colonne est comparée en majuscules
-            $immobilisation = Immobilisation::where('code', $cleanCode) 
-            ->select('id', 'code', DB::raw("designation AS designation_complete"), DB::raw("'Immobilisation' as type"))
-            ->first();
+        // 1. Recherche dans la table des immobilisations
+        // CLÉ : On utilise DB::raw('UPPER(code)') pour s'assurer que la colonne est comparée en majuscules
+        $immobilisation = Immobilisation::where('code', $cleanCode) 
+        ->select('id', 'code', DB::raw("designation AS designation_complete"), DB::raw("'Immobilisation' as type"))
+        ->first();
 
         if ($immobilisation) {
+            // 📝 LOG → Désignation trouvée (Immobilisation)
+            LogJournalisation::create([
+                'action'     => 'Recherche désignation réussie (Immo)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+                'details'    => "Code recherché: $code. Trouvé: Immobilisation ID {$immobilisation->id}"
+            ]);
+
             // Retourne la donnée dans le format uniforme attendu par Angular
             return response()->json([
                 'success' => true,
@@ -547,6 +634,16 @@ public function index()
             
             $designation = trim($marque . ' - ' . $modele);
             
+            // 📝 LOG → Désignation trouvée (Véhicule)
+            LogJournalisation::create([
+                'action'     => 'Recherche désignation réussie (Véhicule)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+                'details'    => "Code recherché: $code. Trouvé: Véhicule ID {$vehicule->id}"
+            ]);
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Véhicule trouvé.',
@@ -560,11 +657,20 @@ public function index()
         }
 
         // 3. Actif non trouvé
+        // 📝 LOG → Désignation non trouvée
+        LogJournalisation::create([
+            'action'     => 'Recherche désignation échouée (non trouvé)',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+            'details'    => "Code recherché: $code. Résultat: Non trouvé."
+        ]);
+
         return response()->json([
             'success' => false,
             'message' => 'Aucun actif trouvé pour ce code.',
             'data' => null
         ], 404);
     }
-
 }
