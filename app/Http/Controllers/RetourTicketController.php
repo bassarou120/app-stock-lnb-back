@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 
 class RetourTicketController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $retours = RetourTicket::with([
             'mouvement.employe',
@@ -27,6 +27,14 @@ class RetourTicketController extends Controller
         ->latest()
         ->where('isdeleted', false)
         ->paginate(1000);
+
+        LogJournalisation::create([
+                'action'     => "Consultation des retours de tickets",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => auth()->id(),
+                'date_action'=> now(),
+            ]);
 
         return new PostResource(true, 'Liste des retours', $retours);
     }
@@ -206,7 +214,7 @@ class RetourTicketController extends Controller
     }
 
 
-    public function getAllSortieTicketWhereNotInRetour()
+    public function getAllSortieTicketWhereNotInRetour(Request $request)
     {
         // Récupérer l'ID du type de mouvement "Sortie de Ticket"
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Ticket')->first();
@@ -222,6 +230,14 @@ class RetourTicketController extends Controller
                 ->whereNotIn('id', $mouvementsAvecRetour)
                 ->latest()
                 ->paginate(1000);
+
+            LogJournalisation::create([
+                'action'     => "Consultation des mouvements de sortie de Ticket sans retour",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => auth()->id(),
+                'date_action'=> now(),
+            ]);
 
             return new PostResource(true, 'Liste des mouvements de sortie de Ticket sans retour', $mouvements);
         }

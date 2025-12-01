@@ -604,7 +604,7 @@ class StockRapportController extends Controller
         );
     }
 
-    private function genererRapportCompletArticle($article, $dateDebut, $dateFin)
+    private function genererRapportCompletArticle($article, $dateDebut, $dateFin, Request $request)
     {
         // ✅ 1. DEBUG - VÉRIFIER LES TYPES DE MOUVEMENTS
         $typeEntree = TypeMouvement::where(function($query) {

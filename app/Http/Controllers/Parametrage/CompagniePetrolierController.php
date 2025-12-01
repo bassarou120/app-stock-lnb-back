@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Auth;
 class CompagniePetrolierController extends Controller
 {
     // Afficher la liste des compagnies pétrolières
-    public function index()
+    public function index(Request $request)
     {
         // Récupérer toutes les compagnies pétrolières triées par ordre décroissant
         $compagnies = CompagniePetrolier::latest()->where('isdeleted', false)->paginate(1000);
@@ -94,7 +94,7 @@ class CompagniePetrolierController extends Controller
     }
 
     // Supprimer une compagnie pétrolière
-    public function destroy(CompagniePetrolier $compagnie_petrolier)
+    public function destroy(CompagniePetrolier $compagnie_petrolier, Request $request)
     {
         // Supprimer la compagnie pétrolière
         $compagnie_petrolier->isdeleted = true;
@@ -110,7 +110,7 @@ class CompagniePetrolierController extends Controller
         return new PostResource(true, 'Compagnie pétrolière supprimée avec succès', null);
     }
 
-    public function imprimer()
+    public function imprimer(Request $request)
     {
         $compagnies = CompagniePetrolier::all()->where('isdeleted', false);
 

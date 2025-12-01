@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 class StatusImmoController extends Controller
 {
     // Afficher la liste des statuts immobiliers
-    public function index()
+    public function index(Request $request)
     {
         $status_immos = StatusImmo::latest()->where('isdeleted', false)->paginate(100);
         LogJournalisation::create([
@@ -79,7 +79,7 @@ class StatusImmoController extends Controller
     }
 
     // Supprimer un statut immobilier
-    public function destroy(StatusImmo $status_immo)
+    public function destroy(StatusImmo $status_immo, Request $request)
     {
         $status_immo->isdeleted = true;
         $status_immo->save();

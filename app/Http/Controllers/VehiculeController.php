@@ -26,7 +26,7 @@ use Illuminate\Support\Facades\Auth;
 class VehiculeController extends Controller
 {
      // Afficher la liste des véhicules
-    public function index()
+    public function index(Request $request)
     {
         $vehicules = Vehicule::with(['modele', 'marque', 'sousTypeImmo', 'groupeTypeImmo', 'statusImmo'])
             ->where('isdeleted', false)
@@ -217,7 +217,7 @@ class VehiculeController extends Controller
     }
 
     // Supprimer un vehicule
-    public function destroy(Vehicule $vehicule)
+    public function destroy(Vehicule $vehicule, Request $request)
     {
         $logMessage = "Suppression logique du véhicule ID {$vehicule->id} [Immatriculation: {$vehicule->immatriculation}].";
         $carteGriseSupprimee = false;
@@ -247,7 +247,7 @@ class VehiculeController extends Controller
     }
 
     // Méthode pour l'impression des mouvements d'entrée
-    public function imprimerVehicules()
+    public function imprimerVehicules(Request $request)
     {
         $vehicules = Vehicule::with(['modele', 'marque'])
                                     ->where('isdeleted', false)

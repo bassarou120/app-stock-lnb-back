@@ -15,7 +15,7 @@ use Illuminate\Validation\ValidationException;
 
 class TransfertController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $transferts = Transfert::with([
             'immobilisation',
@@ -26,6 +26,14 @@ class TransfertController extends Controller
         ])
         ->where('isdeleted', false)
         ->latest()->paginate(1000);
+
+        LogJournalisation::create([
+                'action'     => "Consultation de la liste des transferts",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => auth()->id(),
+                'date_action'=> now(),
+            ]);
 
         return new PostResource(true, 'Liste des transferts', $transferts);
     }
@@ -335,7 +343,7 @@ class TransfertController extends Controller
         ]);
     }
 
-    public function imprimerTransferts()
+    public function imprimerTransferts(Request $request)
     {
         // Récupère tous les transferts avec leurs relations nécessaires
         $transferts = Transfert::with([
@@ -350,6 +358,14 @@ class TransfertController extends Controller
 
         // Charge la vue Blade qui servira de template pour le PDF
         $pdf = \Pdf::loadView('pdf.transferts', compact('transferts'));
+
+        LogJournalisation::create([
+                'action'     => "Impression de la liste des transferts",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => auth()->id(),
+                'date_action'=> now(),
+            ]);
 
         // Retourne le PDF en téléchargement
         return $pdf->download('liste_transferts.pdf');

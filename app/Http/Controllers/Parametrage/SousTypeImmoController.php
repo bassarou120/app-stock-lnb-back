@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Auth;
 class SousTypeImmoController extends Controller
 {
     // Afficher la liste des sous-types d'immo
-    public function index()
+    public function index(Request $request)
     {
         $sous_type_immos = SousTypeImmo::with('typeImmo')->where('isdeleted', false)->latest()->paginate(100);
 
@@ -91,7 +91,7 @@ class SousTypeImmoController extends Controller
     }
 
     // Supprimer un sous-type d'immo
-    public function destroy(SousTypeImmo $sous_type_immo)
+    public function destroy(SousTypeImmo $sous_type_immo, Request $request)
     {
         $sous_type_immo->isdeleted = true;
         $sous_type_immo->save();

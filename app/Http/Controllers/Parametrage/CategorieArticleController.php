@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 class CategorieArticleController extends Controller
 {
     // Afficher la liste des catégories d'articles
-    public function index()
+    public function index(Request $request)
     {
         $categories = CategorieArticle::latest()->where('isdeleted', false)->paginate(1000);
         LogJournalisation::create([
@@ -89,7 +89,7 @@ class CategorieArticleController extends Controller
     }
 
     // Supprimer une catégorie d'article
-    public function destroy(CategorieArticle $categorie_article)
+    public function destroy(CategorieArticle $categorie_article, Request $request)
     {
         $categorie_article->isdeleted = true;
         $categorie_article->save();

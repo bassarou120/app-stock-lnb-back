@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Auth;
 
 class AnnulationTicketController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $annulations = AnnulationTicket::with([
             'mouvement.employe',
@@ -29,7 +29,7 @@ class AnnulationTicketController extends Controller
 
         // 📝 LOG → Consultation des annulations
         LogJournalisation::create([
-            'action'     => 'Consultation des annulations de ticket',
+            'action'     => 'Consultation de la liste des annulations de ticket',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
             'user_id'    => Auth::id(), // ID de l'utilisateur connecté
@@ -121,7 +121,7 @@ class AnnulationTicketController extends Controller
         return new PostResource(true, 'Annulation de Ticket supprimée avec succès !', null);
     }
 
-    public function getAllSortieTicketWhereNotInAnnulation()
+    public function getAllSortieTicketWhereNotInAnnulation(Request $request)
     {
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Ticket')->first();
 
@@ -150,7 +150,7 @@ class AnnulationTicketController extends Controller
         return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Ticket".', []);
     }
 
-    public function getMouvementInfo($idMouvement)
+    public function getMouvementInfo($idMouvement, Request $request)
     {
         $mouvement = MouvementTicket::with(['compagniePetrolier', 'coupon_ticket'])
         ->where('isdeleted', false)

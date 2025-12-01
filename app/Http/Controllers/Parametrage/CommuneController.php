@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 class CommuneController extends Controller
 {
     // Afficher la liste des communes
-    public function index()
+    public function index(Request $request)
     {
         // Récupérer toutes les communes triées par ordre décroissant
         $communes = Commune::latest()->where('isdeleted', false)->paginate(1000);

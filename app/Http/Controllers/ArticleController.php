@@ -51,7 +51,7 @@ class ArticleController extends Controller
         return new PostResource(true, 'Liste des articles', $articles);
     }  */
 
-    public function index()
+    public function index(Request $request)
     {
         // 1. Récupérer l'exercice ouvert
         $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
@@ -75,7 +75,7 @@ class ArticleController extends Controller
 
         // 📝 LOG → Consultation du stock pour l'exercice ouvert
         LogJournalisation::create([
-            'action'     => 'Consultation du stock pour l\'exercice ID: '.$exerciceId,
+            'action'     => 'Consultation de la liste des articles',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
             'user_id'    => Auth::id(),
@@ -451,7 +451,7 @@ class ArticleController extends Controller
      *     )
      * )
      */
-    public function destroy(Article $article)
+    public function destroy(Article $article, Request $request)
     {
         // Vérifier l'exercice ouvert
         $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
@@ -486,7 +486,7 @@ class ArticleController extends Controller
 
 
 
-    public function imprimer()
+    public function imprimer(Request $request)
     {
         $articles = Article::with(['categorie', 'stock'])
             ->where('isdeleted', false)
@@ -505,7 +505,7 @@ class ArticleController extends Controller
         return $pdf->download('etat_du_stock.pdf');
     }
 
-    public function exportArticlesExcel()
+    public function exportArticlesExcel(Request $request)
     {
         // Récupérer l'année dont le statut est "ouvert"
         $exercice = Exercice::where('statut', 'ouvert')->first();

@@ -41,7 +41,7 @@ class BureauController extends Controller
  *     )
  * )
  */
-    public function index()
+    public function index(Request $request)
     {
         $bureaux = Bureau::latest()->where('isdeleted', false)->paginate(100);
         LogJournalisation::create([
@@ -194,7 +194,7 @@ class BureauController extends Controller
  *     )
  * )
  */
-    public function destroy(Bureau $bureaux)
+    public function destroy(Bureau $bureaux, Request $request)
     {
         $bureaux->isdeleted = true;
         $bureaux->save();

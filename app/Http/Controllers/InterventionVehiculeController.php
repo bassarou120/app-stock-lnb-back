@@ -40,7 +40,7 @@ class InterventionVehiculeController extends Controller
  * )
  */
 
-    public function index()
+    public function index(Request $request)
     {
         $interventions = InterventionVehicule::with([
             'vehicule',
@@ -60,7 +60,7 @@ class InterventionVehiculeController extends Controller
         return new PostResource(true, 'Liste des interventions de véhicules', $interventions);
     }
 
-    public function Intervention_vehicule()
+    public function Intervention_vehicule(Request $request)
     {
         $interventions = TypeIntervention::where("applicable_seul_vehicule", true)
         ->latest()
@@ -349,6 +349,14 @@ class InterventionVehiculeController extends Controller
         ->latest()
         ->where('isdeleted', false)
         ->paginate(100);
+        $request = new Request();
+        LogJournalisation::create([
+                'action'     => 'Affichage de la liste des interventions',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
 
     return new PostResource(true, 'Liste des interventions vehicules', $interventions);
     }
@@ -375,16 +383,24 @@ class InterventionVehiculeController extends Controller
  * )
  */
 
-    public function destroy($id)
+    public function destroy($id, Request $request)
     {
         $intervention = InterventionVehicule::findOrFail($id);
 
         $intervention->isdeleted = true;
         $intervention->save();
+
+        LogJournalisation::create([
+                'action'     => 'Suppression d\'une intervention',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+        ]);
         return response()->json(['message' => 'intervention supprimé avec succès']);
     }
 
-    public function imprimerInterventionsVehicule()
+    public function imprimerInterventionsVehicule(Request $request)
     {
         $interventions = InterventionVehicule::with([
             'vehicule',

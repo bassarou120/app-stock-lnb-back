@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 class MarqueController extends Controller
 {
     // Afficher la liste des marques
-    public function index()
+    public function index(Request $request)
     {
         // Récupérer toutes les marques triées par ordre décroissant
         $marques = Marque::latest()->where('isdeleted', false)->paginate(100);
@@ -93,7 +93,7 @@ class MarqueController extends Controller
     }
 
     // Supprimer une marque
-    public function destroy(Marque $marque)
+    public function destroy(Marque $marque, Request $request)
     {
         // Supprimer la marque
         $marque->isdeleted = true;

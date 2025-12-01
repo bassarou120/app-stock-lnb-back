@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Auth;
 class StockTicketController extends Controller
 {
     // Afficher la liste des stocks de tickets
-    public function index()
+    public function index(Request $request)
     {
         $stock_tickets = StockTicket::with('couponTicket', 'compagnie')
         ->latest()
@@ -88,7 +88,7 @@ class StockTicketController extends Controller
     }
 
     // Supprimer un stock de ticket
-    public function destroy(StockTicket $stock_ticket)
+    public function destroy(StockTicket $stock_ticket, Request $request)
     {
         $stock_ticket->isdeleted = true;
         $stock_ticket->save();
@@ -103,7 +103,7 @@ class StockTicketController extends Controller
         return new PostResource(true, 'Stock de ticket supprimé avec succès', null);
     }
 
-    public function imprimerEtatStockTickets()
+    public function imprimerEtatStockTickets(Request $request)
     {
         $stock_tickets = StockTicket::with('couponTicket', 'compagnie')
         ->latest()

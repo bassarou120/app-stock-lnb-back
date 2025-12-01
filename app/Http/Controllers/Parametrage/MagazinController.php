@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 class MagazinController extends Controller
 {
     // Afficher la liste des magasins
-    public function index()
+    public function index(Request $request)
     {
         $magazins = Magazin::latest()->where('isdeleted', false)->paginate(100);
         
@@ -87,7 +87,7 @@ class MagazinController extends Controller
     }
 
     // Supprimer un magasin
-    public function destroy(Magazin $magazin)
+    public function destroy(Magazin $magazin, Request $request)
     {
         $magazin->isdeleted = true;
         $magazin->save();

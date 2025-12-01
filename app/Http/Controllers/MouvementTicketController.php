@@ -26,7 +26,7 @@ use Illuminate\Validation\ValidationException; // Ajout pour gérer spécifiquem
 class MouvementTicketController extends Controller
 {
     // Afficher la liste des mouvements
-    public function indexEntreeTicket()
+    public function indexEntreeTicket(Request $request)
     {
         // Récupérer l'ID du type de mouvement "Entrée de Ticket"
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Entrée de Ticket')->first();
@@ -38,6 +38,14 @@ class MouvementTicketController extends Controller
                 ->where('isdeleted', false)
                 ->latest()
                 ->paginate(1000);
+
+            LogJournalisation::create([
+                'action'     => 'Consultation des mouvements "Entrée de Ticket"',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => auth()->id(),
+                'date_action'=> now(),
+            ]);
 
             return new PostResource(true, 'Liste des mouvements d\'Entrée de Ticket', $mouvements);
         }
@@ -299,7 +307,7 @@ class MouvementTicketController extends Controller
 
     //Sortie de ticket
     // Afficher la liste des mouvements de sortie des tickets
-    public function indexSortieTicket()
+    public function indexSortieTicket(Request $request)
     {
         // Récupérer l'ID du type de mouvement "Sortie de Ticket"
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Ticket')->first();
@@ -1057,7 +1065,13 @@ class MouvementTicketController extends Controller
 
         Log::info('Fin du rapport périodique.');
       
-
+        LogJournalisation::create([
+            'action'     => "Génération et impression du rapport périodique (PDF) [ID: {$id}, Fiche: {$numeroFiche}]",
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
         return new PostResource(true, 'Rapport généré avec succès', $rapport);
     }
 
@@ -1240,6 +1254,13 @@ class MouvementTicketController extends Controller
         $finalDetailsForTable2 = $this->aggregateFinalDetails($globalDetails);
 
         Log::info('Fin du rapport périodique (montants).');
+        LogJournalisation::create([
+            'action'     => "Génération et impression du rapport périodique (Montants) (PDF) [ID: {$id}, Fiche: {$numeroFiche}]",
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
         
         // RETOURNER LES DEUX JEUX DE DONNÉES (Tableau 1 et Tableau 2)
         return new PostResource(true, 'Rapport généré avec succès', [
@@ -1280,6 +1301,13 @@ class MouvementTicketController extends Controller
         $pdf = PDF::loadView('pdf.rapport-periodique', compact('rapport', 'titre'));
 
         Log::info("PDF généré, envoi de la réponse.");
+        LogJournalisation::create([
+            'action'     => "Génération et impression du rapport périodique (PDF) [ID: {$id}, Fiche: {$numeroFiche}]",
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
 
         return $pdf->download('rapport-periodique-' . $annee . '-' . $periode . '.pdf');
     }

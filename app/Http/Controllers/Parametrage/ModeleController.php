@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 class ModeleController extends Controller
 {
     // Afficher la liste des modèles
-    public function index()
+    public function index(Request $request)
     {
         $modeles = Modele::latest()->where('isdeleted', false)->paginate(100);
         LogJournalisation::create([
@@ -68,7 +68,7 @@ class ModeleController extends Controller
     }
 
     // Supprimer un modèle
-    public function destroy(Modele $modele)
+    public function destroy(Modele $modele, Request $request)
     {
         $modele->isdeleted = true;
         $modele->save();

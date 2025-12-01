@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 class UniteDeMesureController extends Controller
 {
     // Afficher la liste des UniteDeMesures
-    public function index()
+    public function index(Request $request)
     {
         $uniteDeMesures = UniteDeMesure::latest()->where('isdeleted', false)->paginate(100);
         LogJournalisation::create([
@@ -78,7 +78,7 @@ class UniteDeMesureController extends Controller
     }
 
     // Supprimer un unite_de_mesure
-    public function destroy(UniteDeMesure $unite_de_mesure)
+    public function destroy(UniteDeMesure $unite_de_mesure, Request $request)
     {
         $unite_de_mesure->isdeleted = true;
         $unite_de_mesure->save();

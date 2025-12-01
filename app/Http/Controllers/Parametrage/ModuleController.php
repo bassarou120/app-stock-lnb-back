@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Auth;
 class ModuleController extends Controller
 {
     // Liste des modules
-    public function index()
+    public function index(Request $request)
     {
         $modules = Module::latest()->where('isdeleted', false)->paginate(200);
         LogJournalisation::create([
@@ -82,7 +82,7 @@ class ModuleController extends Controller
     }
 
     // Suppression d'un module
-    public function destroy(Module $module)
+    public function destroy(Module $module, Request $request)
     {
         $module->isdeleted = true;
         $module->save();

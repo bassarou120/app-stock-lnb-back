@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 class TypeInterventionController extends Controller
 {
     // Afficher la liste des types d'intervention
-    public function index()
+    public function index(Request $request)
     {
         $types = TypeIntervention::latest()
         ->where('isdeleted', false)
@@ -99,7 +99,7 @@ class TypeInterventionController extends Controller
     }
 
     // Supprimer un type d'intervention
-    public function destroy(TypeIntervention $type_intervention)
+    public function destroy(TypeIntervention $type_intervention, Request $request)
     {
         $type_intervention->isdeleted = true;
         $type_intervention->save();

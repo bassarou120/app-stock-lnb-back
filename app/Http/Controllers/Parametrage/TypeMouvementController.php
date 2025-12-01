@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 class TypeMouvementController extends Controller
 {
     // Afficher la liste des types de mouvement
-    public function index()
+    public function index(Request $request)
     {
         $typesMouvement = TypeMouvement::latest()->where('isdeleted', false)->paginate(100);
         LogJournalisation::create([
@@ -82,7 +82,7 @@ class TypeMouvementController extends Controller
     }
 
     // Supprimer un type de mouvement
-    public function destroy(TypeMouvement $typeMouvement)
+    public function destroy(TypeMouvement $typeMouvement, Request $request)
     {
         $typeMouvement->isdeleted = true;
         $typeMouvement->save();

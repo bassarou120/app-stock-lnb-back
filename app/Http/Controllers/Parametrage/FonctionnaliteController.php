@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 class FonctionnaliteController extends Controller
 {
     // Afficher une liste paginée des fonctionnalités
-    public function index()
+    public function index(Request $request)
     {
         $fonctionnalites = Fonctionnalite::with('module')->where('isdeleted', false)->latest()->paginate(200);
         LogJournalisation::create([
@@ -88,7 +88,7 @@ class FonctionnaliteController extends Controller
     }
 
     // Supprimer une fonctionnalité
-    public function destroy(Fonctionnalite $fonctionnalite)
+    public function destroy(Fonctionnalite $fonctionnalite, Request $request)
     {
         $fonctionnalite->isdeleted = true;
         $fonctionnalite->save();

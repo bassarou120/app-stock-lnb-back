@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Auth;
 class CouponTicketController extends Controller
 {
     // Afficher la liste des coupon_tickets
-    public function index()
+    public function index(Request $request)
     {
         LogJournalisation::create([
             "action"      => "Consultation de la liste des coupon tickets",

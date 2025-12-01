@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Auth;
 class FournisseurController extends Controller
 {
     // Afficher la liste des fournisseurs
-    public function index()
+    public function index(Request $request)
     {
         $fournisseurs = Fournisseur::latest()->where('isdeleted', false)->paginate(100);
         LogJournalisation::create([
@@ -88,7 +88,7 @@ class FournisseurController extends Controller
     }
 
     // Supprimer un fournisseur
-    public function destroy(Fournisseur $fournisseur)
+    public function destroy(Fournisseur $fournisseur, Request $request)
     {
         $fournisseur->isdeleted = true;
         $fournisseur->save();
@@ -102,7 +102,7 @@ class FournisseurController extends Controller
         return new PostResource(true, 'Fournisseur supprimé avec succès', null);
     }
 
-    public function imprimer()
+    public function imprimer(Request $request)
     {
         $fournisseurs = Fournisseur::all()->where('isdeleted', false);
 

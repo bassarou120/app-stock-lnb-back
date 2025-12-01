@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 class TypeImmoController extends Controller
 {
     // Afficher la liste des types d'immo
-    public function index()
+    public function index(Request $request)
     {
         $type_immos = TypeImmo::latest()->where('isdeleted', false)->paginate(100);
         LogJournalisation::create([
@@ -85,7 +85,7 @@ class TypeImmoController extends Controller
     }
 
     // Supprimer un type d'immo
-    public function destroy(TypeImmo $type_immo)
+    public function destroy(TypeImmo $type_immo, Request $request)
     {
         $type_immo->isdeleted = true;
         $type_immo->save();

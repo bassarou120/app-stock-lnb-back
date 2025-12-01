@@ -43,7 +43,7 @@ use Illuminate\Support\Facades\Response;
 class MouvementStockController extends Controller
 {
     // Afficher la liste des mouvements
-    public function indexEntreeStock()
+    public function indexEntreeStock(Request $request)
     {
         // Récupérer l'ID du type de mouvement "Entrée de Stock"
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Entrée de Stock')->first();
@@ -480,7 +480,7 @@ class MouvementStockController extends Controller
 
 
     //delete entrée
-    public function deleteEntreeStock($id)
+    public function deleteEntreeStock($id, Request $request)
     {
         $mouvement = MouvementStock::find($id);
 
@@ -963,7 +963,7 @@ class MouvementStockController extends Controller
         return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Stock".', []);
     } */
 
-    public function indexSortieStockGrouped()
+    public function indexSortieStockGrouped(Request $request)
     {
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Stock')->first();
 
@@ -1028,7 +1028,7 @@ class MouvementStockController extends Controller
 
 
     // index sortieStock
-    public function indexSortieStock()
+    public function indexSortieStock(Request $request)
     {
         // Récupérer l'ID du type de mouvement "Sortie de Stock"
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Stock')->first();
@@ -1065,7 +1065,7 @@ class MouvementStockController extends Controller
     /**
      * Imprimer la liste des sorties de stock en PDF
      */
-    public function imprimerSortiesStock()
+    public function imprimerSortiesStock(Request $request)
     {
         try {
             // Récupérer l'ID du type de mouvement "Sortie de Stock"
@@ -1656,7 +1656,7 @@ class MouvementStockController extends Controller
 
 
 
-    public function deleteSortieStock($id)
+    public function deleteSortieStock($id, Request $request)
     {
         // Trouver le mouvement
         $mouvement = MouvementStock::find($id);
@@ -1743,7 +1743,7 @@ class MouvementStockController extends Controller
      * @param string $codeMouvement
      * @return \Illuminate\Http\Response
      */
-    public function genererFicheDemande($codeMouvement)
+    public function genererFicheDemande($codeMouvement, Request $request)
     {
 
         // Existing logic from your request
@@ -1789,7 +1789,7 @@ class MouvementStockController extends Controller
         return $pdf->download('Fiche_Demande_Sortie_' . $codeMouvement . '_' . $numeroFiche . '.pdf');
     }
 
-    public function genererFicheIndividuelle($id)
+    public function genererFicheIndividuelle($id, Request $request)
     {
         $mouvement = MouvementStock::with('article', 'employe', 'bureau')
             ->find($id);

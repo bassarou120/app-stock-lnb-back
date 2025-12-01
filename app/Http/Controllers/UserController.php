@@ -20,13 +20,21 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
 
         $users = User::with('role')
             ->orderBy('created_at', 'desc')
             ->where('isdeleted', false)
             ->paginate(10);
+
+            LogJournalisation::create([
+                'action'     => "Consultation de la liste des utilisateurs",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => auth()->id(),
+                'date_action'=> now(),
+            ]);
         return response()->json($users);
     }
 

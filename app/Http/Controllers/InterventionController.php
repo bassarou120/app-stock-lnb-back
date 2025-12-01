@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 class InterventionController extends Controller
 {
    // Afficher la liste des intervention
-   public function index()
+   public function index(Request $request)
    {
        $interventions = Intervention::with([
            'typeIntervention',
@@ -36,7 +36,7 @@ class InterventionController extends Controller
        return new PostResource(true, 'Liste des interventions', $interventions);
    }
 
-    public function Intervention_immo()
+    public function Intervention_immo(Request $request)
     {
         $interventions = TypeIntervention::where("applicable_seul_vehicule", false)
         ->latest()
@@ -114,7 +114,7 @@ class InterventionController extends Controller
    }
 
    // Supprimer une intervention
-   public function destroy(Intervention $intervention)
+   public function destroy(Intervention $intervention, Request $request)
    {
        $intervention->isdeleted = true;
        $intervention->save();
@@ -130,7 +130,7 @@ class InterventionController extends Controller
        return new PostResource(true, 'intervention supprimée avec succès', null);
    }
 
-   public function imprimerInterventions()
+   public function imprimerInterventions(Request $request)
     {
         $interventions = Intervention::with([
             'typeIntervention',

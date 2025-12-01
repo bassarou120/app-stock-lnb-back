@@ -17,14 +17,14 @@ class Article_ExoController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         // Récupère toutes les entrées de la table pivot
         $articleExercices = ArticleExercice::all();
 
         // 📝 LOG → Consultation de la liste des articles
         LogJournalisation::create([
-            'action'     => 'Consultation de la liste des articles',
+            'action'     => 'Consultation de la liste des articles par exercices',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
             'user_id'    => Auth::id(),
@@ -35,7 +35,7 @@ class Article_ExoController extends Controller
         return new PostResource(true, 'Liste des articles', $articleExercices);
     }
 
-    public function articlesExercices()
+    public function articlesExercices(Request $request)
     {
         // Eager load the 'article' and 'exercice' relationships.
         // This fetches the related data in a single query for each relationship.
@@ -97,7 +97,7 @@ class Article_ExoController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Article $article, Exercice $exercice)
+    public function show(Article $article, Exercice $exercice, Request $request)
     {
         // Recherche l'entrée spécifique en utilisant les IDs des deux clés
         $articleExercice = ArticleExercice::where('id_article', $article->id)
@@ -163,7 +163,7 @@ class Article_ExoController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(string $id, Request $request)
     {
         //
     }

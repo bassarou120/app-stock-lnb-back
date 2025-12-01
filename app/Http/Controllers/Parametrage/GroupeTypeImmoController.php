@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Auth;
 class GroupeTypeImmoController extends Controller
 {
     // Afficher la liste des groupes de type immo
-    public function index()
+    public function index(Request $request)
     {
         $groupe_type_immos = GroupeTypeImmo::latest()->where('isdeleted', false)->paginate(1000);
 
@@ -89,7 +89,7 @@ class GroupeTypeImmoController extends Controller
     }
 
     // Supprimer un groupe de type immo
-    public function destroy(GroupeTypeImmo $groupe_type_immo)
+    public function destroy(GroupeTypeImmo $groupe_type_immo, Request $request)
     {
         $groupe_type_immo->isdeleted = true;
         $groupe_type_immo->save();

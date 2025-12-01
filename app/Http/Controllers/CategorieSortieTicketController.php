@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
 class CategorieSortieTicketController extends Controller
 {
      // Afficher la liste des communes
-    public function index()
+    public function index(Request $request)
     {
         $categorieSortieTicket = CategorieSortieTicket::latest()->where('isdeleted', false)->paginate(1000);
 
@@ -94,7 +94,7 @@ class CategorieSortieTicketController extends Controller
     }
 
     // Supprimer une categorieSortieTicket
-    public function destroy(CategorieSortieTicket $categorieSortieTicket)
+    public function destroy(CategorieSortieTicket $categorieSortieTicket, Request $request)
     {
         // Supprimer la categorieSortieTicket
         $categorieSortieTicket->isdeleted = true;

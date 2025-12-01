@@ -25,7 +25,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 class ImmobilisationController extends Controller
 {
     // ... [index] inchangé
-    public function index()
+    public function index(Request $request)
     {
         $immos = Immobilisation::with([
             'vehicule',
@@ -42,6 +42,14 @@ class ImmobilisationController extends Controller
             })
             ->latest()
             ->paginate(100);
+
+            LogJournalisation::create([
+                'action'     => "Affichage de la liste des immobilisations",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => Auth::id(),
+                'date_action'=> now(),
+            ]);
 
         return new PostResource(true, 'Liste des immobilisations', $immos);
     }
@@ -260,7 +268,7 @@ class ImmobilisationController extends Controller
     }
 
     // ... [imprimerImmos] inchangé
-    public function imprimerImmos()
+    public function imprimerImmos(Request $request)
     {
         // Récupère toutes les immobilisations avec leurs relations nécessaires
         $immobilisations = Immobilisation::with([
@@ -277,10 +285,17 @@ class ImmobilisationController extends Controller
             ->get();
 
         $pdf = \Pdf::loadView('pdf.immobilisations', compact('immobilisations'));
+        LogJournalisation::create([
+            'action'     => "Imprimer liste immobilisations",
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => Auth::id(),
+            'date_action'=> now(),
+        ]);
 
         return $pdf->download('liste_immobilisations.pdf');
     }
-    // ...
+   
 
     public function import(Request $request)
     {

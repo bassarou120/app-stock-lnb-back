@@ -14,7 +14,7 @@ use App\Models\LogJournalisation; // Ajout du modèle de journalisation
 class TrajetController extends Controller
 {
     // Afficher tous les trajets
-    public function index()
+    public function index(Request $request)
     {
         $trajet = Trajet::with([
             'depart',
@@ -22,6 +22,13 @@ class TrajetController extends Controller
         ])
         ->where('isdeleted', false)
         ->latest()->paginate(1000);
+        LogJournalisation::create([
+            'action'     => "Consultation des trajets",
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => auth()->id(),
+            'date_action'=> now(),
+        ]);
 
         return new PostResource(true, 'Liste des trajets', $trajet);
     }

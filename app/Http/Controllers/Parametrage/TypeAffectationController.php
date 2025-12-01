@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 class TypeAffectationController extends Controller
 {
     // Afficher la liste des types d'affectation
-    public function index()
+    public function index(Request $request)
     {
         $typesAffectation = TypeAffectation::latest()->where('isdeleted', false)->paginate(100);
 
@@ -86,7 +86,7 @@ class TypeAffectationController extends Controller
     }
 
     // Supprimer un type d'affectation
-    public function destroy(TypeAffectation $typeAffectation)
+    public function destroy(TypeAffectation $typeAffectation, Request $request)
     {
         $typeAffectation->isdeleted = true;
         $typeAffectation->save();

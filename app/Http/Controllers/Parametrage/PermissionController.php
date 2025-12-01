@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
 
 class PermissionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $permissions = Permission::with(['role', 'module', 'fonctionnalite'])->where('isdeleted', false)->latest()->paginate(200);
 
@@ -98,7 +98,7 @@ class PermissionController extends Controller
     }
 
     // Supprimer une permission
-    public function destroy(Permission $permission)
+    public function destroy(Permission $permission, Request $request)
     {
         $permission->isdeleted = true;
         $permission->save();

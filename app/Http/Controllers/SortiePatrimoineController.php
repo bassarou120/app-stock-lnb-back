@@ -20,7 +20,7 @@ class SortiePatrimoineController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         // 1. Trouver l'exercice ouvert
         $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
@@ -39,6 +39,14 @@ class SortiePatrimoineController extends Controller
             ->where('exercice_id', $exerciceId) // <-- C'est ici qu'on ajoute le filtre
             ->latest()
             ->paginate(1000); 
+
+            LogJournalisation::create([
+                'action'     => "Consultation des sorties de patrimoine",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => auth()->id(),
+                'date_action'=> now(),
+            ]);
 
         // 3. Retourner la réponse
         return new PostResource(true, 'Liste des sorties de patrimoine pour l\'exercice ouvert', $sortiespatrimoines);

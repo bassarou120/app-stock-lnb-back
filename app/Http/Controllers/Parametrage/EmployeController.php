@@ -48,7 +48,7 @@ class EmployeController extends Controller
      *     )
      * )
      */
-    public function index()
+    public function index(Request $request)
     {
         $employes = Employe::latest()->where('isdeleted', false)->paginate(500);
         LogJournalisation::create([
@@ -286,7 +286,7 @@ class EmployeController extends Controller
      * )
      */
 
-    public function destroy(Employe $employe)
+    public function destroy(Employe $employe, Request $request)
     {
         $employe->isdeleted = true;
         $employe->save();
@@ -315,7 +315,7 @@ class EmployeController extends Controller
      *     )
      * )
      */
-    public function imprimer()
+    public function imprimer(Request $request)
     {
         $employes = Employe::all()->where('isdeleted', false);
 

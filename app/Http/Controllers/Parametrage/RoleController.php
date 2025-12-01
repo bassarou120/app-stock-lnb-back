@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 class RoleController extends Controller
 {
     // Afficher une liste paginée des rôles
-    public function index()
+    public function index(Request $request)
     {
         $roles = Role::latest()->where('isdeleted', false)->paginate(200);
 
@@ -99,7 +99,7 @@ class RoleController extends Controller
     }
 
     // Supprimer un rôle
-    public function destroy(Role $role)
+    public function destroy(Role $role, Request $request)
     {
         $role->isdeleted = true;
         $role->save();
