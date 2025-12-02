@@ -52,7 +52,7 @@ class UserController extends Controller
         try {
             // On trouve l'employé pour récupérer ses informations
             $employe = Employe::findOrFail($validatedData['employe_id']);
-            
+
             // Création de l'utilisateur
             $user = User::create([
                 'name' => $employe->nom,
@@ -70,12 +70,20 @@ class UserController extends Controller
             // Ici, nous le faisons après la création réussie.
 
             DB::commit();
-            
+
             try {
                 Mail::to($user->email)->send(new UserRegisteredMail($user, $generatedPassword));
                 $emailStatus = 'E-mail envoyé.';
             } catch (\Exception $e) {
                 $emailStatus = 'Échec de l\'envoi de l\'e-mail: ' . $e->getMessage();
+                LogJournalisation::create([
+                    'action'     => 'Création utilisateur échouée',
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->header('User-Agent'),
+                    'user_id'    => null,
+                    'date_action'=> now(),
+                    'details'    => "User , Email: {$user->email}"
+                ]);
             }
 
             // 📝 LOG → Création réussie
@@ -92,7 +100,7 @@ class UserController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             // 📝 LOG → Création échouée (exception)
             $employeId = $validatedData['employe_id'] ?? 'N/A';
             LogJournalisation::create([
@@ -103,7 +111,7 @@ class UserController extends Controller
                 'date_action'=> now(),
                 'details'    => "Employé ID: {$employeId}. Erreur: " . $e->getMessage()
             ]);
-            
+
             return response()->json(['message' => 'Erreur lors de la création de l\'utilisateur.'], 500);
         }
     }
@@ -223,7 +231,7 @@ class UserController extends Controller
             // Suppression logique (Soft Delete)
             $user->isdeleted = true;
             $user->save();
-            
+
             DB::commit();
 
             // 📝 LOG → Suppression réussie

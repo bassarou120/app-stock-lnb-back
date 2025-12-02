@@ -26,6 +26,8 @@ return new class extends Migration
                 ->onUpdate('cascade')
                 ->onDelete('set null');
 
+                $table->string('user_name')->nullable();
+
             $table->timestamps();
         });
     }

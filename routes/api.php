@@ -307,4 +307,3 @@ Route::prefix('logs')->group(function () {
     Route::get('/{id}', [LogJournalisationController::class, 'show']);
     Route::delete('/{id}', [LogJournalisationController::class, 'destroy']);
 });
-
