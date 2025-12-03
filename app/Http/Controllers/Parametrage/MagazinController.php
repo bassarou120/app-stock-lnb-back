@@ -23,7 +23,8 @@ class MagazinController extends Controller
             "action"      => "Affichage de la liste des magasins",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         
@@ -51,7 +52,8 @@ class MagazinController extends Controller
             "action"      => "Création de magasin",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         
@@ -79,7 +81,8 @@ class MagazinController extends Controller
             "action"      => "Mise à jour de magasin ID: " . $magazin->id,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         
@@ -96,7 +99,8 @@ class MagazinController extends Controller
             "action"      => "Suppression de magasin ID: " . $magazin->id,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         

@@ -22,7 +22,8 @@ class CouponTicketController extends Controller
             "action"      => "Consultation de la liste des coupon tickets",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -46,7 +47,8 @@ class CouponTicketController extends Controller
             "action"      => "Consultation de la liste des coupons avec compagnies",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -77,7 +79,8 @@ class CouponTicketController extends Controller
             "action"      => "Création d'un nouveau coupon ticket",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -109,7 +112,8 @@ class CouponTicketController extends Controller
             "action"      => "Modification d'un coupon ticket",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -127,7 +131,8 @@ class CouponTicketController extends Controller
             "action"      => "Suppression d'un coupon ticket",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         // Retourner la réponse formatée avec PostResource, indiquant que la suppression a réussi

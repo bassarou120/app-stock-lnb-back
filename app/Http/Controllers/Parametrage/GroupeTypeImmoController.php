@@ -25,7 +25,8 @@ class GroupeTypeImmoController extends Controller
             "action"      => "Affichage de la liste des groupes de type immo",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -53,7 +54,8 @@ class GroupeTypeImmoController extends Controller
             "action"      => "Création de groupe de type immo",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -81,7 +83,8 @@ class GroupeTypeImmoController extends Controller
             "action"      => "Mise à jour de groupe de type immo ID: " . $groupe_type_immo->id,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -98,7 +101,8 @@ class GroupeTypeImmoController extends Controller
             "action"      => "Suppression de groupe de type immo ID: " . $groupe_type_immo->id,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         

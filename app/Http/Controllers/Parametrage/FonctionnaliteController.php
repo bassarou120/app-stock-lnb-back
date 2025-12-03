@@ -22,7 +22,8 @@ class FonctionnaliteController extends Controller
             "action"      => "Affichage de la liste des fonctionnalités",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Liste des fonctionnalités', $fonctionnalites);
@@ -51,7 +52,8 @@ class FonctionnaliteController extends Controller
             "action"      => "Création de fonctionnalité",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -80,7 +82,8 @@ class FonctionnaliteController extends Controller
             "action"      => "Mise à jour de fonctionnalité ID: " . $fonctionnalite->id,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -97,7 +100,8 @@ class FonctionnaliteController extends Controller
             "action"      => "Suppression de fonctionnalité ID: " . $fonctionnalite->id,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Fonctionnalité supprimée avec succès', null);

@@ -23,7 +23,8 @@ class TypeAffectationController extends Controller
             "action"      => "Affichage de la liste des types d'affectation",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Liste des types d\'affectation', $typesAffectation);
@@ -50,7 +51,8 @@ class TypeAffectationController extends Controller
             "action"      => "Création d'un nouveau type d'affectation",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -78,7 +80,8 @@ class TypeAffectationController extends Controller
             "action"      => "Mise à jour d'un type d'affectation",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -94,7 +97,8 @@ class TypeAffectationController extends Controller
             "action"      => "Suppression d'un type d'affectation",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Type d\'affectation supprimé avec succès', null);

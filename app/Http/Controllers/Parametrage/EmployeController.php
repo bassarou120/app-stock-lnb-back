@@ -55,7 +55,8 @@ class EmployeController extends Controller
             "action"      => "Affichage de la liste des employés",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Liste des employés', $employes);
@@ -185,7 +186,8 @@ class EmployeController extends Controller
             "action"      => "Création d'un employé",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -258,7 +260,8 @@ class EmployeController extends Controller
             "action"      => "Mise à jour d'un employé",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -294,7 +297,8 @@ class EmployeController extends Controller
             "action"      => "Suppression d'un employé",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Employe supprimé avec succès', null);
@@ -324,7 +328,8 @@ class EmployeController extends Controller
             "action"      => "Impression de la liste des employés",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return $pdf->download('liste_personnels.pdf');

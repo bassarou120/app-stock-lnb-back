@@ -22,7 +22,8 @@ class TypeImmoController extends Controller
             "action"      => "Affichage de la liste des types d'immo",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Liste des types d\'immos', $type_immos);
@@ -49,7 +50,8 @@ class TypeImmoController extends Controller
             "action"      => "Création du type immo : " . $type_immo->libelle_typeImmo . " (Compte: " . $type_immo->compte . ", ID: " . $type_immo->id . ")",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -77,7 +79,8 @@ class TypeImmoController extends Controller
             "action"      => "Mise à jour du type immo : " . $type_immo->libelle_typeImmo . " (Compte: " . $type_immo->compte . ", ID: " . $type_immo->id . ")",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -93,7 +96,8 @@ class TypeImmoController extends Controller
             "action"      => "Suppression du type immo : " . $type_immo->libelle_typeImmo . " (Compte: " . $type_immo->compte . ", ID: " . $type_immo->id . ")",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Type d\'immo supprimé avec succès', null);

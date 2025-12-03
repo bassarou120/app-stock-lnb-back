@@ -25,7 +25,8 @@ class TypeInterventionController extends Controller
             "action"      => "Affichage de la liste des types d'intervention",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -59,7 +60,8 @@ class TypeInterventionController extends Controller
             "action"      => "Création du type d'intervention : " . $type->libelle_type_intervention,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -92,7 +94,8 @@ class TypeInterventionController extends Controller
             "action"      => "Mise à jour du type d'intervention : " . $type_intervention->libelle_type_intervention,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Type d\'intervention mis à jour avec succès', $type_intervention);
@@ -107,7 +110,8 @@ class TypeInterventionController extends Controller
             "action"      => "Suppression du type d'intervention : " . $type_intervention->libelle_type_intervention,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Type d\'intervention supprimé avec succès', null);
