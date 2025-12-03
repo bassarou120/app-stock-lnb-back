@@ -55,7 +55,8 @@ class EntrerController extends Controller
             "action"      => "Consulatat du rapport des entrées de stock",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 

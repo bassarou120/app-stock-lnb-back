@@ -113,10 +113,11 @@ class StockRapportController extends Controller
             }
 
             LogJournalisation::create([
-                "action"      => "Consultation du rapport des stock",
+                "action"      => "Consultation du rapport des stock individuel",
                 "ip_address"  => request()->ip(),
                 "user_agent"  => request()->userAgent(),
-                "user_id"     => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 "date_action" => now()
             ]);
 
@@ -145,6 +146,16 @@ class StockRapportController extends Controller
             if ($request->filled('id_Article')) {
                 $query->where('id_Article', $request->id_Article);
             }
+
+            LogJournalisation::create([
+                "action"      => "Consultation du rapport des stock d'entrée",
+                "ip_address"  => request()->ip(),
+                "user_agent"  => request()->userAgent(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                "date_action" => now()
+            ]);
+
         } elseif ($request->id_type_rapport === 'sortie') {
             $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Sortie de Stock")->latest()->first();
             if ($type_mouvement) {
@@ -157,6 +168,14 @@ class StockRapportController extends Controller
             if ($request->filled('id_Article')) {
                 $query->where('id_Article', $request->id_Article);
             }
+            LogJournalisation::create([
+                "action"      => "Consultation du rapport des stocks de sortie",
+                "ip_address"  => request()->ip(),
+                "user_agent"  => request()->userAgent(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                "date_action" => now()
+            ]);
         }
 
         $query->with([
@@ -201,7 +220,8 @@ class StockRapportController extends Controller
                             Carbon::parse($request->date_fin)->format('d/m/Y'),
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -217,7 +237,8 @@ class StockRapportController extends Controller
                 "action"      => "Téléchargement du rapport individuel stock article : " . $idArticle,
                 "ip_address"  => request()->ip(),
                 "user_agent"  => request()->userAgent(),
-                "user_id"     => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 "date_action" => now()
             ]);
 
@@ -396,7 +417,8 @@ class StockRapportController extends Controller
             "action"      => "Téléchargement du rapport stock général : " . ucfirst($request->id_type_rapport),
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -497,7 +519,8 @@ class StockRapportController extends Controller
                             " du " . $dateDebut->format('d/m/Y') . " au " . $dateFin->format('d/m/Y'),
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         // ✅ GÉNÉRER LE PDF
@@ -628,7 +651,8 @@ class StockRapportController extends Controller
                             Carbon::parse($dateFin)->format('d/m/Y'),
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 

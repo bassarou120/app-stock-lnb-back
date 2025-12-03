@@ -78,7 +78,8 @@ class RapportParcController extends Controller
                     "action"      => "Génération du rapport : " . ucfirst($typeRapport),
                     "ip_address"  => request()->ip(),
                     "user_agent"  => request()->userAgent(),
-                    "user_id"     => Auth::id(),
+                    'user_id'    => $request->user()->id,
+                    'user_name'   => $request->user()->name,
                     "date_action" => now()
                 ]);
 
@@ -115,7 +116,8 @@ class RapportParcController extends Controller
                     "action"      => "Génération du rapport : " . ucfirst($typeRapport),
                     "ip_address"  => request()->ip(),
                     "user_agent"  => request()->userAgent(),
-                    "user_id"     => Auth::id(),
+                    'user_id'    => $request->user()->id,
+                    'user_name'   => $request->user()->name,
                     "date_action" => now()
                 ]);
 
@@ -155,7 +157,8 @@ class RapportParcController extends Controller
                         "action"      => "Génération du rapport : " . ucfirst($typeRapport),
                         "ip_address"  => request()->ip(),
                         "user_agent"  => request()->userAgent(),
-                        "user_id"     => Auth::id(),
+                        'user_id'    => $request->user()->id,
+                        'user_name'   => $request->user()->name,
                         "date_action" => now()
                     ]);
                     
@@ -234,7 +237,8 @@ class RapportParcController extends Controller
                     "action"      => "Impression du rapport des: " . ucfirst($typeRapport),
                     "ip_address"  => request()->ip(),
                     "user_agent"  => request()->userAgent(),
-                    "user_id"     => Auth::id(),
+                    'user_id'    => $request->user()->id,
+                    'user_name'   => $request->user()->name,
                     "date_action" => now()
                 ]);
 
@@ -286,7 +290,8 @@ class RapportParcController extends Controller
                     "action"      => "Impression du rapport des: " . ucfirst($typeRapport),
                     "ip_address"  => request()->ip(),
                     "user_agent"  => request()->userAgent(),
-                    "user_id"     => Auth::id(),
+                    'user_id'    => $request->user()->id,
+                    'user_name'   => $request->user()->name,
                     "date_action" => now()
                 ]);
                 break;
@@ -336,7 +341,8 @@ class RapportParcController extends Controller
                         "action"      => "Impression du rapport des: " . ucfirst($typeRapport),
                         "ip_address"  => request()->ip(),
                         "user_agent"  => request()->userAgent(),
-                        "user_id"     => Auth::id(),
+                        'user_id'    => $request->user()->id,
+                        'user_name'   => $request->user()->name,
                         "date_action" => now()
                     ]);
 
