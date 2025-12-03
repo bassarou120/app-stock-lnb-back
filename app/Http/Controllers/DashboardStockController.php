@@ -94,4 +94,5 @@ class DashboardStockController extends Controller
             'total_demandes_accorde'               => $total_demandes_accorde,
         ]);
     }
+    
 }

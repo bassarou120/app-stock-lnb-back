@@ -47,7 +47,8 @@ class ImmobilisationController extends Controller
                 'action'     => "Affichage de la liste des immobilisations",
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -87,7 +88,8 @@ class ImmobilisationController extends Controller
                 'action'     => 'Échec de validation (création immobilisation)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
                 'details'    => json_encode($validator->errors())
             ]);
@@ -127,7 +129,8 @@ class ImmobilisationController extends Controller
                 'action'     => 'Création immobilisation réussie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
                 'details'    => "Immo ID: {$immo->id}, Code: {$immo->code}"
             ]);
@@ -143,7 +146,8 @@ class ImmobilisationController extends Controller
                 'action'     => 'Création immobilisation échouée (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
                 'details'    => $e->getMessage()
             ]);
@@ -190,7 +194,9 @@ class ImmobilisationController extends Controller
                 'action'     => 'Échec de validation (mise à jour immobilisation)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'  => $request->user()->name,
+                'date_action'=> now(),
                 'date_action'=> now(),
                 'details'    => "Immo ID: {$immobilisation->id}, Erreurs: " . json_encode($validator->errors())
             ]);
@@ -205,7 +211,8 @@ class ImmobilisationController extends Controller
                 'action'     => 'Mise à jour immobilisation réussie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
                 'details'    => "Immo ID: {$immobilisation->id}, Code: {$immobilisation->code}"
             ]);
@@ -217,7 +224,8 @@ class ImmobilisationController extends Controller
                 'action'     => 'Mise à jour immobilisation échouée (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
                 'details'    => "Immo ID: {$immobilisation->id}, Erreur: " . $e->getMessage()
             ]);
@@ -242,7 +250,8 @@ class ImmobilisationController extends Controller
                 'action'     => 'Suppression immobilisation réussie (soft delete)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
                 'details'    => "Immo ID: {$immobilisation->id}, Code: {$immobilisation->code}"
             ]);
@@ -254,7 +263,8 @@ class ImmobilisationController extends Controller
                 'action'     => 'Suppression immobilisation échouée (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
                 'details'    => "Immo ID: {$immobilisation->id}, Erreur: " . $e->getMessage()
             ]);
@@ -289,7 +299,8 @@ class ImmobilisationController extends Controller
             'action'     => "Imprimer liste immobilisations",
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -310,7 +321,8 @@ class ImmobilisationController extends Controller
                 'action'     => 'Échec de validation (import immobilisations)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
                 'details'    => json_encode($validator->errors())
             ]);
@@ -356,7 +368,8 @@ class ImmobilisationController extends Controller
                         'action'     => 'Import - Ligne ignorée (colonnes insuffisantes)',
                         'ip_address' => $request->ip(),
                         'user_agent' => $request->header('User-Agent'),
-                        'user_id'    => Auth::id(),
+                        'user_id'    => $request->user()->id,
+                        'user_name'   => $request->user()->name,
                         'date_action'=> now(),
                         'details'    => $msg
                     ]);
@@ -406,7 +419,8 @@ class ImmobilisationController extends Controller
                         'action'     => 'Import - Ligne ignorée (doublon)',
                         'ip_address' => $request->ip(),
                         'user_agent' => $request->header('User-Agent'),
-                        'user_id'    => Auth::id(),
+                        'user_id'    => $request->user()->id,
+                        'user_name'   => $request->user()->name,
                         'date_action'=> now(),
                         'details'    => $msg
                     ]);
@@ -427,7 +441,8 @@ class ImmobilisationController extends Controller
                         'action'     => 'Import - Ligne ignorée (groupe vide)',
                         'ip_address' => $request->ip(),
                         'user_agent' => $request->header('User-Agent'),
-                        'user_id'    => Auth::id(),
+                        'user_id'    => $request->user()->id,
+                        'user_name'   => $request->user()->name,
                         'date_action'=> now(),
                         'details'    => $msg
                     ]);
@@ -478,7 +493,8 @@ class ImmobilisationController extends Controller
                         'action'     => 'Import - Ligne ignorée (date invalide)',
                         'ip_address' => $request->ip(),
                         'user_agent' => $request->header('User-Agent'),
-                        'user_id'    => Auth::id(),
+                        'user_id'    => $request->user()->id,
+                        'user_name'   => $request->user()->name,
                         'date_action'=> now(),
                         'details'    => $msg . " Dates: $date_mouvement, $date_acquisition, $date_mise_en_service"
                     ]);
@@ -518,7 +534,8 @@ class ImmobilisationController extends Controller
                 'action'     => 'Import immobilisations terminé',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
                 'details'    => "Importé: $importedCount, Ignoré: " . count($ignoredRows)
             ]);
@@ -535,7 +552,8 @@ class ImmobilisationController extends Controller
                 'action'     => 'Import immobilisations échoué (exception globale)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
                 'details'    => $e->getMessage()
             ]);
@@ -577,7 +595,8 @@ class ImmobilisationController extends Controller
                 'action'     => 'Récupération codes Immo/Véhicule réussie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
                 'details'    => "Nombre de codes: " . count($codesCombinés)
             ]);
@@ -590,7 +609,8 @@ class ImmobilisationController extends Controller
                 'action'     => 'Récupération codes Immo/Véhicule échouée (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
                 'details'    => $e->getMessage()
             ]);
@@ -618,7 +638,8 @@ class ImmobilisationController extends Controller
                 'action'     => 'Recherche désignation réussie (Immo)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
                 'details'    => "Code recherché: $code. Trouvé: Immobilisation ID {$immobilisation->id}"
             ]);
@@ -654,7 +675,8 @@ class ImmobilisationController extends Controller
                 'action'     => 'Recherche désignation réussie (Véhicule)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
                 'details'    => "Code recherché: $code. Trouvé: Véhicule ID {$vehicule->id}"
             ]);
@@ -677,7 +699,8 @@ class ImmobilisationController extends Controller
             'action'     => 'Recherche désignation échouée (non trouvé)',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
             'details'    => "Code recherché: $code. Résultat: Non trouvé."
         ]);

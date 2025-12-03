@@ -53,7 +53,8 @@ class InterventionVehiculeController extends Controller
             'action'     => 'Consultation de la liste des interventions de véhicules',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -71,7 +72,8 @@ class InterventionVehiculeController extends Controller
             'action'     => 'Consultation de la liste des interventions pour véhicules',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => auth()->id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
         return new PostResource(true, 'Liste des interventions immos', $interventions);
@@ -271,6 +273,14 @@ class InterventionVehiculeController extends Controller
 
         // Crée l'intervention avec toutes les données validées
         $interventionVehicule = InterventionVehicule::create($data);
+        LogJournalisation::create([
+            'action'     => 'Création d\'une intervention',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            'date_action'=> now(),
+        ]);
 
         return new PostResource(true, 'intervention créée avec succès', $interventionVehicule);
    }
@@ -338,6 +348,14 @@ class InterventionVehiculeController extends Controller
 
         // Met à jour l’intervention
         $interventionVehicule->update($data);
+        LogJournalisation::create([
+            'action'     => 'Mise à jour d\'une intervention',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            'date_action'=> now(),
+        ]);
 
         return new PostResource(true, 'intervention mise à jour avec succès', $interventionVehicule);
     }
@@ -354,7 +372,8 @@ class InterventionVehiculeController extends Controller
                 'action'     => 'Affichage de la liste des interventions',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -394,7 +413,8 @@ class InterventionVehiculeController extends Controller
                 'action'     => 'Suppression d\'une intervention',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
         ]);
         return response()->json(['message' => 'intervention supprimé avec succès']);
@@ -409,6 +429,14 @@ class InterventionVehiculeController extends Controller
         ->latest()->get();
 
         $pdf = \Pdf::loadView('pdf.interventions_vehicule', compact('interventions'));
+        LogJournalisation::create([
+                'action'     => 'Imprission de la liste des interventions vehicules',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+        ]);
 
         return $pdf->download('liste_interventions_vehicule.pdf');
     }

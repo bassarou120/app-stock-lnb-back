@@ -30,7 +30,8 @@ class ExerciceController extends Controller
                 'action'     => 'Consultation liste des exercices',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -43,7 +44,8 @@ class ExerciceController extends Controller
                 'action'     => 'Erreur consultation exercices : ' . $e->getMessage(),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -67,7 +69,8 @@ class ExerciceController extends Controller
                 'action'     => 'Consultation exercices + articles',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -80,7 +83,8 @@ class ExerciceController extends Controller
                 'action'     => 'Erreur consultation exercices articles : ' . $e->getMessage(),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -126,7 +130,8 @@ class ExerciceController extends Controller
                 'action'     => 'Création exercice ' . $anneeDebut,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -139,7 +144,8 @@ class ExerciceController extends Controller
                 'action'     => 'Erreur création exercice : ' . $e->getMessage(),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -186,7 +192,8 @@ class ExerciceController extends Controller
                 'action'     => 'Modification exercice ID=' . $id,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -199,7 +206,8 @@ class ExerciceController extends Controller
                 'action'     => 'Erreur modification exercice : ' . $e->getMessage(),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -314,7 +322,8 @@ class ExerciceController extends Controller
             'action'     => "Changement de statut de l'exercice ID: {$exercice->id} vers '{$nouvStatut}'",
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -337,7 +346,8 @@ class ExerciceController extends Controller
                 'action'     => 'Suppression exercice ID=' . $id,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -350,11 +360,13 @@ class ExerciceController extends Controller
                 'action'     => 'Erreur suppression exercice : ' . $e->getMessage(),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
             throw $e;
         }
     }
+    
 }

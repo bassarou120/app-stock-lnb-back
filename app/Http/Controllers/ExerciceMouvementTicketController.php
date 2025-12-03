@@ -25,7 +25,8 @@ class ExerciceMouvementTicketController extends Controller
                 'action'     => 'Consultation liste ExerciceMouvementTicket',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -42,7 +43,8 @@ class ExerciceMouvementTicketController extends Controller
                 'action'     => 'Erreur consultation ExerciceMouvementTicket : ' . $e->getMessage(),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -66,7 +68,8 @@ class ExerciceMouvementTicketController extends Controller
                 'action'     => 'Création association ExerciceMouvementTicket',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -79,7 +82,8 @@ class ExerciceMouvementTicketController extends Controller
                 'action'     => 'Erreur création ExerciceMouvementTicket : ' . $e->getMessage(),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -100,7 +104,8 @@ class ExerciceMouvementTicketController extends Controller
                 'action'     => 'Consultation association ID Exercice=' . $exerciceId . ' / Mouvement=' . $mouvementId,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -113,7 +118,8 @@ class ExerciceMouvementTicketController extends Controller
                 'action'     => 'Erreur consultation association Exercice/Mouvement : ' . $e->getMessage(),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -133,7 +139,8 @@ class ExerciceMouvementTicketController extends Controller
                 'action'     => 'Modification association ExerciceMouvementTicket ID=' . $id,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -146,7 +153,8 @@ class ExerciceMouvementTicketController extends Controller
                 'action'     => 'Erreur modification ExerciceMouvementTicket ID=' . $id . ' : ' . $e->getMessage(),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -166,7 +174,8 @@ class ExerciceMouvementTicketController extends Controller
                 'action'     => 'Suppression association ExerciceMouvementTicket ID=' . $id,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -179,7 +188,8 @@ class ExerciceMouvementTicketController extends Controller
                 'action'     => 'Erreur suppression ExerciceMouvementTicket ID=' . $id . ' : ' . $e->getMessage(),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 

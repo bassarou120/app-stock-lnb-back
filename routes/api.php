@@ -58,252 +58,260 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 
-Route::get('/stock/coupon-compagnies', [CouponTicketController::class, 'getCouponTicketsWithCompagnies']);
-Route::apiResource('marques', MarqueController::class);
-Route::apiResource('communes', CommuneController::class);
-Route::apiResource('coupon_tickets', CouponTicketController::class);
-Route::apiResource('stock_coupon_tickets', StockTicketController::class)->except(['show']);
-Route::get('/stock-tickets/imprimer', [StockTicketController::class, 'imprimerEtatStockTickets']);
-Route::apiResource('compagnie_petrolier', CompagniePetrolierController::class);
-Route::get('compagnie_petrolier-imprimer', [CompagniePetrolierController::class, 'imprimer']);
-Route::apiResource('magazins', MagazinController::class);
-Route::apiResource('modeles', ModeleController::class);
-Route::apiResource('type-interventions', TypeInterventionController::class);
-Route::apiResource('categorie-articles', CategorieArticleController::class);
-Route::apiResource('fournisseurs', FournisseurController::class);
-Route::get('fournisseurs-imprimer', [FournisseurController::class, 'imprimer']);
-Route::apiResource('employes', EmployeController::class);
-Route::get('employes-imprimer', [EmployeController::class, 'imprimer']);
-Route::apiResource('type_affectations', TypeAffectationController::class);
-Route::apiResource('type_mouvements', TypeMouvementController::class);
-Route::apiResource('bureaux', BureauController::class);
-Route::apiResource('unite-de-mesure', UniteDeMesureController::class);
-Route::apiResource('status_immos', StatusImmoController::class);
-Route::apiResource('type_immos', TypeImmoController::class);
-Route::apiResource('sous_type_immos', SousTypeImmoController::class);
-Route::apiResource('groupe_type_immos', GroupeTypeImmoController::class);
-Route::apiResource('modules', ModuleController::class);
-Route::apiResource('roles', RoleController::class);
-Route::apiResource('fonctionnalites', FonctionnaliteController::class);
-Route::apiResource('permissions', PermissionController::class);
-Route::post('permissions/toggle', [PermissionController::class, 'togglePermission']);
-Route::apiResource('articles', ArticleController::class);
-Route::get('etat_stock-imprimer', [ArticleController::class, 'imprimer']);
-Route::apiResource('immobilisations', ImmobilisationController::class)->except(['show']);
-Route::get('/immobilisations/imprimer', [ImmobilisationController::class, 'imprimerImmos']);
-Route::apiResource('interventions', InterventionController::class)->except(['show']);
-Route::get('/interventions/imprimer', [InterventionController::class, 'imprimerInterventions']);
-// Route::apiResource('transferts', TransfertController::class);
-Route::apiResource('transferts', TransfertController::class)->except(['show']);
-Route::get('ancien-info/{id}', [TransfertController::class, 'getOldInfo']);
-Route::get('/transferts/imprimer', [TransfertController::class, 'imprimerTransferts']);
-Route::get('etat_stock-imprimer-excel', [ArticleController::class, 'exportArticlesExcel']);
-Route::apiResource('immobilisations', ImmobilisationController::class);
-Route::apiResource('interventions', InterventionController::class);
-Route::apiResource('transferts', TransfertController::class);
-Route::apiResource('retour-ticket', RetourTicketController::class);
-Route::apiResource('annulation-ticket', AnnulationTicketController::class);
-Route::apiResource('trajets', TrajetController::class);
-Route::apiResource('exercices', ExerciceController::class);
-Route::apiResource('categorieSortieTicket', CategorieSortieTicketController::class);
-
-
-
-Route::get('mouvement-info/{id}', [RetourTicketController::class, 'getMouvementInfo']);
-Route::get('mouvement-ticket/getAllSortieTicketWhereNotInRetour', [RetourTicketController::class, 'getAllSortieTicketWhereNotInRetour']);
-
-
-Route::apiResource('vehicules', VehiculeController::class);
-Route::post('vehicules/batch', [VehiculeController::class, 'storeBatch']);
-
-// Nouvelle route pour l'ajout par lot
-Route::get('dashboard/stock', [DashboardStockController::class, 'indexArticles']);
-Route::middleware('auth:api')->get('dashboard/dashInfoStock', [DashboardStockController::class, 'dashInfoStock']);
-Route::post('articles/batch', [ArticleController::class, 'storeBatch']);
-
-Route::get('mouvement-stock/entree', [MouvementStockController::class, 'indexEntreeStock']);
-Route::post('mouvement-stock/entree', [MouvementStockController::class, 'storeEntreeStock']);
-Route::post('/mouvement-stock/entree-multiple', [MouvementStockController::class, 'storeMultipleEntreeStock']);
-Route::put('/mouvement-stock/entree/{id}', [MouvementStockController::class, 'updateEntreeStock']);
-Route::delete('mouvement-stock/entree/{id}', [MouvementStockController::class, 'deleteEntreeStock']);
-Route::get('/imprimerEntrees', [MouvementStockController::class, 'imprimerEntrees']);
-
-Route::get('mouvement-stock/sortie/indexSortieStockGrouped', [MouvementStockController::class, 'indexSortieStockGrouped']);
-Route::get('mouvement-stock/sortie', [MouvementStockController::class, 'indexSortieStock']);
-Route::post('mouvement-stock/sortie', [MouvementStockController::class, 'storeSortieStock']);
-Route::post('demande-de-sortie', [MouvementStockController::class, 'storeSortieStockMultiple']);
-Route::delete('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'deleteSortieStock']);
-Route::get('quantite-disponible/{id}', [MouvementStockController::class, 'getQuantiteDisponible']);
-Route::post('mouvement-stock/demande-sortie/tout-valider', [MouvementStockController::class, 'validerDemandeGroupee']);
-Route::put('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'updateSortieStock']);
-Route::patch('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'updateDemandeStock']);
-
-Route::get('mouvement-ticket/entree', [MouvementTicketController::class, 'indexEntreeTicket']);
-Route::post('mouvement-ticket/entree', [MouvementTicketController::class, 'storeEntreeTicket']);
-Route::put('/mouvement-ticket/entree/{id}', [MouvementTicketController::class, 'updateEntreeTicket']);
-Route::delete('mouvement-ticket/entree/{id}', [MouvementTicketController::class, 'deleteEntreeTicket']);
-
-Route::get('mouvement-ticket/sortie', [MouvementTicketController::class, 'indexSortieTicket']);
-Route::post('mouvement-ticket/sortie', [MouvementTicketController::class, 'storeSortieTicket']);
-Route::get('quantite-disponible-ticket/{idCoupon}/{idCompagnie}', [MouvementTicketController::class, 'getQuantiteDisponible']);
-Route::put('/mouvement-ticket/sortie/{id}', [MouvementTicketController::class, 'updateSortieTicket']);
-Route::delete('mouvement-ticket/sortie/{id}', [MouvementTicketController::class, 'deleteSortieTicket']);
-Route::post('get-quantite-ticket-attribution', [MouvementTicketController::class, 'getQuantiteTicketAttribution']);
-
-
-
-// Route::post('reset-password/{user}', [AuthentificationController::class, 'resetPassword']);
-// Routes pour les utilisateurs
-Route::apiResource('users', UserController::class); // Ceci crée les routes CRUD complètes pour /api/users
-Route::post('register', [AuthentificationController::class, 'register']);
-Route::post('login', [AuthentificationController::class, 'login'])->name("login");
-
-
-Route::post('/forgot-password', [ForgotPasswordController::class, 'sendOTP']);
-Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOTP']);
-Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
-Route::post('/bonjour', [ForgotPasswordController::class, 'direBonjour']);
+Route::middleware('auth:api')->group(function () {
+
+    Route::get('/stock/coupon-compagnies', [CouponTicketController::class, 'getCouponTicketsWithCompagnies']);
+    Route::apiResource('marques', MarqueController::class);
+    Route::apiResource('communes', CommuneController::class);
+    Route::apiResource('coupon_tickets', CouponTicketController::class);
+    Route::apiResource('stock_coupon_tickets', StockTicketController::class)->except(['show']);
+    Route::get('/stock-tickets/imprimer', [StockTicketController::class, 'imprimerEtatStockTickets']);
+    Route::apiResource('compagnie_petrolier', CompagniePetrolierController::class);
+    Route::get('compagnie_petrolier-imprimer', [CompagniePetrolierController::class, 'imprimer']);
+    Route::apiResource('magazins', MagazinController::class);
+    Route::apiResource('modeles', ModeleController::class);
+    Route::apiResource('type-interventions', TypeInterventionController::class);
+    Route::apiResource('categorie-articles', CategorieArticleController::class);
+    Route::apiResource('fournisseurs', FournisseurController::class);
+    Route::get('fournisseurs-imprimer', [FournisseurController::class, 'imprimer']);
+    Route::apiResource('employes', EmployeController::class);
+    Route::get('employes-imprimer', [EmployeController::class, 'imprimer']);
+    Route::apiResource('type_affectations', TypeAffectationController::class);
+    Route::apiResource('type_mouvements', TypeMouvementController::class);
+    Route::apiResource('bureaux', BureauController::class);
+    Route::apiResource('unite-de-mesure', UniteDeMesureController::class);
+    Route::apiResource('status_immos', StatusImmoController::class);
+    Route::apiResource('type_immos', TypeImmoController::class);
+    Route::apiResource('sous_type_immos', SousTypeImmoController::class);
+    Route::apiResource('groupe_type_immos', GroupeTypeImmoController::class);
+    Route::apiResource('modules', ModuleController::class);
+    Route::apiResource('roles', RoleController::class);
+    Route::apiResource('fonctionnalites', FonctionnaliteController::class);
+    Route::apiResource('permissions', PermissionController::class);
+    Route::post('permissions/toggle', [PermissionController::class, 'togglePermission']);
+    Route::middleware('auth:api')->group(function () {
+        Route::apiResource('articles', ArticleController::class);
+    });
+
+    Route::get('etat_stock-imprimer', [ArticleController::class, 'imprimer']);
+    Route::apiResource('immobilisations', ImmobilisationController::class)->except(['show']);
+    Route::get('/immobilisations/imprimer', [ImmobilisationController::class, 'imprimerImmos']);
+    Route::apiResource('interventions', InterventionController::class)->except(['show']);
+    Route::get('/interventions/imprimer', [InterventionController::class, 'imprimerInterventions']);
+    // Route::apiResource('transferts', TransfertController::class);
+    Route::apiResource('transferts', TransfertController::class)->except(['show']);
+    Route::get('ancien-info/{id}', [TransfertController::class, 'getOldInfo']);
+    Route::get('/transferts/imprimer', [TransfertController::class, 'imprimerTransferts']);
+    Route::get('etat_stock-imprimer-excel', [ArticleController::class, 'exportArticlesExcel']);
+    Route::apiResource('immobilisations', ImmobilisationController::class);
+    Route::apiResource('interventions', InterventionController::class);
+    Route::apiResource('transferts', TransfertController::class);
+    Route::apiResource('retour-ticket', RetourTicketController::class);
+    Route::apiResource('annulation-ticket', AnnulationTicketController::class);
+    Route::apiResource('trajets', TrajetController::class);
+    Route::apiResource('exercices', ExerciceController::class);
+    Route::apiResource('categorieSortieTicket', CategorieSortieTicketController::class);
+
+
+
+    Route::get('mouvement-info/{id}', [RetourTicketController::class, 'getMouvementInfo']);
+    Route::get('mouvement-ticket/getAllSortieTicketWhereNotInRetour', [RetourTicketController::class, 'getAllSortieTicketWhereNotInRetour']);
+
+
+    Route::apiResource('vehicules', VehiculeController::class);
+    Route::post('vehicules/batch', [VehiculeController::class, 'storeBatch']);
+
+    // Nouvelle route pour l'ajout par lot
+    Route::get('dashboard/stock', [DashboardStockController::class, 'indexArticles']);
+    Route::middleware('auth:api')->get('dashboard/dashInfoStock', [DashboardStockController::class, 'dashInfoStock']);
+    Route::post('articles/batch', [ArticleController::class, 'storeBatch']);
+
+    Route::get('mouvement-stock/entree', [MouvementStockController::class, 'indexEntreeStock']);
+    Route::post('mouvement-stock/entree', [MouvementStockController::class, 'storeEntreeStock']);
+    Route::post('/mouvement-stock/entree-multiple', [MouvementStockController::class, 'storeMultipleEntreeStock']);
+    Route::put('/mouvement-stock/entree/{id}', [MouvementStockController::class, 'updateEntreeStock']);
+    Route::delete('mouvement-stock/entree/{id}', [MouvementStockController::class, 'deleteEntreeStock']);
+    Route::get('/imprimerEntrees', [MouvementStockController::class, 'imprimerEntrees']);
+
+    Route::get('mouvement-stock/sortie/indexSortieStockGrouped', [MouvementStockController::class, 'indexSortieStockGrouped']);
+    Route::get('mouvement-stock/sortie', [MouvementStockController::class, 'indexSortieStock']);
+    Route::post('mouvement-stock/sortie', [MouvementStockController::class, 'storeSortieStock']);
+    Route::post('demande-de-sortie', [MouvementStockController::class, 'storeSortieStockMultiple']);
+    Route::delete('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'deleteSortieStock']);
+    Route::get('quantite-disponible/{id}', [MouvementStockController::class, 'getQuantiteDisponible']);
+    Route::post('mouvement-stock/demande-sortie/tout-valider', [MouvementStockController::class, 'validerDemandeGroupee']);
+    Route::put('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'updateSortieStock']);
+    Route::patch('mouvement-stock/sortie/{id}', [MouvementStockController::class, 'updateDemandeStock']);
+
+    Route::get('mouvement-ticket/entree', [MouvementTicketController::class, 'indexEntreeTicket']);
+    Route::post('mouvement-ticket/entree', [MouvementTicketController::class, 'storeEntreeTicket']);
+    Route::put('/mouvement-ticket/entree/{id}', [MouvementTicketController::class, 'updateEntreeTicket']);
+    Route::delete('mouvement-ticket/entree/{id}', [MouvementTicketController::class, 'deleteEntreeTicket']);
+
+    Route::get('mouvement-ticket/sortie', [MouvementTicketController::class, 'indexSortieTicket']);
+    Route::post('mouvement-ticket/sortie', [MouvementTicketController::class, 'storeSortieTicket']);
+    Route::get('quantite-disponible-ticket/{idCoupon}/{idCompagnie}', [MouvementTicketController::class, 'getQuantiteDisponible']);
+    Route::put('/mouvement-ticket/sortie/{id}', [MouvementTicketController::class, 'updateSortieTicket']);
+    Route::delete('mouvement-ticket/sortie/{id}', [MouvementTicketController::class, 'deleteSortieTicket']);
+    Route::post('get-quantite-ticket-attribution', [MouvementTicketController::class, 'getQuantiteTicketAttribution']);
+
+
+
+    // Route::post('reset-password/{user}', [AuthentificationController::class, 'resetPassword']);
+    // Routes pour les utilisateurs
+    Route::apiResource('users', UserController::class); // Ceci crée les routes CRUD complètes pour /api/users
+    Route::post('register', [AuthentificationController::class, 'register']);
+    Route::post('login', [AuthentificationController::class, 'login'])->name("login");
 
-Route::apiResource('intervention-vehicules', InterventionVehiculeController::class)->except(['show']);
-Route::get('/interventions-vehicule/imprimer', [InterventionVehiculeController::class, 'imprimerInterventionsVehicule']);
-// Route::get('/intervention-vehicules', [InterventionVehiculeController::class, 'index']);
-// Route::post('/intervention-vehicules', [InterventionVehiculeController::class, 'store']);
-// Route::get('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'show']);
-// Route::put('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'update']);
-// Route::delete('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'destroy']);
 
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendOTP']);
+    Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOTP']);
+    Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
+    Route::post('/bonjour', [ForgotPasswordController::class, 'direBonjour']);
 
-Route::get('vehicules-imprimer', [VehiculeController::class, 'imprimerVehicules']);
+    Route::apiResource('intervention-vehicules', InterventionVehiculeController::class)->except(['show']);
+    Route::get('/interventions-vehicule/imprimer', [InterventionVehiculeController::class, 'imprimerInterventionsVehicule']);
+    // Route::get('/intervention-vehicules', [InterventionVehiculeController::class, 'index']);
+    // Route::post('/intervention-vehicules', [InterventionVehiculeController::class, 'store']);
+    // Route::get('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'show']);
+    // Route::put('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'update']);
+    // Route::delete('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'destroy']);
 
-//Rapport
-// Route::post('rapport-entrestock', [EntrerController::class, 'rapport_EntreeStock']);
 
+    Route::get('vehicules-imprimer', [VehiculeController::class, 'imprimerVehicules']);
 
-Route::get('/rapports/immobilisations', [ImmobilisationRapportController::class, 'getRapportData']);
+    //Rapport
+    // Route::post('rapport-entrestock', [EntrerController::class, 'rapport_EntreeStock']);
 
-Route::get('/rapports/transferts', [ImmobilisationRapportController::class, 'getRapportData']);
 
-Route::get('/rapports/interventions', [ImmobilisationRapportController::class, 'getRapportData']);
+    Route::get('/rapports/immobilisations', [ImmobilisationRapportController::class, 'getRapportData']);
 
-Route::get('/rapports/immobilisations/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportImmos']);
-// Routes pour l'impression PDF des rapports
-Route::get('/rapports/immobilisations/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
-// Route pour l'impression PDF des rapports de transferts
-Route::get('/rapports/transferts/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
-// Route pour l'impression PDF des rapports d'interventions
-Route::get('/rapports/interventions/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
-// Route pour l'impression PDF des rapports de bureau
-Route::get('/rapports/bureau/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
-// Routes API pour les Rapports de Stock (Entrée et Sortie)
-Route::get('/rapports/stock', [StockRapportController::class, 'getRapportData']);
-Route::get('/rapports/stock/imprimer', [StockRapportController::class, 'imprimerRapportStock']);
+    Route::get('/rapports/transferts', [ImmobilisationRapportController::class, 'getRapportData']);
 
-Route::get('/rapports/parc', [RapportParcController::class, 'getRapportData']);
-Route::get('/rapports/parc/imprimer', [RapportParcController::class, 'imprimerRapportParc']);
+    Route::get('/rapports/interventions', [ImmobilisationRapportController::class, 'getRapportData']);
 
-Route::get('/rapports/ticket', [RapportTicketController::class, 'getRapportData']);
-Route::get('/rapports/ticket/imprimer', [RapportTicketController::class, 'imprimerRapportTicket']);
-// NOUVELLE ROUTE : Pour récupérer les données du rapport d'état de stock (JSON)
-Route::get('/rapports/etat-stock', [StockRapportController::class, 'getRapportFicheStock']);
+    Route::get('/rapports/immobilisations/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportImmos']);
+    // Routes pour l'impression PDF des rapports
+    Route::get('/rapports/immobilisations/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
+    // Route pour l'impression PDF des rapports de transferts
+    Route::get('/rapports/transferts/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
+    // Route pour l'impression PDF des rapports d'interventions
+    Route::get('/rapports/interventions/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
+    // Route pour l'impression PDF des rapports de bureau
+    Route::get('/rapports/bureau/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
+    // Routes API pour les Rapports de Stock (Entrée et Sortie)
+    Route::get('/rapports/stock', [StockRapportController::class, 'getRapportData']);
+    Route::get('/rapports/stock/imprimer', [StockRapportController::class, 'imprimerRapportStock']);
 
-Route::get('/rapports/inventaire', [ImmobilisationRapportController::class, 'getRapportData']);
-Route::get('/rapports/inventaire/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
+    Route::get('/rapports/parc', [RapportParcController::class, 'getRapportData']);
+    Route::get('/rapports/parc/imprimer', [RapportParcController::class, 'imprimerRapportParc']);
 
-// NOUVELLE ROUTE : Pour l'impression PDF du rapport d'état de stock
-Route::get('/rapports/etat-stock/imprimer', [StockRapportController::class, 'imprimerRapportEtatStock']);
+    Route::get('/rapports/ticket', [RapportTicketController::class, 'getRapportData']);
+    Route::get('/rapports/ticket/imprimer', [RapportTicketController::class, 'imprimerRapportTicket']);
+    // NOUVELLE ROUTE : Pour récupérer les données du rapport d'état de stock (JSON)
+    Route::get('/rapports/etat-stock', [StockRapportController::class, 'getRapportFicheStock']);
 
-Route::get('/permissions/role/{roleId}', [PermissionController::class, 'getByRole']);
+    Route::get('/rapports/inventaire', [ImmobilisationRapportController::class, 'getRapportData']);
+    Route::get('/rapports/inventaire/imprimer', [ImmobilisationRapportController::class, 'imprimerRapportData']);
 
-Route::get('/intervention_immo', [InterventionController::class, 'Intervention_immo']);
-Route::get('/intervention_vehicule', [InterventionVehiculeController::class, 'Intervention_Vehicule']);
+    // NOUVELLE ROUTE : Pour l'impression PDF du rapport d'état de stock
+    Route::get('/rapports/etat-stock/imprimer', [StockRapportController::class, 'imprimerRapportEtatStock']);
 
-// Routes pour les paramètres du site
-Route::get('/site-settings', [SiteSettingController::class, 'index']);
-Route::post('/site-settings/store', [SiteSettingController::class, 'store']); // <-- C'EST LA ROUTE MANQUANTE
-Route::get('/imprimerSorties', [MouvementStockController::class, 'imprimerSortiesStock']);
+    Route::get('/permissions/role/{roleId}', [PermissionController::class, 'getByRole']);
 
-//Route::get('/count-assurance-expiresoon', [InterventionVehiculeController::class, 'getVehiculesAssuranceExpireSoon']);
-Route::get('/assurance-expiresoon', [InterventionVehiculeController::class, 'getVehiculesAssuranceExpireSoon']);
+    Route::get('/intervention_immo', [InterventionController::class, 'Intervention_immo']);
+    Route::get('/intervention_vehicule', [InterventionVehiculeController::class, 'Intervention_Vehicule']);
 
-Route::get('/transferts/print/{id}', [TransfertController::class, 'printSingleTransfert']);
+    // Routes pour les paramètres du site
+    Route::get('/site-settings', [SiteSettingController::class, 'index']);
+    Route::post('/site-settings/store', [SiteSettingController::class, 'store']); // <-- C'EST LA ROUTE MANQUANTE
+    Route::get('/imprimerSorties', [MouvementStockController::class, 'imprimerSortiesStock']);
 
-Route::post('/vehicules/import', [VehiculeController::class, 'import']);
+    //Route::get('/count-assurance-expiresoon', [InterventionVehiculeController::class, 'getVehiculesAssuranceExpireSoon']);
+    Route::get('/assurance-expiresoon', [InterventionVehiculeController::class, 'getVehiculesAssuranceExpireSoon']);
 
-Route::post('/articles/import', [ArticleController::class, 'import']);
-Route::post('/immobilisations/import', [ImmobilisationController::class, 'import']);Route::post('/vehicules/{vehicule}/carte-grise', [VehiculeController::class, 'addCarteGrise']);
+    Route::get('/transferts/print/{id}', [TransfertController::class, 'printSingleTransfert']);
 
-Route::post('/vehicules/{vehicule}/carte-grise', [VehiculeController::class, 'addCarteGrise']);
+    Route::post('/vehicules/import', [VehiculeController::class, 'import']);
 
-Route::put('/mouvement-tickets/{id}/kilometrage-fin', [MouvementTicketController::class, 'updateKilometrageDeFin']);
+    Route::post('/articles/import', [ArticleController::class, 'import']);
+    Route::post('/immobilisations/import', [ImmobilisationController::class, 'import']);Route::post('/vehicules/{vehicule}/carte-grise', [VehiculeController::class, 'addCarteGrise']);
 
-Route::put('/exercicestate/{id}/status', [ExerciceController::class, 'changeStatus']);
+    Route::post('/vehicules/{vehicule}/carte-grise', [VehiculeController::class, 'addCarteGrise']);
 
-Route::get('/exercice/ouvert', [ExerciceController::class, 'getExerciceOuvert']);
+    Route::put('/mouvement-tickets/{id}/kilometrage-fin', [MouvementTicketController::class, 'updateKilometrageDeFin']);
 
-// Define the specific route first
-Route::get('/articlesExercices', [Article_ExoController::class, 'articlesExercices']);
+    Route::put('/exercicestate/{id}/status', [ExerciceController::class, 'changeStatus']);
 
-// Then, define the general route
-Route::get('/articles/{id}', [ArticleController::class, 'show']);
+    Route::get('/exercice/ouvert', [ExerciceController::class, 'getExerciceOuvert']);
 
-Route::get('/mouvement-tickets/generer-bon/{reference}', [MouvementTicketController::class, 'genererBonDeSortie']);
-Route::post('/mouvement-tickets/{id}/televerser-bon', [MouvementTicketController::class, 'televerserBonDeSortie']);
-Route::get('/mouvement-tickets/{id}/voir-bon', [MouvementTicketController::class, 'voirBonDeSortie']);
+    // Define the specific route first
+    Route::get('/articlesExercices', [Article_ExoController::class, 'articlesExercices']);
 
+    // Then, define the general route
+    Route::get('/articles/{id}', [ArticleController::class, 'show']);
 
-Route::get('/generer-fiche-demande/{code_mouvement}', [MouvementStockController::class, 'genererFicheDemande']);
+    Route::get('/mouvement-tickets/generer-bon/{reference}', [MouvementTicketController::class, 'genererBonDeSortie']);
+    Route::post('/mouvement-tickets/{id}/televerser-bon', [MouvementTicketController::class, 'televerserBonDeSortie']);
+    Route::get('/mouvement-tickets/{id}/voir-bon', [MouvementTicketController::class, 'voirBonDeSortie']);
 
-Route::get('/mouvements/fiche/{id}', [MouvementStockController::class, 'genererFicheIndividuelle']);
 
-Route::post('/demande/valid-upload-signe', [MouvementStockController::class, 'validAndUploadSigne']);
+    Route::get('/generer-fiche-demande/{code_mouvement}', [MouvementStockController::class, 'genererFicheDemande']);
 
-Route::get('/view-file', [MouvementStockController::class, 'viewFile']);
+    Route::get('/mouvements/fiche/{id}', [MouvementStockController::class, 'genererFicheIndividuelle']);
 
-Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController::class, 'downloadGroupedFile']);
+    Route::post('/demande/valid-upload-signe', [MouvementStockController::class, 'validAndUploadSigne']);
 
-Route::get('/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']);
+    Route::get('/view-file', [MouvementStockController::class, 'viewFile']);
 
-Route::get('/mouvements/demande-sortie/check-status-and-generate/{id}', [MouvementStockController::class, 'checkStatusAccorde']);
+    Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController::class, 'downloadGroupedFile']);
 
+    Route::get('/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']);
 
-Route::post('/rapport-periodique', [MouvementTicketController::class, 'rapportperiodique']);
-Route::get('rapports/periodique', [MouvementTicketController::class, 'rapportperiodique']);
+    Route::get('/mouvements/demande-sortie/check-status-and-generate/{id}', [MouvementStockController::class, 'checkStatusAccorde']);
 
 
-Route::post('/rapport-periodiqueMontant', [MouvementTicketController::class, 'rapportperiodiqueMontant']);
-Route::get('rapports/periodiqueMontant', [MouvementTicketController::class, 'rapportperiodiqueMontant']);
+    Route::post('/rapport-periodique', [MouvementTicketController::class, 'rapportperiodique']);
+    Route::get('rapports/periodique', [MouvementTicketController::class, 'rapportperiodique']);
 
 
+    Route::post('/rapport-periodiqueMontant', [MouvementTicketController::class, 'rapportperiodiqueMontant']);
+    Route::get('rapports/periodiqueMontant', [MouvementTicketController::class, 'rapportperiodiqueMontant']);
 
-Route::get('/mouvements/demande-sortie/check-status-and-generate/{codeMouvement}', [MouvementStockController::class, 'checkStatusAccorde']);
-//Route::get('/getrapport-periodique', [MouvementTicketController::class, 'getrapportperiodique']);
-Route::get('/mouvements/demande-sortie/check-status-and-generate/{id}', [MouvementStockController::class, 'checkStatusAccorde']);
 
-Route::get('rapports/periodique/imprimer', [MouvementTicketController::class, 'imprimerRapportPeriodique']);
-Route::get('rapports/periodiqueMontant/imprimer', [MouvementTicketController::class, 'imprimerRapportPeriodiqueMontant']);
 
-Route::get('/mouvements/demande-sortie/check-status-and-generate/{id}', [MouvementStockController::class, 'checkStatusAccorde']);
+    Route::get('/mouvements/demande-sortie/check-status-and-generate/{codeMouvement}', [MouvementStockController::class, 'checkStatusAccorde']);
+    //Route::get('/getrapport-periodique', [MouvementTicketController::class, 'getrapportperiodique']);
+    Route::get('/mouvements/demande-sortie/check-status-and-generate/{id}', [MouvementStockController::class, 'checkStatusAccorde']);
 
-Route::get('/rapports/getcodes', [ImmobilisationRapportController::class, 'getCodesImmoEtVehicule']);
+    Route::get('rapports/periodique/imprimer', [MouvementTicketController::class, 'imprimerRapportPeriodique']);
+    Route::get('rapports/periodiqueMontant/imprimer', [MouvementTicketController::class, 'imprimerRapportPeriodiqueMontant']);
 
-Route::get('/sortiepatrimoines', [SortiePatrimoineController::class, 'index']);
-Route::post('/sortiepatrimoines', [SortiePatrimoineController::class, 'store']);
-// 2. Route pour l'insertion MULTIPLE (Batch)
-Route::post('/sortiepatrimoines/batch', [SortiePatrimoineController::class, 'storeBatch']); // <-- Ajout de '/batch'
+    Route::get('/mouvements/demande-sortie/check-status-and-generate/{id}', [MouvementStockController::class, 'checkStatusAccorde']);
 
-Route::put('/sortiepatrimoines/{id}', [SortiePatrimoineController::class, 'update']);
-Route::delete('/sortiepatrimoines/{id}', [SortiePatrimoineController::class, 'destroy']);
-Route::get('/sortiepatrimoines/{id}', [SortiePatrimoineController::class, 'show']);
+    Route::get('/rapports/getcodes', [ImmobilisationRapportController::class, 'getCodesImmoEtVehicule']);
 
-// 4. Routes spécifiques à l'import/export
-Route::post('/sortiepatrimoines/import', [SortiePatrimoineController::class, 'importSortiePatrimoine']); // <-- Ajout pour la cohérence
+    Route::get('/sortiepatrimoines', [SortiePatrimoineController::class, 'index']);
+    Route::post('/sortiepatrimoines', [SortiePatrimoineController::class, 'store']);
+    // 2. Route pour l'insertion MULTIPLE (Batch)
+    Route::post('/sortiepatrimoines/batch', [SortiePatrimoineController::class, 'storeBatch']); // <-- Ajout de '/batch'
 
-Route::get('immobilisations/designation-by-code/{code}', [ImmobilisationController::class, 'getDesignationByCode']);
+    Route::put('/sortiepatrimoines/{id}', [SortiePatrimoineController::class, 'update']);
+    Route::delete('/sortiepatrimoines/{id}', [SortiePatrimoineController::class, 'destroy']);
+    Route::get('/sortiepatrimoines/{id}', [SortiePatrimoineController::class, 'show']);
 
+    // 4. Routes spécifiques à l'import/export
+    Route::post('/sortiepatrimoines/import', [SortiePatrimoineController::class, 'importSortiePatrimoine']); // <-- Ajout pour la cohérence
 
-Route::prefix('logs')->group(function () {
-    Route::post('/', [LogJournalisationController::class, 'store']);
-    Route::get('/', [LogJournalisationController::class, 'index']);
-    Route::get('/{id}', [LogJournalisationController::class, 'show']);
-    Route::delete('/{id}', [LogJournalisationController::class, 'destroy']);
+    Route::get('immobilisations/designation-by-code/{code}', [ImmobilisationController::class, 'getDesignationByCode']);
+
+
+    Route::prefix('logs')->group(function () {
+        Route::post('/', [LogJournalisationController::class, 'store']);
+        Route::get('/', [LogJournalisationController::class, 'index']);
+        Route::get('/{id}', [LogJournalisationController::class, 'show']);
+        Route::delete('/{id}', [LogJournalisationController::class, 'destroy']);
+    });
+
+
 });

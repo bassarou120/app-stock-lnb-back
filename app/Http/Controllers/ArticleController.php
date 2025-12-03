@@ -56,11 +56,6 @@ class ArticleController extends Controller
         // 1. Récupérer l'exercice ouvert
         $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
 
-        $user = $request->user();
-        $userName = trim(($user?->name ?? '') . ' ' . ($user?->surname ?? ''));
-        $userNameForLog = !empty($userName) ? $userName : ($user?->email ?? 'N/A');
-        echo "user_name" . $userNameForLog;
-
         if (!$exerciceOuvert) {
             return response()->json([
                 'success' => false,
@@ -83,7 +78,8 @@ class ArticleController extends Controller
             'action'     => 'Consultation de la liste des articles',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -256,7 +252,8 @@ class ArticleController extends Controller
                 'action'     => 'Création d\'un lot d\'articles (' . count($articles) . ' articles)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
         } catch (\Exception $e) {
@@ -266,7 +263,8 @@ class ArticleController extends Controller
                 'action'     => 'Echec de Création d\'articles',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
             // Utiliser Log::error pour le débogage et masquer les détails trop techniques
@@ -396,7 +394,8 @@ class ArticleController extends Controller
                 'action'     => 'Mise à jour de l\'article ID ' . $article->id . ' (Libellé: ' . $article->libelle . ')',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
         } catch (\Exception $e) {
@@ -406,7 +405,8 @@ class ArticleController extends Controller
                 'action'     => 'Echec de la Mise à jour de l\'article ID ' . $article->id . ' (Libellé: ' . $article->libelle . ')',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
             // Journalisation de l'erreur pour le débogage côté serveur
@@ -482,7 +482,8 @@ class ArticleController extends Controller
             'action'     => 'Suppression de l\'article ID ' . $article->id . ' (Libellé: ' . $article->libelle . ')',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id() ?? null,
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -501,7 +502,8 @@ class ArticleController extends Controller
             'action'     => 'Impression de l\'état du stock des articles',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id() ?? null,
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -534,7 +536,8 @@ class ArticleController extends Controller
             'action'     => 'Export Excel de l\'état du stock des articles',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id() ?? null,
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -689,7 +692,8 @@ class ArticleController extends Controller
                 'action' => 'Début de l\'importation des articles via Excel',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id' => Auth::id() ?? null,
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action' => now(),
             ]);
 
@@ -706,7 +710,8 @@ class ArticleController extends Controller
                 'action' => 'Échec de l\'importation des articles: ' . $e->getMessage(),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id' => Auth::id() ?? null,
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action' => now(),
             ]);
 
