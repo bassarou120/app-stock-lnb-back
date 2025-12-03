@@ -348,47 +348,45 @@ class MouvementTicketController extends Controller
 
 
         // 3. Transformer chaque groupe en un seul objet consolidé pour le frontend
-        $transactions = $groupedMouvements->map(function ($group) {
-            // Prendre le premier mouvement comme base pour les informations communes
-            $firstMouvement = $group->first();
+$transactions = $groupedMouvements->map(function ($group) use ($request) {
+    $firstMouvement = $group->first();
 
-            // Créer un tableau contenant les détails de chaque ticket du groupe
-            $ticketsDetails = $group->map(function ($mouvement) {
-                return [
-                    'coupon' => $mouvement->coupon_ticket,
-                    'compagnie' => $mouvement->compagniePetrolier,
-                    'qte' => $mouvement->qte,
-                ];
-            });
+    $ticketsDetails = $group->map(function ($mouvement) {
+        return [
+            'coupon' => $mouvement->coupon_ticket,
+            'compagnie' => $mouvement->compagniePetrolier,
+            'qte' => $mouvement->qte,
+        ];
+    });
 
-            LogJournalisation::create([
-                'action'     => 'Consultation des mouvements "Sortie de Ticket"',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
-            ]);
+    LogJournalisation::create([
+        'action'     => 'Consultation des mouvements Sortie de Ticket',
+        'ip_address' => $request->ip(),
+        'user_agent' => $request->header('User-Agent'),
+        'user_id'    => $request->user()->id,
+        'user_name'   => $request->user()->name,
+        'date_action'=> now(),
+    ]);
 
-            // Retourner un objet unique par transaction
-            return [
-                "id" => $firstMouvement->id, // ID du premier mouvement du groupe
-                'reference' => $firstMouvement->reference,
-                'date' => $firstMouvement->date,
-                'vehicule' => $firstMouvement->vehicule,
-                'employe' => $firstMouvement->employe,
-                'objet' => $firstMouvement->objet,
-                'description' => $firstMouvement->description,
-                'commune_depart' => $firstMouvement->depart,
-                'commune_arriver' => $firstMouvement->arriver,
-                'trajet_aller_retour' => $firstMouvement->trajet_aller_retour,
-                'kilometrage' => $firstMouvement->kilometrage, // Assurez-vous que ces champs existent
-                'kilometrage_de_fin' => $firstMouvement->kilometrage_de_fin,
-                'bon_de_sortie_path' => $firstMouvement->bon_de_sortie_path,
-                'tickets' => $ticketsDetails, // Le tableau des tickets
-                'categorie_sortie_ticket' => $firstMouvement->categorieSortieTicket,
-            ];
-        })->values(); // Utiliser values() pour réindexer le tableau numériquement
+    return [
+        "id" => $firstMouvement->id,
+        'reference' => $firstMouvement->reference,
+        'date' => $firstMouvement->date,
+        'vehicule' => $firstMouvement->vehicule,
+        'employe' => $firstMouvement->employe,
+        'objet' => $firstMouvement->objet,
+        'description' => $firstMouvement->description,
+        'commune_depart' => $firstMouvement->depart,
+        'commune_arriver' => $firstMouvement->arriver,
+        'trajet_aller_retour' => $firstMouvement->trajet_aller_retour,
+        'kilometrage' => $firstMouvement->kilometrage,
+        'kilometrage_de_fin' => $firstMouvement->kilometrage_de_fin,
+        'bon_de_sortie_path' => $firstMouvement->bon_de_sortie_path,
+        'tickets' => $ticketsDetails,
+        'categorie_sortie_ticket' => $firstMouvement->categorieSortieTicket,
+    ];
+})
+->values(); // Utiliser values() pour réindexer le tableau numériquement
         // Retourner un objet unique par transaction
         return new PostResource(true, 'Liste des mouvements de sortie de Ticket', $transactions);
     }
