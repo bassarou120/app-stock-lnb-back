@@ -41,7 +41,8 @@ class VehiculeController extends Controller
             'action'     => 'Consultation de la liste des véhicules (Hors patrimoine sorti)',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
         return new PostResource(true, 'Liste des véhicules', $vehicules);
@@ -129,7 +130,8 @@ class VehiculeController extends Controller
                 'action'     => "Création de véhicule(s) en masse. Immatriculations",
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -140,7 +142,8 @@ class VehiculeController extends Controller
                 'action'     => "Échec critique: La création de véhicules en masse a échoué. Transaction annulée.",
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -209,7 +212,8 @@ class VehiculeController extends Controller
             'action'     => $logMessage,
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -240,7 +244,8 @@ class VehiculeController extends Controller
             'action'     => $logMessage,
             'ip_address' => request()->ip(),
             'user_agent' => request()->header('User-Agent'),
-            'user_id'    => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
         return new PostResource(true, 'vehicule supprimé avec succès', null);
@@ -261,7 +266,8 @@ class VehiculeController extends Controller
             'action'     => "Impression de la liste des véhicules (PDF généré, {$nombreVehicules} enregistrements inclus).",
             'ip_address' => request()->ip(),
             'user_agent' => request()->header('User-Agent'),
-            'user_id'    => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -404,7 +410,8 @@ class VehiculeController extends Controller
                 'action'     => "Échec: Tentative d'importation de véhicules (Validation échouée - Fichier requis/format incorrect)",
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
             return response()->json(['errors' => $validator->errors()], 422);
@@ -565,7 +572,8 @@ class VehiculeController extends Controller
                 'action'     => $logAction,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -586,7 +594,8 @@ class VehiculeController extends Controller
                 'action'     => $logAction,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
             return response()->json([

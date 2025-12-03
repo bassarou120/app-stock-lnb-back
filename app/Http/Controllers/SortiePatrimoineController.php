@@ -44,7 +44,8 @@ class SortiePatrimoineController extends Controller
                 'action'     => "Consultation des sorties de patrimoine",
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -91,9 +92,10 @@ class SortiePatrimoineController extends Controller
                 'action'     => 'Création sortie patrimoine réussie (simple)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "Sortie ID: {$sortiePatrimoine->id}, Code: {$validatedData['code_immo']}"
+                //'details'    => "Sortie ID: {$sortiePatrimoine->id}, Code: {$validatedData['code_immo']}"
             ]);
 
             // 4. Retourner la réponse
@@ -105,9 +107,10 @@ class SortiePatrimoineController extends Controller
                 'action'     => 'Échec validation (création sortie patrimoine)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => json_encode($e->errors())
+                //'details'    => json_encode($e->errors())
             ]);
             throw $e;
         } catch (\Exception $e) {
@@ -116,9 +119,10 @@ class SortiePatrimoineController extends Controller
                 'action'     => 'Création sortie patrimoine échouée (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "Erreur: " . $e->getMessage()
+                //'details'    => "Erreur: " . $e->getMessage()
             ]);
             
             return response()->json([
@@ -167,9 +171,10 @@ class SortiePatrimoineController extends Controller
                     'action'     => 'Échec création sortie patrimoine (statut manquant)',
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->header('User-Agent'),
-                    'user_id'    => Auth::id(),
+                    'user_id'    => $request->user()->id,
+                    'user_name'   => $request->user()->name,
                     'date_action'=> now(),
-                    'details'    => "Le statut 'Sortie de patrimoine' est introuvable."
+                    //'details'    => "Le statut 'Sortie de patrimoine' est introuvable."
                 ]);
                 return response()->json([
                     'success' => false,
@@ -221,9 +226,10 @@ class SortiePatrimoineController extends Controller
                 'action'     => 'Création sortie patrimoine réussie (Batch)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => count($sortiesToInsert) . " sorties enregistrées. Codes Immo: " . implode(', ', $codesImmoUpdated)
+                //'details'    => count($sortiesToInsert) . " sorties enregistrées. Codes Immo: " . implode(', ', $codesImmoUpdated)
             ]);
 
             return new PostResource(true, count($sortiesToInsert) . ' sorties de patrimoine enregistrées avec succès.', null);
@@ -234,9 +240,10 @@ class SortiePatrimoineController extends Controller
                 'action'     => 'Échec validation (création sortie patrimoine Batch)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => json_encode($e->errors())
+                //'details'    => json_encode($e->errors())
             ]);
             throw $e;
         } catch (\Exception $e) {
@@ -247,9 +254,10 @@ class SortiePatrimoineController extends Controller
                 'action'     => 'Création sortie patrimoine échouée (exception Batch)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => $e->getMessage()
+                //'details'    => $e->getMessage()
             ]);
 
             return response()->json([
@@ -295,9 +303,10 @@ class SortiePatrimoineController extends Controller
                 'action'     => 'Échec mise à jour sortie patrimoine (non trouvé)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "ID: {$id} non trouvé."
+                //'details'    => "ID: {$id} non trouvé."
             ]);
             return response()->json([
                 'success' => false,
@@ -327,9 +336,10 @@ class SortiePatrimoineController extends Controller
                 'action'     => 'Mise à jour sortie patrimoine réussie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "ID: {$id}. Anciennes données: {$oldData}. Nouvelles données: " . $sortiePatrimoine->toJson()
+                //'details'    => "ID: {$id}. Anciennes données: {$oldData}. Nouvelles données: " . $sortiePatrimoine->toJson()
             ]);
 
             // 4. Retourner la réponse
@@ -341,9 +351,10 @@ class SortiePatrimoineController extends Controller
                 'action'     => 'Échec validation (mise à jour sortie patrimoine)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "ID: {$id}. Erreurs: " . json_encode($e->errors())
+                //'details'    => "ID: {$id}. Erreurs: " . json_encode($e->errors())
             ]);
             throw $e;
         } catch (\Exception $e) {
@@ -352,9 +363,10 @@ class SortiePatrimoineController extends Controller
                 'action'     => 'Mise à jour sortie patrimoine échouée (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "ID: {$id}. Erreur: " . $e->getMessage()
+                //'details'    => "ID: {$id}. Erreur: " . $e->getMessage()
             ]);
             
             return response()->json([
@@ -379,9 +391,10 @@ class SortiePatrimoineController extends Controller
                 'action'     => 'Échec suppression sortie patrimoine (non trouvé)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "ID: {$id} non trouvé."
+                //'details'    => "ID: {$id} non trouvé."
             ]);
             return response()->json([
                 'success' => false,
@@ -405,9 +418,10 @@ class SortiePatrimoineController extends Controller
                     'action'     => 'Échec annulation sortie patrimoine (statut manquant)',
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->header('User-Agent'),
-                    'user_id'    => Auth::id(),
+                    'user_id'    => $request->user()->id,
+                    'user_name'   => $request->user()->name,
                     'date_action'=> now(),
-                    'details'    => $detailsLog . ". Le statut 'En magasin' est introuvable."
+                    //'details'    => $detailsLog . ". Le statut 'En magasin' est introuvable."
                 ]);
                 DB::rollBack();
                 return response()->json([
@@ -440,9 +454,10 @@ class SortiePatrimoineController extends Controller
                     'action'     => 'Échec annulation sortie patrimoine (actif non trouvé)',
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->header('User-Agent'),
-                    'user_id'    => Auth::id(),
+                    'user_id'    => $request->user()->id,
+                    'user_name'   => $request->user()->name,
                     'date_action'=> now(),
-                    'details'    => $detailsLog . ". Actif ({$codeImmo}) introuvable dans Vehicules/Immobilisations pour mise à jour."
+                    //'details'    => $detailsLog . ". Actif ({$codeImmo}) introuvable dans Vehicules/Immobilisations pour mise à jour."
                 ]);
             }
 
@@ -456,9 +471,10 @@ class SortiePatrimoineController extends Controller
                 'action'     => 'Annulation sortie patrimoine réussie (Suppression physique)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => $detailsLog . ". Statut actif mis à jour vers 'En magasin'."
+                //'details'    => $detailsLog . ". Statut actif mis à jour vers 'En magasin'."
             ]);
 
             return new PostResource(true, 'Sortie de patrimoine annulée, actif remis en magasin et retrait de la table SortiePatrimoine.', null);
@@ -471,9 +487,10 @@ class SortiePatrimoineController extends Controller
                 'action'     => 'Annulation sortie patrimoine échouée (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => $detailsLog . ". Erreur: " . $e->getMessage()
+                //'details'    => $detailsLog . ". Erreur: " . $e->getMessage()
             ]);
             
             \Log::error("Erreur lors de l'annulation de la sortie de patrimoine #{$id}: " . $e->getMessage());

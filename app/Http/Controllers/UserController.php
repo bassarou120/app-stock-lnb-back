@@ -32,7 +32,8 @@ class UserController extends Controller
                 'action'     => "Consultation de la liste des utilisateurs",
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
         return response()->json($users);
@@ -81,8 +82,9 @@ class UserController extends Controller
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->header('User-Agent'),
                     'user_id'    => null,
+                    'user_name'   => null,
                     'date_action'=> now(),
-                    'details'    => "User , Email: {$user->email}"
+                    //'details'    => "User , Email: {$user->email}"
                 ]);
             }
 
@@ -91,9 +93,10 @@ class UserController extends Controller
                 'action'     => 'Création utilisateur réussie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "User ID: {$user->id}, Email: {$user->email}, Rôle: {$user->role_id}. {$emailStatus}"
+                //'details'    => "User ID: {$user->id}, Email: {$user->email}, Rôle: {$user->role_id}. {$emailStatus}"
             ]);
 
             return response()->json($user->load('role'), 201);
@@ -107,9 +110,10 @@ class UserController extends Controller
                 'action'     => 'Création utilisateur échouée (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "Employé ID: {$employeId}. Erreur: " . $e->getMessage()
+                //'details'    => "Employé ID: {$employeId}. Erreur: " . $e->getMessage()
             ]);
 
             return response()->json(['message' => 'Erreur lors de la création de l\'utilisateur.'], 500);
@@ -170,9 +174,10 @@ class UserController extends Controller
                 'action'     => 'Mise à jour utilisateur réussie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "User ID: {$user->id}, Email: {$user->email}. PWD changé: " . ($passwordChanged ? 'Oui' : 'Non') . ". Anciennes données: {$oldUserData}."
+                //'details'    => "User ID: {$user->id}, Email: {$user->email}. PWD changé: " . ($passwordChanged ? 'Oui' : 'Non') . ". Anciennes données: {$oldUserData}."
             ]);
 
             return response()->json($user->load('role'));
@@ -183,9 +188,10 @@ class UserController extends Controller
                 'action'     => 'Échec validation (mise à jour utilisateur)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "User ID: {$user->id}. Erreurs: " . json_encode($e->errors())
+                //'details'    => "User ID: {$user->id}. Erreurs: " . json_encode($e->errors())
             ]);
             throw $e; // Renvoyer l'exception de validation après le log
         } catch (\Exception $e) {
@@ -195,9 +201,10 @@ class UserController extends Controller
                 'action'     => 'Mise à jour utilisateur échouée (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "User ID: {$user->id}. Erreur: " . $e->getMessage()
+                //'details'    => "User ID: {$user->id}. Erreur: " . $e->getMessage()
             ]);
 
             return response()->json(['message' => 'Erreur lors de la mise à jour de l\'utilisateur.'], 500);
@@ -217,9 +224,10 @@ class UserController extends Controller
                 'action'     => 'Échec suppression utilisateur (non trouvé)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "User ID: {$id} introuvable."
+                //'details'    => "User ID: {$id} introuvable."
             ]);
             return response()->json(['message' => 'Utilisateur non trouvé'], 404);
         }
@@ -239,9 +247,10 @@ class UserController extends Controller
                 'action'     => 'Suppression utilisateur réussie (soft delete)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => $detailsLog
+                //'details'    => $detailsLog
             ]);
 
             return response()->json(['message' => 'Utilisateur supprimé avec succès'], 200);
@@ -254,9 +263,10 @@ class UserController extends Controller
                 'action'     => 'Suppression utilisateur échouée (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => $detailsLog . ". Erreur: " . $e->getMessage()
+                //'details'    => $detailsLog . ". Erreur: " . $e->getMessage()
             ]);
 
             return response()->json(['message' => 'Erreur lors de la suppression de l\'utilisateur.'], 500);

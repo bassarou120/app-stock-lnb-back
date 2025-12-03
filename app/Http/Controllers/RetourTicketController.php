@@ -32,7 +32,8 @@ class RetourTicketController extends Controller
                 'action'     => "Consultation des retours de tickets",
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -61,9 +62,9 @@ class RetourTicketController extends Controller
                 'action'     => 'Échec de validation (création retour ticket)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => json_encode($validator->errors())
             ]);
             return response()->json($validator->errors(), 422);
         }
@@ -102,9 +103,9 @@ class RetourTicketController extends Controller
                 'action'     => 'Création de retour(s) ticket réussie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "Retour(s) IDs: " . implode(', ', $retours_ids) . ". Total lignes: " . count($retours_ids)
             ]);
             
             return new PostResource(true, 'Retour(s) de Tickets enregistré(s) avec succès !', null);
@@ -117,9 +118,9 @@ class RetourTicketController extends Controller
                 'action'     => 'Création de retour(s) ticket échouée (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => $e->getMessage()
             ]);
             
             \Log::error('Erreur lors de l\'enregistrement du retour de ticket: ' . $e->getMessage());
@@ -138,9 +139,9 @@ class RetourTicketController extends Controller
                 'action'     => 'Suppression retour ticket échouée (non trouvé)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "ID de retour non trouvé: {$id}"
             ]);
             
             return response()->json([
@@ -188,9 +189,10 @@ class RetourTicketController extends Controller
                 'action'     => 'Suppression retour ticket réussie (soft delete)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => $detailsLog
+                //'details'    => $detailsLog
             ]);
 
             return new PostResource(true, 'Retour Ticket supprimé avec succès !', null);
@@ -203,9 +205,10 @@ class RetourTicketController extends Controller
                 'action'     => 'Suppression retour ticket échouée (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => $detailsLog . ". Erreur: " . $e->getMessage()
+                //'details'    => $detailsLog . ". Erreur: " . $e->getMessage()
             ]);
             
             \Log::error("Erreur lors de la suppression du retour ticket #{$id}: " . $e->getMessage());
@@ -235,7 +238,8 @@ class RetourTicketController extends Controller
                 'action'     => "Consultation des mouvements de sortie de Ticket sans retour",
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 

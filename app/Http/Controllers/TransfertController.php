@@ -31,7 +31,8 @@ class TransfertController extends Controller
                 'action'     => "Consultation de la liste des transferts",
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -58,9 +59,10 @@ class TransfertController extends Controller
                 'action'     => 'Échec validation (création transfert)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => json_encode($validator->errors())
+                //'details'    => json_encode($validator->errors())
             ]);
             return response()->json($validator->errors(), 422);
         }
@@ -112,9 +114,10 @@ class TransfertController extends Controller
                 'action'     => 'Création transfert réussie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "Transfert ID: {$transfert->id}, Immo ID: {$immo->id}, De Bureau: {$oldBureau} à {$request->bureau_id}, Employé: {$oldEmploye} à {$request->employe_id}"
+                //'details'    => "Transfert ID: {$transfert->id}, Immo ID: {$immo->id}, De Bureau: {$oldBureau} à {$request->bureau_id}, Employé: {$oldEmploye} à {$request->employe_id}"
             ]);
 
             return new PostResource(true, 'Transfert ou retour enregistré avec succès', $transfert);
@@ -127,9 +130,10 @@ class TransfertController extends Controller
                 'action'     => 'Création transfert échouée (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "Erreur: " . $e->getMessage()
+                //'details'    => "Erreur: " . $e->getMessage()
             ]);
 
             return response()->json(['message' => 'Erreur lors de l\'enregistrement du transfert: ' . $e->getMessage()], 500);
@@ -155,9 +159,10 @@ class TransfertController extends Controller
                 'action'     => 'Échec validation (mise à jour transfert)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "ID: {$id}. Erreurs: " . json_encode($validator->errors())
+                //'details'    => "ID: {$id}. Erreurs: " . json_encode($validator->errors())
             ]);
             return response()->json($validator->errors(), 422);
         }
@@ -169,9 +174,10 @@ class TransfertController extends Controller
                 'action'     => 'Échec mise à jour transfert (non trouvé)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "Transfert ID: {$id} introuvable."
+                //'details'    => "Transfert ID: {$id} introuvable."
             ]);
             return response()->json(['message' => 'Transfert introuvable'], 404);
         }
@@ -223,9 +229,10 @@ class TransfertController extends Controller
                 'action'     => 'Mise à jour transfert réussie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "ID: {$id}, Immo ID: {$immo->id}. Anciennes données (Transfert): {$oldTransfertData}. Nouveaux ID: Bureau {$request->bureau_id}, Employé {$request->employe_id}."
+                //'details'    => "ID: {$id}, Immo ID: {$immo->id}. Anciennes données (Transfert): {$oldTransfertData}. Nouveaux ID: Bureau {$request->bureau_id}, Employé {$request->employe_id}."
             ]);
 
             return new PostResource(true, 'Transfert modifié avec succès', $transfert);
@@ -238,9 +245,10 @@ class TransfertController extends Controller
                 'action'     => 'Mise à jour transfert échouée (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "ID: {$id}. Erreur: " . $e->getMessage()
+                //'details'    => "ID: {$id}. Erreur: " . $e->getMessage()
             ]);
 
             return response()->json(['message' => 'Erreur lors de la modification du transfert: ' . $e->getMessage()], 500);
@@ -284,9 +292,10 @@ class TransfertController extends Controller
                     'action'     => 'Avertissement suppression transfert (Immo manquante)',
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->header('User-Agent'),
-                    'user_id'    => Auth::id(),
+                    'user_id'    => $request->user()->id,
+                    'user_name'   => $request->user()->name,
                     'date_action'=> now(),
-                    'details'    => $detailsLog . ". Immobilisation associée non trouvée pour restauration."
+                    //'details'    => $detailsLog . ". Immobilisation associée non trouvée pour restauration."
                 ]);
             }
 
@@ -301,9 +310,10 @@ class TransfertController extends Controller
                 'action'     => 'Suppression (Annulation) transfert réussie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => $detailsLog . ". Immo restaurée (Bureau: {$transfert->old_bureau_id}, Employé: {$transfert->old_employe_id}, Statut: {$newStatusId})."
+                //'details'    => $detailsLog . ". Immo restaurée (Bureau: {$transfert->old_bureau_id}, Employé: {$transfert->old_employe_id}, Statut: {$newStatusId})."
             ]);
 
             return new PostResource(true, 'Transfert supprimé et immobilisation restaurée avec succès', null);
@@ -316,9 +326,10 @@ class TransfertController extends Controller
                 'action'     => 'Suppression (Annulation) transfert échouée (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => $detailsLog . ". Erreur: " . $e->getMessage()
+                //'details'    => $detailsLog . ". Erreur: " . $e->getMessage()
             ]);
 
             return response()->json(['message' => 'Erreur lors de la suppression du transfert: ' . $e->getMessage()], 500);
@@ -363,7 +374,8 @@ class TransfertController extends Controller
                 'action'     => "Impression de la liste des transferts",
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
