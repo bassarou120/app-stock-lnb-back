@@ -112,56 +112,99 @@
             <tr>
                 <td colspan="2" style="text-align: center;">
                     <img src="images/logo1.png" alt="Logo LNB" style="height: 45px; margin-bottom: 5px;"><br>
-                    {{-- Le titre du rapport est mis à jour --}}
-                    <h2>Rapport Périodique des Mouvements de Tickets</h2>
+                    {{-- Le titre du rapport est mis à jour pour mieux refléter les montants --}}
+                    <h2>Rapport Périodique des Mouvements de Tickets (Montants)</h2>
                 </td>
             </tr>
         </table>
     </div>
 
     <div class="table-section">
-        <h3 style="font-size: 13pt; margin-bottom: 5px;">Mouvements Périodiques (Indicateurs)</h3>
+        <h3 style="font-size: 13pt; margin-bottom: 5px;">Tableau 1: Mouvements Périodiques (XOF)</h3>
         {{-- Remarque : J'utilise $rapport_periodique que nous avons défini de passer dans la fonction PHP --}}
-        @if(!empty($rapport) && is_array($rapport))
-        <table>
-            <thead>
-                <tr>
-                    <th rowspan="2">Période</th>
-                    <th rowspan="2">Stock Initial</th>
-                    <th colspan="3">Entrées</th>
-                    <th colspan="4">Sorties</th>
-                    <th rowspan="2">Stock Final</th>
-                </tr>
-                <tr>
-                    <th>Acquis</th>
-                    <th>Retour</th>
-                    <th>Total</th>
-                    <th>Dotation Agences</th>
-                    <th>Dotation Chef Garage</th>
-                    <th>Groupe Electrogène</th>
-                    <th>Missions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($rapport as $donnees)
+        @if(!empty($rapport_periodique) && is_array($rapport_periodique))
+            <table>
+                <thead>
                     <tr>
-                        <td class="text-left">{{ $donnees['periode'] }}</td>
-                        <td>{{ number_format($donnees['stock_initial'] ?? 0, 0, ',', ' ') }}</td>
-                        <td>{{ number_format($donnees['entrees'] ?? 0, 0, ',', ' ') }}</td>
-                        <td>{{ number_format($donnees['retours'] ?? 0, 0, ',', ' ') }}</td>
-                        <td>{{ number_format(($donnees['entrees'] ?? 0) + ($donnees['retours'] ?? 0), 0, ',', ' ') }}</td>
-                        <td>{{ number_format($donnees['sorties_par_categorie']['Dotation Agences'] ?? 0, 0, ',', ' ') }}</td>
-                        <td>{{ number_format($donnees['sorties_par_categorie']['Dotation Chef Garage'] ?? 0, 0, ',', ' ') }}</td>
-                        <td>{{ number_format($donnees['sorties_par_categorie']['Groupe Electrogène'] ?? 0, 0, ',', ' ') }}</td>
-                        <td>{{ number_format($donnees['sorties_par_categorie']['Missions'] ?? 0, 0, ',', ' ') }}</td>
-                        <td class="fw-bold" style="color: blue;">{{ number_format($donnees['stock_final'] ?? 0, 0, ',', ' ') }}</td>
+                        <th rowspan="2">Période</th>
+                        <th rowspan="2">Stock Initial</th>
+                        <th colspan="3" style="text-align: center;">Entrées</th>
+                        <th colspan="4" style="text-align: center;">Sorties</th>
+                        <th rowspan="2">Stock Final</th>
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
-    @else
-        <p>Aucune donnée disponible pour la période sélectionnée.</p>
-    @endif
+                    <tr>
+                        <th>Acquis</th>
+                        <th>Retour</th>
+                        <th>Total</th>
+                        <th>Dotation Agences</th>
+                        <th>Dotation Chef Garage</th>
+                        <th>Groupe Electrogène</th>
+                        <th>Missions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{-- Boucle sur les données du rapport périodique --}}
+                    @foreach($rapport_periodique as $donnees)
+                        <tr>
+                            <td class="text-left">{{ $donnees['periode'] }}</td>
+                            <td>{{ number_format($donnees['stock_initial'] ?? 0, 0, ',', ' ') }}</td>
+                            <td>{{ number_format($donnees['entrees'] ?? 0, 0, ',', ' ') }}</td>
+                            <td>{{ number_format($donnees['retours'] ?? 0, 0, ',', ' ') }}</td>
+                            {{-- Total Entrées = Acquis + Retours --}}
+                            <td>{{ number_format(($donnees['entrees'] ?? 0) + ($donnees['retours'] ?? 0), 0, ',', ' ') }}</td>
+
+                            {{-- Détail des Sorties par catégorie (Montants) --}}
+                            <td>{{ number_format($donnees['sorties_par_categorie']['Dotation Agences'] ?? 0, 0, ',', ' ') }}</td>
+                            <td>{{ number_format($donnees['sorties_par_categorie']['Dotation Chef Garage'] ?? 0, 0, ',', ' ') }}</td>
+                            <td>{{ number_format($donnees['sorties_par_categorie']['Groupe Electrogène'] ?? 0, 0, ',', ' ') }}</td>
+                            <td>{{ number_format($donnees['sorties_par_categorie']['Missions'] ?? 0, 0, ',', ' ') }}</td>
+
+                            <td><b style="color: blue;">{{ number_format($donnees['stock_final'] ?? 0, 0, ',', ' ') }}</b></td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @else
+            <p>Aucune donnée de rapport périodique disponible.</p>
+        @endif
+    </div>
+
+    <div style="height: 15px;"></div> {{-- Petit espace --}}
+
+    <div class="coupon-details-section">
+        <h3 style="font-size: 13pt; margin-bottom: 5px;">Tableau 2: Détail Consolidé des Coupons (Montants Globaux)</h3>
+
+        @if(!empty($details_coupons_global) && is_array($details_coupons_global) && count($details_coupons_global) > 0)
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Compagnie</th>
+                        <th style="width: 20%;">Valeur Coupon (XOF)</th>
+                        <th style="width: 25%;">Total Coupons Mouvements (Qté)</th>
+                        <th style="width: 25%;">Montant Total Mouvements (XOF)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($details_coupons_global as $detail)
+                        <tr>
+                            <td class="text-left">{{ $detail['nom_compagnie'] }}</td>
+                            <td class="text-right">{{ number_format($detail['valeur'] ?? 0, 0, ',', ' ') }}</td>
+                            <td class="text-right fw-bold">{{ number_format($detail['nombre_coupons'] ?? 0, 0, ',', ' ') }}</td>
+                            <td class="text-right fw-bold">{{ number_format($detail['montant_total'] ?? 0, 0, ',', ' ') }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr style="background-color: #e0e0e0;">
+                        <td colspan="2" class="text-right fw-bold">TOTAL GÉNÉRAL CONSOLIDÉ</td>
+                        <td class="text-right fw-bold">{{ number_format($totalCoupons ?? 0, 0, ',', ' ') }}</td>
+                        <td class="text-right fw-bold">{{ number_format($totalMontant ?? 0, 0, ',', ' ') }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        @else
+            <p>Aucun détail de coupon (mouvement) trouvé pour la période sélectionnée.</p>
+        @endif
     </div>
 
 </div> <div class="footer-section">
