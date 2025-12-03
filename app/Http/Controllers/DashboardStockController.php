@@ -17,7 +17,8 @@ class DashboardStockController extends Controller
             'action'     => 'Consultation liste des articles',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -36,7 +37,8 @@ class DashboardStockController extends Controller
             'action'     => 'Consultation des articles en alerte',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -50,15 +52,6 @@ class DashboardStockController extends Controller
 
     public function dashInfoStock(Request $request)
     {
-        // 🔥 Log consultation dashboard stock
-        LogJournalisation::create([
-            'action'     => 'Consultation dashboard stock',
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id(),
-            'date_action'=> now(),
-        ]);
-
         // Articles en alerte
         $query = Article::with('stock')
             ->where('isdeleted', false)
@@ -82,6 +75,16 @@ class DashboardStockController extends Controller
         $total_article = Article::count();
         $total_demandes_en_attente = MouvementStock::where('statut', 'En attente')->count();
         $total_demandes_accorde = MouvementStock::where('statut', 'Accordé')->count();
+
+        // 🔥 Log consultation dashboard stock
+        LogJournalisation::create([
+            'action'     => 'Consultation dashboard stock',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            'date_action'=> now(),
+        ]);
 
         return new PostResource(true, 'Données du dashboard stock', [
             'total_article_en_alerte'              => $total_article_en_alerte,

@@ -34,7 +34,7 @@ class CouponTicketController extends Controller
         return new PostResource(true, 'Liste des coupon tickets', $couponTickets);
     }
 
-    public function getCouponTicketsWithCompagnies()
+    public function getCouponTicketsWithCompagnies(Request $request)
     {
 
         $stocks = StockTicket::with(['couponTicket', 'compagnie'])
@@ -118,7 +118,7 @@ class CouponTicketController extends Controller
     }
 
     // Supprimer un coupon_ticket
-    public function destroy(CouponTicket $couponTicket)
+    public function destroy(CouponTicket $couponTicket, Request $request)
     {
         // Supprimer le coupon_ticket
         $couponTicket->isdeleted = true;

@@ -14,6 +14,12 @@ class LogJournalisation extends Model
         'ip_address',
         'date_action',
         'user_agent',
-        'user_id'
+        'user_id',
+        'user_name',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
 }

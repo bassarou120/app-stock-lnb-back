@@ -118,7 +118,7 @@ Route::post('vehicules/batch', [VehiculeController::class, 'storeBatch']);
 
 // Nouvelle route pour l'ajout par lot
 Route::get('dashboard/stock', [DashboardStockController::class, 'indexArticles']);
-Route::get('dashboard/dashInfoStock', [DashboardStockController::class, 'dashInfoStock']);
+Route::middleware('auth:api')->get('dashboard/dashInfoStock', [DashboardStockController::class, 'dashInfoStock']);
 Route::post('articles/batch', [ArticleController::class, 'storeBatch']);
 
 Route::get('mouvement-stock/entree', [MouvementStockController::class, 'indexEntreeStock']);
@@ -307,4 +307,3 @@ Route::prefix('logs')->group(function () {
     Route::get('/{id}', [LogJournalisationController::class, 'show']);
     Route::delete('/{id}', [LogJournalisationController::class, 'destroy']);
 });
-

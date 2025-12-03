@@ -122,7 +122,8 @@ class ForgotPasswordController extends Controller
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
             // On utilise l'ID de l'utilisateur concerné.
-            'user_id'    => $user->id, 
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -186,7 +187,8 @@ class ForgotPasswordController extends Controller
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
             // On utilise l'ID de l'utilisateur dont le mot de passe a été changé pour le log
-            'user_id'    => $user->id, 
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 

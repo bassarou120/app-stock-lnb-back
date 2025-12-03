@@ -35,6 +35,7 @@ class AuthentificationController extends Controller
     {
         $input = $request->all();
 
+
         try {
             // Appeler la fonction d'enregistrement dans AuthService
             $this->authService->register($input);
@@ -43,7 +44,8 @@ class AuthentificationController extends Controller
                 'action'     => 'Inscription',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => null, // toujours pas connecté
+                'user_id'    => null, // pas encore connecté
+                'user_name'  => trim(($input['name'] ?? '') . ' ' . ($input['surname'] ?? '')),
                 'date_action'=> now(),
             ]);
 
@@ -54,10 +56,11 @@ class AuthentificationController extends Controller
         } catch (\Exception $e) {
             // 📝 LOG → Inscription échouée
             LogJournalisation::create([
-                'action'     => 'Inscription échouée: ' . $e->getMessage(),
+                'action'     => 'Inscription',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => null, // toujours pas connecté
+                'user_id'    => null, // pas encore connecté
+                'user_name'  => trim(($input['name'] ?? '') . ' ' . ($input['surname'] ?? '')),
                 'date_action'=> now(),
             ]);
 
@@ -149,19 +152,60 @@ class AuthentificationController extends Controller
         $input = $request->all();
         $result = $this->authService->login($input);
 
-        if ($result[0]) {
-            $user = $result[1]['user'];
+        // Récupération du message
+        $messageBack = $result[1]['message'] ?? null;
 
-            // 📝 LOG → Connexion réussie
+        // Récupération du user en cas de succès ou échec
+        $user = $result[1]['user'] ?? null;
+
+        // Si compte inactif, un user peut être fourni en index 2
+        if (!$result[0] && $messageBack === 'inactif') {
+            $user = $result[2] ?? $user;
+        }
+
+        // Extraire infos user
+        $userId   = $user?->id;
+        //echo "user id est : ".$userId;
+        $userName = null;
+        $dd="dd";
+
+        // Construction du nom complet si user trouvé
+        if ($user) {
+            // Logique de récupération du nom (identique à celle du login)
+            if ($user->employe) {
+                $userName = trim(($user->employe->nom ?? '') . ' ' . ($user->employe->prenom ?? ''));
+                //echo "username est" .$userName
+            }
+
+            if (empty($userName)) {
+                $userFullName = trim(($user->name ?? '') . ' ' . ($user->surname ?? ''));
+                $userName = !empty($userFullName) ? $userFullName : ($user->email ?? 'N/A');
+            }
+        }
+
+        // Action par défaut
+        $action = "Tentative échouée";
+
+        // =========================================================
+        //  CAS DE CONNEXION RÉUSSIE
+        // =========================================================
+        if ($result[0]) {
+
+            $action = "Connexion réussie";
+
+            // Log de la réussite
             LogJournalisation::create([
-                'action'     => 'Connexion',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $user->id,
-                'date_action'=> now(),
+                'action'      => $action,
+                'ip_address'  => $request->ip(),
+                'user_agent'  => $request->header('User-Agent'),
+                'user_id'     => $userId,
+                'user_name'   => (string) ($userName ?: $user->email),
+                'date_action' => now(),
             ]);
 
-            if ($user->active == 1) {
+
+            // Vérification activation du compte
+            if ($user && $user->active == 1) {
                 return response()->json([
                     'success' => true,
                     'data'    => $result[1],
@@ -169,6 +213,7 @@ class AuthentificationController extends Controller
                 ], 200);
             }
 
+            // Compte inactif après authentification correcte
             return response()->json([
                 'success' => false,
                 'message' => 'Compte inactif!',
@@ -176,18 +221,25 @@ class AuthentificationController extends Controller
             ], 403);
         }
 
-        // ❌ erreurs identifiants
-        $messageBack = $result[1];
+        // =========================================================
+        //  CAS DE CONNEXION ÉCHOUÉE
+        // =========================================================
 
-        // 📝 LOG → Tentative échouée
+        if ($messageBack === 'inactif') {
+            $action = "Tentative de connexion (Compte inactif)";
+        }
+
+        // Log de l'échec
         LogJournalisation::create([
-            'action'     => 'Tentative connexion échouée',
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->header('User-Agent'),
-            'user_id'    => null,
-            'date_action'=> now(),
+            'action'      => $action,
+            'ip_address'  => $request->ip(),
+            'user_agent'  => $request->header('User-Agent'),
+            'user_id'     => $userId,
+            'user_name'   => $userName,
+            'date_action' => now(),
         ]);
 
+        // Identifiants incorrects
         if ($messageBack === 'erreurs identifiants') {
             return response()->json([
                 'success' => false,
@@ -196,6 +248,7 @@ class AuthentificationController extends Controller
             ], 401);
         }
 
+        // Compte inactif
         if ($messageBack === 'inactif') {
             return response()->json([
                 'success' => false,
@@ -203,7 +256,16 @@ class AuthentificationController extends Controller
                 'errors'  => ['failed' => 'Votre compte est inactif. Contactez un administrateur']
             ], 403);
         }
+
+        // Fallback — erreur générique (au cas où)
+        return response()->json([
+            'success' => false,
+            'message' => 'Une erreur inconnue est survenue.',
+            'errors'  => ['failed' => 'Erreur interne']
+        ], 500);
     }
+
+
 
     //-------------------- Fonction de déconnexion (logout)
 
@@ -250,15 +312,22 @@ class AuthentificationController extends Controller
     {
         try {
             $token = $request->bearerToken();
+            $user = Auth::user();
+            $userName = null;
+
+            if ($user && $user->employe) {
+                $userName = $user->employe->nom . ' ' . $user->employe->prenom;
+            }
 
             if ($token && $this->authService->logout($token)[0]) {
 
                 // 📝 LOG → Déconnexion
                 LogJournalisation::create([
-                    'action'     => 'Déconnexion',
+                    'action'     => 'Déconnexion réussie',
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->header('User-Agent'),
-                    'user_id'    => Auth::id(),
+                    'user_id'    => $user?->id,
+                    'user_name'  => $userName,
                     'date_action'=> now(),
                 ]);
 
@@ -269,13 +338,15 @@ class AuthentificationController extends Controller
             }
 
             // LOG → échec déconnexion
-            LogJournalisation::create([
-                'action'     => 'Tentative déconnexion échouée',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
-                'date_action'=> now(),
-            ]);
+
+                LogJournalisation::create([
+                    'action'     => "Tentative déconnexion échouée",
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->header('User-Agent'),
+                    'user_id'    => $user?->id,
+                    'user_name'  => $userName,
+                    'date_action'=> now(),
+                ]);
 
             return response()->json([
                 'success' => false,
@@ -288,12 +359,13 @@ class AuthentificationController extends Controller
 
             // LOG → exception logout
             LogJournalisation::create([
-                'action'     => 'Erreur déconnexion (exception)',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
-                'date_action'=> now(),
-            ]);
+                    'action'     => "Erreur déconnexion (exception)",
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->header('User-Agent'),
+                    'user_id'    => $user?->id,
+                    'user_name'  => $userName,
+                    'date_action'=> now(),
+                ]);
 
             return response()->json([
                 'success' => false,

@@ -56,6 +56,11 @@ class ArticleController extends Controller
         // 1. Récupérer l'exercice ouvert
         $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
 
+        $user = $request->user();
+        $userName = trim(($user?->name ?? '') . ' ' . ($user?->surname ?? ''));
+        $userNameForLog = !empty($userName) ? $userName : ($user?->email ?? 'N/A');
+        echo "user_name" . $userNameForLog;
+
         if (!$exerciceOuvert) {
             return response()->json([
                 'success' => false,
