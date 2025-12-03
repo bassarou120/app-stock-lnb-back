@@ -6,6 +6,7 @@ use App\Models\LogJournalisation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth; 
 
 class LogJournalisationController extends Controller
 {
@@ -22,19 +23,14 @@ class LogJournalisationController extends Controller
             'date_action' => 'nullable|date',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation des logs',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+        // récupérer l'utilisateur connecté
+        $userId = $request->user_id ?? Auth::id();
 
         $log = LogJournalisation::create([
             'action' => $request->action,
             'ip_address' => $request->ip_address ?? $request->ip(),
             'user_agent' => $request->user_agent ?? $request->header('User-Agent'),
-            'user_id' => $request->user_id,
+            'user_id' => $userId, 
             'date_action' => $request->date_action
                         ? $request->date_action
                         : DB::raw('CURRENT_TIMESTAMP')
@@ -52,7 +48,16 @@ class LogJournalisationController extends Controller
      */
     public function index()
     {
-        $logs = LogJournalisation::orderBy('date_action', 'desc')->get();
+        // Concaténation des colonnes 'name' et 'surname' pour former le nom complet.
+        // On suppose que votre SGBD utilise CONCAT (MySQL/PostgreSQL). 
+        // Si vous utilisez SQL Server ou autre, l'opérateur de concaténation pourrait être différent.
+        $logs = LogJournalisation::orderBy('date_action', 'desc')
+            ->leftJoin('users', 'log_journalisations.user_id', '=', 'users.id')
+            ->select(
+                'log_journalisations.*', 
+                DB::raw("CONCAT(users.surname, ' ', users.name) as user_name_full") // Nom complet
+            )
+            ->get();
 
         return response()->json([
             'success' => true,
