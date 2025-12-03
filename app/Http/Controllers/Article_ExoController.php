@@ -27,7 +27,8 @@ class Article_ExoController extends Controller
             'action'     => 'Consultation de la liste des articles par exercices',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -48,7 +49,8 @@ class Article_ExoController extends Controller
             'action'     => 'Consultation de la liste complète des articles_exercices',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -84,7 +86,8 @@ class Article_ExoController extends Controller
             'action'     => 'Création de l\'association Article-Exercice ID Article: '.$request->id_article.' / ID Exercice: '.$request->id_exercice,
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -109,7 +112,8 @@ class Article_ExoController extends Controller
             'action'     => 'Consultation de l\'association Article ID: '.$article->id.' ↔ Exercice ID: '.$exercice->id,
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -151,7 +155,8 @@ class Article_ExoController extends Controller
             'action'     => 'Mise à jour de l\'association Article ID: '.$article->id.' ↔ Exercice ID: '.$exercice->id,
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 

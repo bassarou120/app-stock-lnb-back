@@ -169,7 +169,8 @@ class AnnulationTicketController extends Controller
             'action'     => 'Consultation du mouvement de ticket ID '.$idMouvement,
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 

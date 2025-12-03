@@ -23,7 +23,8 @@ class CategorieSortieTicketController extends Controller
             'action'     => 'Consultation de la liste des CategorieSortieTicket',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id() ?? null,
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -54,7 +55,8 @@ class CategorieSortieTicketController extends Controller
             'action'     => 'Création de la CategorieSortieTicket ID ' . $categorieSortieTicket->id . ' (Libellé: ' . $categorieSortieTicket->libelle . ')',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id() ?? null,
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -85,7 +87,8 @@ class CategorieSortieTicketController extends Controller
             'action'     => 'Modification de la CategorieSortieTicket ID ' . $categorieSortieTicket->id . ' (Libellé: ' . $categorieSortieTicket->libelle . ')',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id() ?? null,
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -104,7 +107,8 @@ class CategorieSortieTicketController extends Controller
             'action'     => 'Suppression de la CategorieSortieTicket ID ' . $categorieSortieTicket->id . ' (Libellé: ' . $categorieSortieTicket->libelle . ')',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id() ?? null,
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
         // Retourner la réponse formatée avec PostResource, indiquant que la suppression a réussi

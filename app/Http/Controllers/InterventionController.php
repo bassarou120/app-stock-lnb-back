@@ -29,7 +29,8 @@ class InterventionController extends Controller
             'action'     => 'Consultation de la liste des interventions',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id() ?? null,
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -48,7 +49,8 @@ class InterventionController extends Controller
             'action'     => 'Consultation des interventions immos',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id() ?? null,
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -77,7 +79,8 @@ class InterventionController extends Controller
             'action'     => 'Création d\'une intervention ID ' . $intervention->id . ' (Titre: ' . $intervention->titre . ')',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id() ?? null,
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -106,7 +109,8 @@ class InterventionController extends Controller
             'action'     => 'Mise à jour de l\'intervention ID ' . $intervention->id . ' (Titre: ' . $intervention->titre . ')',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id() ?? null,
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -123,7 +127,8 @@ class InterventionController extends Controller
             'action'     => 'Suppression de l\'intervention ID ' . $intervention->id . ' (Titre: ' . $intervention->titre . ')',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => Auth::id() ?? null,
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -143,7 +148,8 @@ class InterventionController extends Controller
                 'action'     => 'Impression de la liste des interventions',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
         return $pdf->download('liste_interventions.pdf');
