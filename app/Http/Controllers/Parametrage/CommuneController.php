@@ -23,7 +23,8 @@ class CommuneController extends Controller
             "action"      => "Consultation de la liste des communes",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         // Retourner la réponse formatée avec PostResource
@@ -52,7 +53,8 @@ class CommuneController extends Controller
             "action"      => "Création de la commune : " . $commune->libelle_commune . " (ID: " . $commune->id . ")",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         // Retourner la réponse formatée avec PostResource, indiquant que la création a réussi
@@ -81,7 +83,8 @@ class CommuneController extends Controller
             "action"      => "Mise à jour de la commune : " . $commune->libelle_commune . " (ID: " . $commune->id . ")",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -99,7 +102,8 @@ class CommuneController extends Controller
             "action"      => "Suppression de la commune : " . $commune->libelle_commune . " (ID: " . $commune->id . ")",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         // Retourner la réponse formatée avec PostResource, indiquant que la suppression a réussi

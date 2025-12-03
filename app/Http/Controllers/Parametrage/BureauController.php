@@ -48,7 +48,8 @@ class BureauController extends Controller
             "action"      => "Consultation de la liste des bureaux",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Liste des bureaux', $bureaux);
@@ -101,7 +102,8 @@ class BureauController extends Controller
             "action"      => "Création d’un nouveau bureau",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -162,7 +164,8 @@ class BureauController extends Controller
             "action"      => "Mise à jour d'un bureau",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Bureau mis à jour avec succès', $bureaux);
@@ -202,7 +205,8 @@ class BureauController extends Controller
             "action"      => "Suppression du bureau : " . $bureaux->libelle_bureau,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => auth()->id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Bureau supprimé avec succès', null);

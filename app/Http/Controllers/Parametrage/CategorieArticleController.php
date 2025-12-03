@@ -22,7 +22,8 @@ class CategorieArticleController extends Controller
             "action"      => "Consultation de la liste des catégories d'articles",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Liste des catégories d\'articles', $categories);
@@ -51,7 +52,8 @@ class CategorieArticleController extends Controller
             "action"      => "Création d'une nouvelle catégorie d'article",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -81,7 +83,8 @@ class CategorieArticleController extends Controller
             "action"      => "Mise à jour d'une catégorie d'article",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -97,7 +100,8 @@ class CategorieArticleController extends Controller
             "action"      => "Suppression de la catégorie d'article : " . $categorie_article->libelle_categorie_article,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Catégorie d\'article supprimée avec succès', null);
