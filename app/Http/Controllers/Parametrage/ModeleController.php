@@ -22,7 +22,8 @@ class ModeleController extends Controller
             "action"      => "Affichage de la liste des modèles",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -60,7 +61,8 @@ class ModeleController extends Controller
             "action"      => "Création de modèle",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         
@@ -76,7 +78,8 @@ class ModeleController extends Controller
             "action"      => "Suppression de modèle ID: " . $modele->id,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Modèle supprimé avec succès', null);

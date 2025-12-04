@@ -27,7 +27,8 @@ class StockTicketController extends Controller
             "action"      => "Affichage de la liste des stocks de tickets",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Liste des stocks de tickets', $stock_tickets);
@@ -54,7 +55,8 @@ class StockTicketController extends Controller
             "action"      => "Création du stock de ticket : " . $stock_ticket->couponTicket->libelle_coupon_ticket,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Stock de ticket créé avec succès', $stock_ticket);
@@ -81,7 +83,8 @@ class StockTicketController extends Controller
             "action"      => "Mise à jour du stock de ticket : " . $stock_ticket->couponTicket->libelle_coupon_ticket,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Stock de ticket mis à jour avec succès', $stock_ticket);
@@ -97,7 +100,8 @@ class StockTicketController extends Controller
             "action"      => "Suppression du stock de ticket : " . $stock_ticket->couponTicket->libelle_coupon_ticket,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Stock de ticket supprimé avec succès', null);
@@ -116,7 +120,8 @@ class StockTicketController extends Controller
             "action"      => "Impression de l'état des stocks de tickets",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
