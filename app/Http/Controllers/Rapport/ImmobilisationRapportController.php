@@ -326,6 +326,15 @@ class ImmobilisationRapportController extends Controller
                 break;
         }
 
+        LogJournalisation::create([
+            "action"      => "Consultation des rapports d'immobilisations",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
+
         return new PostResource($success, $message, $data);
     }
 
@@ -612,6 +621,15 @@ public function imprimerRapportData(Request $request)
             }
 
             $pdf = \Pdf::loadView($viewName, $compactData);
+
+        LogJournalisation::create([
+            "action"      => "Impression des rapports de ticket ",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
 
             return $pdf->download($filename);
     }

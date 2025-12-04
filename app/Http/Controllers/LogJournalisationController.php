@@ -6,7 +6,9 @@ use App\Models\LogJournalisation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth; 
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class LogJournalisationController extends Controller
 {
@@ -30,7 +32,8 @@ class LogJournalisationController extends Controller
             'action' => $request->action,
             'ip_address' => $request->ip_address ?? $request->ip(),
             'user_agent' => $request->user_agent ?? $request->header('User-Agent'),
-            'user_id' => $userId, 
+            'user_id' => $request->user_id,
+            'user_name'   => $request->user()->name,
             'date_action' => $request->date_action
                         ? $request->date_action
                         : DB::raw('CURRENT_TIMESTAMP')

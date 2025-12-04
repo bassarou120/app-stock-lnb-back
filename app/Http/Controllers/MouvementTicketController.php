@@ -43,7 +43,8 @@ class MouvementTicketController extends Controller
                 'action'     => 'Consultation des mouvements "Entrée de Ticket"',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -126,9 +127,9 @@ class MouvementTicketController extends Controller
                 'action'     => 'Création Entrée Ticket réussie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "Mouvement d'entrée de ticket créé avec succès"
             ]);
 
             return new PostResource(true, 'Le mouvement d\'entrée de ticket a été bien enregistré !', $b);
@@ -136,12 +137,11 @@ class MouvementTicketController extends Controller
                         // 📝 LOG → Échec de validation
             // 📝 LOG → Création échouée (exception)
             LogJournalisation::create([
-                'action'     => 'Création Entrée Ticket échouée (exception)',
+                'action'     => 'Création Entrée Ticket échouée (exception)' . $e->getMessage(),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
                 'user_id'    => Auth::id(),
                 'date_action'=> now(),
-                'details'    => "Erreur: " . $e->getMessage()
             ]);
             DB::rollBack();
             return response()->json(['error' => 'Erreur lors de l\'enregistrement du mouvement d\'entrée: ' . $e->getMessage()], 500);
@@ -180,8 +180,6 @@ class MouvementTicketController extends Controller
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
-
-
 
         DB::beginTransaction();
         try {
@@ -240,9 +238,9 @@ class MouvementTicketController extends Controller
                 'action'     => 'Mise à jour d\'Entrée de Ticket réussie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "Mouvement d'entrée de ticket mis à jour avec succès"
             ]);
 
             DB::commit();
@@ -254,9 +252,9 @@ class MouvementTicketController extends Controller
                 'action'     => 'Echec de Mise à jour d\'Entrée de Ticket',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "Echec lors de la mise à jour du mouvement d'entrée de ticket: " . $e->getMessage()
             ]);
             DB::rollBack();
             return response()->json(['error' => 'Erreur lors de la mise à jour du mouvement d\'entrée: ' . $e->getMessage()], 500);
@@ -302,7 +300,8 @@ class MouvementTicketController extends Controller
                 'action'     => 'Suppression logique du mouvement "Entrée de Ticket"',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -313,7 +312,8 @@ class MouvementTicketController extends Controller
                 'action'     => 'Erreur lors de la suppression du mouvement "Entrée de Ticket" (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
             DB::rollBack();
@@ -348,46 +348,45 @@ class MouvementTicketController extends Controller
 
 
         // 3. Transformer chaque groupe en un seul objet consolidé pour le frontend
-        $transactions = $groupedMouvements->map(function ($group) {
-            // Prendre le premier mouvement comme base pour les informations communes
-            $firstMouvement = $group->first();
+$transactions = $groupedMouvements->map(function ($group) use ($request) {
+    $firstMouvement = $group->first();
 
-            // Créer un tableau contenant les détails de chaque ticket du groupe
-            $ticketsDetails = $group->map(function ($mouvement) {
-                return [
-                    'coupon' => $mouvement->coupon_ticket,
-                    'compagnie' => $mouvement->compagniePetrolier,
-                    'qte' => $mouvement->qte,
-                ];
-            });
+    $ticketsDetails = $group->map(function ($mouvement) {
+        return [
+            'coupon' => $mouvement->coupon_ticket,
+            'compagnie' => $mouvement->compagniePetrolier,
+            'qte' => $mouvement->qte,
+        ];
+    });
 
-            LogJournalisation::create([
-                'action'     => 'Consultation des mouvements "Sortie de Ticket"',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
-                'date_action'=> now(),
-            ]);
+    LogJournalisation::create([
+        'action'     => 'Consultation des mouvements Sortie de Ticket',
+        'ip_address' => $request->ip(),
+        'user_agent' => $request->header('User-Agent'),
+        'user_id'    => $request->user()->id,
+        'user_name'   => $request->user()->name,
+        'date_action'=> now(),
+    ]);
 
-            // Retourner un objet unique par transaction
-            return [
-                "id" => $firstMouvement->id, // ID du premier mouvement du groupe
-                'reference' => $firstMouvement->reference,
-                'date' => $firstMouvement->date,
-                'vehicule' => $firstMouvement->vehicule,
-                'employe' => $firstMouvement->employe,
-                'objet' => $firstMouvement->objet,
-                'description' => $firstMouvement->description,
-                'commune_depart' => $firstMouvement->depart,
-                'commune_arriver' => $firstMouvement->arriver,
-                'trajet_aller_retour' => $firstMouvement->trajet_aller_retour,
-                'kilometrage' => $firstMouvement->kilometrage, // Assurez-vous que ces champs existent
-                'kilometrage_de_fin' => $firstMouvement->kilometrage_de_fin,
-                'bon_de_sortie_path' => $firstMouvement->bon_de_sortie_path,
-                'tickets' => $ticketsDetails, // Le tableau des tickets
-                'categorie_sortie_ticket' => $firstMouvement->categorieSortieTicket,
-            ];
-        })->values(); // Utiliser values() pour réindexer le tableau numériquement
+    return [
+        "id" => $firstMouvement->id,
+        'reference' => $firstMouvement->reference,
+        'date' => $firstMouvement->date,
+        'vehicule' => $firstMouvement->vehicule,
+        'employe' => $firstMouvement->employe,
+        'objet' => $firstMouvement->objet,
+        'description' => $firstMouvement->description,
+        'commune_depart' => $firstMouvement->depart,
+        'commune_arriver' => $firstMouvement->arriver,
+        'trajet_aller_retour' => $firstMouvement->trajet_aller_retour,
+        'kilometrage' => $firstMouvement->kilometrage,
+        'kilometrage_de_fin' => $firstMouvement->kilometrage_de_fin,
+        'bon_de_sortie_path' => $firstMouvement->bon_de_sortie_path,
+        'tickets' => $ticketsDetails,
+        'categorie_sortie_ticket' => $firstMouvement->categorieSortieTicket,
+    ];
+})
+->values(); // Utiliser values() pour réindexer le tableau numériquement
         // Retourner un objet unique par transaction
         return new PostResource(true, 'Liste des mouvements de sortie de Ticket', $transactions);
     }
@@ -444,8 +443,6 @@ class MouvementTicketController extends Controller
                     ], 400);
                 }
 
-
-
                 // Créer mouvement (les champs communs sont pris du root)
                 $mouvement = MouvementTicket::create([
                     "id_type_mouvement" => $type_mouvement->id,
@@ -478,7 +475,8 @@ class MouvementTicketController extends Controller
                 'action'     => 'Sortie de tickets créé avec succès',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
             DB::commit();
@@ -490,7 +488,8 @@ class MouvementTicketController extends Controller
                 'action'     => 'Erreur lors de la création de la sortie de tickets',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
             DB::rollBack();
@@ -550,7 +549,8 @@ class MouvementTicketController extends Controller
                 'action'     => 'Mise à jour des mouvements de sortie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -562,7 +562,8 @@ class MouvementTicketController extends Controller
                 'action'     => 'Erreur lors de la mise à jour des mouvements de sortie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
             DB::rollBack();
@@ -611,7 +612,8 @@ class MouvementTicketController extends Controller
                 'action'     => 'Suppression logique du mouvement de sortie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
             return new PostResource(true, 'Mouvement supprimé avec succès !', null);
@@ -621,7 +623,8 @@ class MouvementTicketController extends Controller
                 'action'     => 'Erreur lors de la suppression du mouvement de sortie (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
             return response()->json(['error' => 'Erreur lors de la suppression du mouvement de sortie: ' . $e->getMessage()], 500);
@@ -798,7 +801,8 @@ class MouvementTicketController extends Controller
                 'action'     => 'Génération de bon de sortie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -807,76 +811,30 @@ class MouvementTicketController extends Controller
     }
 
     // Fichier : app/Http/Controllers/MouvementTicketController.php
-    public function televerserBonDeSortie($id, Request $request)
+    public function televerserBonDeSortie(Request $request, $id)
     {
-        $mouvement = MouvementTicket::where('isdeleted', false)->find($id);
+        // ✅ CORRECTION : Utiliser 'bon_de_sortie_file'
+        $request->validate(['bon_de_sortie_file' => 'required|file|mimes:pdf|max:2048']);
+
+        // 1. Trouver le mouvement initial par son ID
+        $mouvement = MouvementTicket::find($id);
 
         if (!$mouvement) {
-            // 📝 LOG → Échec upload (non trouvé)
-            LogJournalisation::create([
-                'action'     => 'Échec upload Bon de Sortie (non trouvé)',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
-                'date_action'=> now(),
-                'details'    => "Mouvement ID: {$id} non trouvé."
-            ]);
-            return response()->json(['message' => 'Mouvement de sortie non trouvé.'], 404);
+            return response()->json(['message' => 'Mouvement introuvable.'], 404);
         }
 
-        $reference = $mouvement->reference;
+        // ✅ CORRECTION : Récupérer le fichier avec la même clé
+        $filePath = $request->file('bon_de_sortie_file')->store('public/bons_de_sortie');
 
-        try {
-            $request->validate(['bon_de_sortie_file' => 'required|file|mimes:pdf|max:5120']); // 5MB max
+        // 3. Mettre à jour TOUS les mouvements qui partagent la même référence
+        MouvementTicket::where('reference', $mouvement->reference)->update([
+            'bon_de_sortie_path' => $filePath
+        ]);
 
-            $file = $request->file('bon_de_sortie_file');
-            $path = $file->storeAs('bons_de_sortie', $reference . '_' . time() . '.' . $file->extension(), 'public');
-
-            DB::beginTransaction();
-
-            // Mise à jour de tous les mouvements avec la référence
-            MouvementTicket::where('reference', $reference)
-                ->update(['bon_de_sortie' => $path]);
-
-            DB::commit();
-
-            // 📝 LOG → Upload réussi
-            LogJournalisation::create([
-                'action'     => 'Téléversement Bon de Sortie réussi',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
-                'date_action'=> now(),
-                'details'    => "Référence: {$reference}. Chemin: {$path}"
-            ]);
-
-            return new PostResource(true, 'Bon de sortie téléversé avec succès.', ['path' => $path]);
-
-        } catch (ValidationException $e) {
-             // 📝 LOG → Échec de validation
-            LogJournalisation::create([
-                'action'     => 'Échec validation (upload Bon de Sortie)',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
-                'date_action'=> now(),
-                'details'    => "ID: {$id}. Erreurs: " . json_encode($e->errors())
-            ]);
-            throw $e;
-        } catch (\Exception $e) {
-            DB::rollBack();
-            // 📝 LOG → Échec upload (exception)
-            LogJournalisation::create([
-                'action'     => 'Téléversement Bon de Sortie échoué (exception)',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
-                'date_action'=> now(),
-                'details'    => "Référence: {$reference}. Erreur: " . $e->getMessage()
-            ]);
-
-            return response()->json(['message' => 'Erreur lors du téléversement du bon de sortie: ' . $e->getMessage()], 500);
-        }
+        return response()->json([
+            'message' => 'Bon de sortie téléversé avec succès !',
+            'bon_de_sortie_path' => $filePath
+        ]);
     }
 
     public function voirBonDeSortie($id, Request $request)
@@ -890,7 +848,8 @@ class MouvementTicketController extends Controller
                 'action'     => 'Voir Bon de Sortie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
         return Storage::response($mouvement->bon_de_sortie_path);
@@ -1060,7 +1019,8 @@ class MouvementTicketController extends Controller
                 'action'     => 'Rapport périodique généré',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -1250,7 +1210,8 @@ class MouvementTicketController extends Controller
                 'action'     => 'Génération du rapport périodique',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -1297,7 +1258,8 @@ class MouvementTicketController extends Controller
                 'action'     => 'Génération du rapport périodique',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 
@@ -1370,7 +1332,8 @@ class MouvementTicketController extends Controller
                 'action'     => 'Génération du rapport périodique par montant',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => auth()->id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
 

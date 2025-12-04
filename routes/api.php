@@ -57,6 +57,16 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+    Route::apiResource('users', UserController::class); // Ceci crée les routes CRUD complètes pour /api/users
+    Route::post('register', [AuthentificationController::class, 'register']);
+    Route::post('login', [AuthentificationController::class, 'login'])->name("login");
+
+
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendOTP']);
+    Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOTP']);
+    Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
+    Route::post('/bonjour', [ForgotPasswordController::class, 'direBonjour']);
+
 
 Route::middleware('auth:api')->group(function () {
 
@@ -159,15 +169,6 @@ Route::middleware('auth:api')->group(function () {
 
     // Route::post('reset-password/{user}', [AuthentificationController::class, 'resetPassword']);
     // Routes pour les utilisateurs
-    Route::apiResource('users', UserController::class); // Ceci crée les routes CRUD complètes pour /api/users
-    Route::post('register', [AuthentificationController::class, 'register']);
-    Route::post('login', [AuthentificationController::class, 'login'])->name("login");
-
-
-    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendOTP']);
-    Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOTP']);
-    Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
-    Route::post('/bonjour', [ForgotPasswordController::class, 'direBonjour']);
 
     Route::apiResource('intervention-vehicules', InterventionVehiculeController::class)->except(['show']);
     Route::get('/interventions-vehicule/imprimer', [InterventionVehiculeController::class, 'imprimerInterventionsVehicule']);

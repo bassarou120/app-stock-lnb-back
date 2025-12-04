@@ -26,7 +26,8 @@ class TrajetController extends Controller
             'action'     => "Consultation des trajets",
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => auth()->id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
@@ -53,9 +54,10 @@ class TrajetController extends Controller
                 'action'     => 'Création de trajet réussie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "Trajet ID: {$trajet->id}, Départ: {$validated['commune_depart']} -> Arrivée: {$validated['commune_arriver']}"
+                //'details'    => "Trajet ID: {$trajet->id}, Départ: {$validated['commune_depart']} -> Arrivée: {$validated['commune_arriver']}"
             ]);
 
             return response()->json($trajet, 201);
@@ -66,9 +68,10 @@ class TrajetController extends Controller
                 'action'     => 'Échec de validation (création trajet)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => json_encode($e->errors())
+                //'details'    => json_encode($e->errors())
             ]);
             // Renvoyer l'erreur de validation (gérée par le framework si on catch pas, mais pour le log on le fait)
             throw $e; 
@@ -79,9 +82,10 @@ class TrajetController extends Controller
                 'action'     => 'Création de trajet échouée (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => $e->getMessage()
+                //'details'    => $e->getMessage()
             ]);
             
             // Log de l'erreur interne
@@ -124,9 +128,10 @@ class TrajetController extends Controller
                 'action'     => 'Mise à jour de trajet réussie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => $oldDetails . ". Nouvelles données: " . json_encode($validated)
+                //'details'    => $oldDetails . ". Nouvelles données: " . json_encode($validated)
             ]);
 
             return response()->json($trajet);
@@ -137,9 +142,10 @@ class TrajetController extends Controller
                 'action'     => 'Échec de validation (mise à jour trajet)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "Trajet ID: {$id}. Erreurs: " . json_encode($e->errors())
+                //'details'    => "Trajet ID: {$id}. Erreurs: " . json_encode($e->errors())
             ]);
             throw $e; 
 
@@ -149,9 +155,10 @@ class TrajetController extends Controller
                 'action'     => 'Mise à jour de trajet échouée (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "Trajet ID: {$id}. Erreur: " . $e->getMessage()
+                //'details'    => "Trajet ID: {$id}. Erreur: " . $e->getMessage()
             ]);
             
             \Log::error("Erreur lors de la mise à jour du trajet #{$id}: " . $e->getMessage());
@@ -178,9 +185,10 @@ class TrajetController extends Controller
                 'action'     => 'Suppression de trajet réussie (soft delete)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "Trajet ID: {$trajet->id}, Départ: {$trajet->commune_depart}, Arrivée: {$trajet->commune_arriver}"
+                //'details'    => "Trajet ID: {$trajet->id}, Départ: {$trajet->commune_depart}, Arrivée: {$trajet->commune_arriver}"
             ]);
 
             return response()->json(['message' => 'Trajet supprimé avec succès']);
@@ -191,9 +199,10 @@ class TrajetController extends Controller
                 'action'     => 'Suppression de trajet échouée (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
                 'date_action'=> now(),
-                'details'    => "Trajet ID: {$id}. Erreur: " . $e->getMessage()
+                //'details'    => "Trajet ID: {$id}. Erreur: " . $e->getMessage()
             ]);
             
             \Log::error("Erreur lors de la suppression du trajet #{$id}: " . $e->getMessage());

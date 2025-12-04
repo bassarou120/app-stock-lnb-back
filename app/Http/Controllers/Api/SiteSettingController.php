@@ -30,7 +30,8 @@ class SiteSettingController extends Controller
                 'action'     => "Échec: Tentative de consultation des paramètres de configuration du site (Erreur système).",
                 'ip_address' => request()->ip(),
                 'user_agent' => request()->header('User-Agent'),
-                'user_id'    => Auth::id(),
+                'user_id'    => $request->user()->id,
+                'user_name'  => $request->user()->name,
                 'date_action'=> now(),
             ]);
             // Log l'erreur pour le débogage (dans storage/logs/laravel.log)
