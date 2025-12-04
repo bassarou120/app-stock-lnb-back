@@ -811,76 +811,30 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
     }
 
     // Fichier : app/Http/Controllers/MouvementTicketController.php
-    public function televerserBonDeSortie($id, Request $request)
+    public function televerserBonDeSortie(Request $request, $id)
     {
-        $mouvement = MouvementTicket::where('isdeleted', false)->find($id);
+        // ✅ CORRECTION : Utiliser 'bon_de_sortie_file'
+        $request->validate(['bon_de_sortie_file' => 'required|file|mimes:pdf|max:2048']);
+
+        // 1. Trouver le mouvement initial par son ID
+        $mouvement = MouvementTicket::find($id);
 
         if (!$mouvement) {
-            // 📝 LOG → Échec upload (non trouvé)
-            LogJournalisation::create([
-                'action'     => 'Échec upload Bon de Sortie (non trouvé)',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
-            ]);
-            return response()->json(['message' => 'Mouvement de sortie non trouvé.'], 404);
+            return response()->json(['message' => 'Mouvement introuvable.'], 404);
         }
 
-        $reference = $mouvement->reference;
+        // ✅ CORRECTION : Récupérer le fichier avec la même clé
+        $filePath = $request->file('bon_de_sortie_file')->store('public/bons_de_sortie');
 
-        try {
-            $request->validate(['bon_de_sortie_file' => 'required|file|mimes:pdf|max:5120']); // 5MB max
+        // 3. Mettre à jour TOUS les mouvements qui partagent la même référence
+        MouvementTicket::where('reference', $mouvement->reference)->update([
+            'bon_de_sortie_path' => $filePath
+        ]);
 
-            $file = $request->file('bon_de_sortie_file');
-            $path = $file->storeAs('bons_de_sortie', $reference . '_' . time() . '.' . $file->extension(), 'public');
-
-            DB::beginTransaction();
-
-            // Mise à jour de tous les mouvements avec la référence
-            MouvementTicket::where('reference', $reference)
-                ->update(['bon_de_sortie' => $path]);
-
-            DB::commit();
-
-            // 📝 LOG → Upload réussi
-            LogJournalisation::create([
-                'action'     => 'Téléversement Bon de Sortie réussi',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
-            ]);
-
-            return new PostResource(true, 'Bon de sortie téléversé avec succès.', ['path' => $path]);
-
-        } catch (ValidationException $e) {
-             // 📝 LOG → Échec de validation
-            LogJournalisation::create([
-                'action'     => 'Échec validation (upload Bon de Sortie)',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
-                'date_action'=> now(),
-                'details'    => "ID: {$id}. Erreurs: " . json_encode($e->errors())
-            ]);
-            throw $e;
-        } catch (\Exception $e) {
-            DB::rollBack();
-            // 📝 LOG → Échec upload (exception)
-            LogJournalisation::create([
-                'action'     => 'Téléversement Bon de Sortie échoué (exception)',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
-                'date_action'=> now(),
-                'details'    => "Référence: {$reference}. Erreur: " . $e->getMessage()
-            ]);
-
-            return response()->json(['message' => 'Erreur lors du téléversement du bon de sortie: ' . $e->getMessage()], 500);
-        }
+        return response()->json([
+            'message' => 'Bon de sortie téléversé avec succès !',
+            'bon_de_sortie_path' => $filePath
+        ]);
     }
 
     public function voirBonDeSortie($id, Request $request)

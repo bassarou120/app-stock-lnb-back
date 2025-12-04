@@ -180,4 +180,5 @@ class AnnulationTicketController extends Controller
             'quantite' => $mouvement->qte,
         ]);
     }
+
 }

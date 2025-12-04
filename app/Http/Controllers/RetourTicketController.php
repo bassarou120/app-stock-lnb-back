@@ -45,15 +45,15 @@ class RetourTicketController extends Controller
     {
         // 💡 Le FormArray du Frontend s'appelle 'retours_coupons'
         $validator = Validator::make($request->all(), [
-            "retours_coupons" => 'required|array|min:1', 
-            
+            "retours_coupons" => 'required|array|min:1',
+
             // Validation des champs de chaque ligne
             "retours_coupons.*.mouvement_ticket_id" => 'required|exists:mouvement_tickets,id',
             "retours_coupons.*.coupon_ticket_id" => 'required|exists:coupon_tickets,id',
             // 'compagnie_petrolier_id' est envoyé comme champ caché pour être utilisé ici
             "retours_coupons.*.compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
             // 'qte_retournee' est le nom du champ de saisie du Frontend (qui devient 'qte' dans la DB)
-            "retours_coupons.*.qte_retournee" => 'required|integer|min:1', 
+            "retours_coupons.*.qte_retournee" => 'required|integer|min:1',
         ]);
 
         if ($validator->fails()) {
@@ -71,16 +71,16 @@ class RetourTicketController extends Controller
 
         DB::beginTransaction();
         try {
-            
+
             $retours_ids = [];
-            
+
             // BOUCLE SUR CHAQUE LIGNE DE COUPON À RETOURNER
-            foreach ($request->retours_coupons as $retourData) { 
-                
+            foreach ($request->retours_coupons as $retourData) {
+
                 // 1. CRÉATION DU RETOUR DE TICKET
                 $retour = RetourTicket::create([
                     'mouvementTicket_id' => $retourData['mouvement_ticket_id'],
-                    'compagnie_petrolier_id' => $retourData['compagnie_petrolier_id'], 
+                    'compagnie_petrolier_id' => $retourData['compagnie_petrolier_id'],
                     'coupon_ticket_id' => $retourData['coupon_ticket_id'],
                     'qte' => $retourData['qte_retournee'], // qte_retournee du front -> qte de la DB
                 ]);
@@ -89,15 +89,15 @@ class RetourTicketController extends Controller
                 // 2. MISE À JOUR DU STOCK (Retour = Augmentation du stock)
                 $stockTicket = StockTicket::firstOrCreate(
                     ['coupon_ticket_id' => $retourData['coupon_ticket_id'], 'compagnie_petrolier_id' => $retourData['compagnie_petrolier_id']],
-                    ['qte_actuel' => 0] 
+                    ['qte_actuel' => 0]
                 );
-                
+
                 $stockTicket->qte_actuel += $retourData['qte_retournee'];
                 $stockTicket->save();
             }
-            
+
             DB::commit();
-            
+
             // 📝 LOG → Création réussie
             LogJournalisation::create([
                 'action'     => 'Création de retour(s) ticket réussie',
@@ -107,12 +107,12 @@ class RetourTicketController extends Controller
                 'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
-            
+
             return new PostResource(true, 'Retour(s) de Tickets enregistré(s) avec succès !', null);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             // 📝 LOG → Création échouée (exception)
             LogJournalisation::create([
                 'action'     => 'Création de retour(s) ticket échouée (exception)',
@@ -122,7 +122,7 @@ class RetourTicketController extends Controller
                 'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
-            
+
             \Log::error('Erreur lors de l\'enregistrement du retour de ticket: ' . $e->getMessage());
             return response()->json(['message' => 'Erreur lors de l\'enregistrement du retour: ' . $e->getMessage()], 500);
         }
@@ -143,20 +143,20 @@ class RetourTicketController extends Controller
                 'user_name'   => $request->user()->name,
                 'date_action'=> now(),
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Mouvement introuvable.'
             ], 404);
         }
-        
+
         // Stockage des données avant suppression
         $couponId = $retourTicket->coupon_ticket_id;
         $compagnieId = $retourTicket->compagnie_petrolier_id;
         $qteRetournee = $retourTicket->qte;
         $mouvementId = $retourTicket->mouvementTicket_id;
         $detailsLog = "Retour ID: {$id}, Mouvement ID: {$mouvementId}, Coupon ID: {$couponId}, Qté: {$qteRetournee}";
-        
+
         DB::beginTransaction();
         try {
             // Vérifier si un stock existe pour ce ticket
@@ -181,7 +181,7 @@ class RetourTicketController extends Controller
             // Supprimer le retourTicket (Soft Delete)
             $retourTicket->isdeleted = true;
             $retourTicket->save();
-            
+
             DB::commit();
 
             // 📝 LOG → Suppression réussie
@@ -196,10 +196,10 @@ class RetourTicketController extends Controller
             ]);
 
             return new PostResource(true, 'Retour Ticket supprimé avec succès !', null);
-        
+
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             // 📝 LOG → Suppression échouée (exception)
             LogJournalisation::create([
                 'action'     => 'Suppression retour ticket échouée (exception)',
@@ -210,7 +210,7 @@ class RetourTicketController extends Controller
                 'date_action'=> now(),
                 //'details'    => $detailsLog . ". Erreur: " . $e->getMessage()
             ]);
-            
+
             \Log::error("Erreur lors de la suppression du retour ticket #{$id}: " . $e->getMessage());
             return response()->json(['message' => 'Erreur lors de la suppression du retour ticket: ' . $e->getMessage()], 500);
         }
@@ -252,11 +252,11 @@ class RetourTicketController extends Controller
     public function getMouvementInfo($idMouvement)//Nouveau
     {
         $mouvementInitial = MouvementTicket::find($idMouvement);
-        
+
         if (!$mouvementInitial) {
             return response()->json(['message' => 'Mouvement de sortie non trouvé.'], 404);
         }
-        
+
         // 1. Récupérer TOUTES les lignes de MouvementTicket pour la même référence de sortie.
         $lignesDeSortie = MouvementTicket::with(['coupon_ticket', 'compagniePetrolier'])
                             ->where('reference', $mouvementInitial->reference)
@@ -264,35 +264,35 @@ class RetourTicketController extends Controller
                             ->get();
 
         $couponsGroupes = [];
-        
+
         // 2. Regrouper les quantités de sortie par coupon
         foreach ($lignesDeSortie as $ligne) {
             $couponId = $ligne->coupon_ticket_id;
-            
+
             if (!isset($couponsGroupes[$couponId])) {
                 $couponsGroupes[$couponId] = [
-                    'mouvementTicket_ids' => [], 
+                    'mouvementTicket_ids' => [],
                     'quantite_sortie_totale' => 0,
                     'coupon' => $ligne->coupon_ticket,
-                    'compagnie_libelle' => $ligne->compagniePetrolier->libelle ?? 'N/A', 
+                    'compagnie_libelle' => $ligne->compagniePetrolier->libelle ?? 'N/A',
                     'compagnie_id' => $ligne->compagnie_petrolier_id,
                 ];
             }
-            
-            $couponsGroupes[$couponId]['mouvementTicket_ids'][] = $ligne->id; 
+
+            $couponsGroupes[$couponId]['mouvementTicket_ids'][] = $ligne->id;
             $couponsGroupes[$couponId]['quantite_sortie_totale'] += $ligne->qte;
         }
 
         $couponsDetails = [];
-        
+
         // 3. Calculer la quantité restante à retourner pour chaque coupon
         foreach ($couponsGroupes as $couponId => $groupe) {
-            
+
             // Calculer la quantité déjà retournée
             $quantiteRetournee = RetourTicket::whereIn('mouvementTicket_id', $groupe['mouvementTicket_ids'])
                                                 ->where('coupon_ticket_id', $couponId)
                                                 ->where('isdeleted', false)
-                                                ->sum('qte'); 
+                                                ->sum('qte');
 
             $quantiteMaxRetournable = $groupe['quantite_sortie_totale'] - $quantiteRetournee;
 
@@ -300,10 +300,10 @@ class RetourTicketController extends Controller
             if ($quantiteMaxRetournable > 0) {
                 $couponsDetails[] = [
                     // Champs requis pour le PAYLOAD FINAL
-                    'mouvement_ticket_id' => $groupe['mouvementTicket_ids'][0], 
+                    'mouvement_ticket_id' => $groupe['mouvementTicket_ids'][0],
                     'coupon_ticket_id' => $couponId,
-                    'compagnie_petrolier_id' => $groupe['compagnie_id'], 
-                    
+                    'compagnie_petrolier_id' => $groupe['compagnie_id'],
+
                     // CHAMPS POUR L'AFFICHAGE ET LE FRONTEND
                     'libelle_affichage' => $groupe['coupon']->libelle . ' (' . $groupe['compagnie_libelle'] . ')', // Pour l'affichage "Coupon (Compagnie)"
                     'quantite_max_retournable' => $quantiteMaxRetournable,
@@ -312,8 +312,8 @@ class RetourTicketController extends Controller
         }
 
         return response()->json([
-            'compagnie_petrolier_id' => $mouvementInitial->compagnie_petrolier_id, 
-            'coupons_details' => $couponsDetails, 
+            'compagnie_petrolier_id' => $mouvementInitial->compagnie_petrolier_id,
+            'coupons_details' => $couponsDetails,
         ]);
     }
 }
