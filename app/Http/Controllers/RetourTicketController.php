@@ -12,6 +12,7 @@ use App\Models\Parametrage\TypeMouvement;
 use App\Models\LogJournalisation; // Ajout du modèle de journalisation
 use Illuminate\Support\Facades\Auth; // Ajout pour récupérer l'ID utilisateur
 use Illuminate\Support\Facades\DB;
+use App\Models\Parametrage\CouponTicket;
 
 
 class RetourTicketController extends Controller
@@ -39,6 +40,17 @@ class RetourTicketController extends Controller
 
         return new PostResource(true, 'Liste des retours', $retours);
     }
+
+    public function mouvementsDisponibles()
+    {
+        $mouvements = MouvementTicket::where('isdeleted', false)
+            ->select('id', 'reference')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($mouvements);
+    }
+
 
     // --- Enregistrer un nouveau retour de ticket ---
     public function store(Request $request)

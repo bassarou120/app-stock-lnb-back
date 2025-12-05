@@ -127,6 +127,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('mouvement-info/{id}', [RetourTicketController::class, 'getMouvementInfo']);
     Route::get('mouvement-ticket/getAllSortieTicketWhereNotInRetour', [RetourTicketController::class, 'getAllSortieTicketWhereNotInRetour']);
 
+    Route::get('mouvements-disponibles', [RetourTicketController::class, 'mouvementsDisponibles']);
 
     Route::apiResource('vehicules', VehiculeController::class);
     Route::post('vehicules/batch', [VehiculeController::class, 'storeBatch']);
