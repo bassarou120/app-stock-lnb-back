@@ -57,7 +57,7 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-    Route::apiResource('users', UserController::class); // Ceci crée les routes CRUD complètes pour /api/users
+
     Route::post('register', [AuthentificationController::class, 'register']);
     Route::post('login', [AuthentificationController::class, 'login'])->name("login");
 
@@ -69,6 +69,8 @@ Route::get('/user', function (Request $request) {
 
 
 Route::middleware('auth:api')->group(function () {
+
+    Route::apiResource('users', UserController::class); // Ceci crée les routes CRUD complètes pour /api/users
 
     Route::get('/stock/coupon-compagnies', [CouponTicketController::class, 'getCouponTicketsWithCompagnies']);
     Route::apiResource('marques', MarqueController::class);
