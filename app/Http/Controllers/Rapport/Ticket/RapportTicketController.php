@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Validator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon; // Pour formater les dates
 use App\Models\Parametrage\CouponTicket;
+use App\Models\LogJournalisation;
 
 
 class RapportTicketController extends Controller
