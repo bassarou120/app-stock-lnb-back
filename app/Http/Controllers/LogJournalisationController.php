@@ -52,12 +52,12 @@ class LogJournalisationController extends Controller
     public function index()
     {
         // Concaténation des colonnes 'name' et 'surname' pour former le nom complet.
-        // On suppose que votre SGBD utilise CONCAT (MySQL/PostgreSQL). 
+        // On suppose que votre SGBD utilise CONCAT (MySQL/PostgreSQL).
         // Si vous utilisez SQL Server ou autre, l'opérateur de concaténation pourrait être différent.
         $logs = LogJournalisation::orderBy('date_action', 'desc')
             ->leftJoin('users', 'log_journalisations.user_id', '=', 'users.id')
             ->select(
-                'log_journalisations.*', 
+                'log_journalisations.*',
                 DB::raw("CONCAT(users.surname, ' ', users.name) as user_name_full") // Nom complet
             )
             ->get();
