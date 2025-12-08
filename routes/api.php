@@ -51,6 +51,7 @@ use App\Http\Controllers\CategorieSortieTicketController;
 use App\Http\Controllers\ExerciceMouvementTicketController;
 use App\Http\Controllers\SortiePatrimoineController;
 use App\Http\Controllers\LogJournalisationController;
+use App\Http\Controllers\ProfileController;
 
 
 Route::get('/user', function (Request $request) {
@@ -67,10 +68,20 @@ Route::get('/user', function (Request $request) {
     Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
     Route::post('/bonjour', [ForgotPasswordController::class, 'direBonjour']);
 
+    Route::middleware('auth:api')->get('/profile', function (Request $request) {
+        return response()->json([
+            'success' => true,
+            'data' => $request->user()->load('role', 'employe'),
+        ]);
+    });
+
+
 
 Route::middleware('auth:api')->group(function () {
 
     Route::apiResource('users', UserController::class); // Ceci crée les routes CRUD complètes pour /api/users
+
+    Route::put('/profile', [ProfileController::class, 'updateProfile']);
 
     Route::get('/stock/coupon-compagnies', [CouponTicketController::class, 'getCouponTicketsWithCompagnies']);
     Route::apiResource('marques', MarqueController::class);
