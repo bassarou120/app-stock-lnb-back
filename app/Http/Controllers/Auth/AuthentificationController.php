@@ -308,6 +308,82 @@ class AuthentificationController extends Controller
         }
     } */
 
+    /**
+     * @OA\Post(
+     *     path="/api/login",
+     *     summary="Authentification d’un utilisateur",
+     *     description="Permet à un utilisateur de se connecter et d’obtenir un token d'accès.",
+     *     tags={"Authentification"},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Identifiants de connexion",
+     *         @OA\JsonContent(
+     *             required={"email", "password"},
+     *             @OA\Property(property="email", type="string", example="user@example.com"),
+     *             @OA\Property(property="password", type="string", example="password123")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Connexion réussie",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 description="Détails de l’utilisateur et token",
+     *                 @OA\Property(property="token", type="string", example="eyJ0eXAiOiJKV1QiLCJhbGciOi..."),
+     *                 @OA\Property(property="user", type="object",
+     *                     @OA\Property(property="id", type="integer", example=12),
+     *                     @OA\Property(property="name", type="string", example="Jean Dupont"),
+     *                     @OA\Property(property="email", type="string", example="user@example.com"),
+     *                     @OA\Property(property="active", type="integer", example=1)
+     *                 )
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Utilisateur authentifié avec succès! 😁")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Identifiants incorrects",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Identifiants incorrects!"),
+     *             @OA\Property(property="errors", type="object",
+     *                 @OA\Property(property="failed", type="string", example="Identifiants incorrects")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=403,
+     *         description="Compte inactif",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Compte inactif!"),
+     *             @OA\Property(property="errors", type="object",
+     *                 @OA\Property(property="failed", type="string", example="Votre compte est inactif. Contactez un administrateur")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Erreur interne serveur",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Une erreur inconnue est survenue."),
+     *             @OA\Property(property="errors", type="object",
+     *                 @OA\Property(property="failed", type="string", example="Erreur interne")
+     *             )
+     *         )
+     *     )
+     * )
+     */
+
     public function logout(Request $request)
     {
         try {
