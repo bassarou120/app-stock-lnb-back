@@ -328,5 +328,5 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('/{id}', [LogJournalisationController::class, 'destroy']);
     });
 
-
+    Route::patch('/users/{user}/toggle-active', [UserController::class, 'toggleActiveStatus']);
 });
