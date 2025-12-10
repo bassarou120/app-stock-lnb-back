@@ -147,7 +147,7 @@ class AuthentificationController extends Controller
         }
     } */
 
-    public function login(LoginRequest $request)
+/*     public function login(LoginRequest $request)
     {
         $input = $request->all();
         $result = $this->authService->login($input);
@@ -263,8 +263,105 @@ class AuthentificationController extends Controller
             'message' => 'Une erreur inconnue est survenue.',
             'errors'  => ['failed' => 'Erreur interne']
         ], 500);
-    }
+    } */
 
+public function login(LoginRequest $request)
+{
+    try {
+        $input = $request->all();
+        $result = $this->authService->login($input);
+
+        $success     = $result[0];
+        $messageBack = $result[1]['message'] ?? null;
+        $user        = $result[1]['user'] ?? $result[2] ?? null;
+
+        $userId   = $user?->id;
+        $userName = null;
+
+        if ($user) {
+            if ($user->employe) {
+                $userName = trim(($user->employe->nom ?? '') . ' ' . ($user->employe->prenom ?? ''));
+            }
+            if (empty($userName)) {
+                $userName = trim(($user->name ?? '') . ' ' . ($user->surname ?? '')) ?: ($user->email ?? 'N/A');
+            }
+        }
+
+        $action = $success ? 'Connexion réussie' : 'Tentative échouée';
+
+        // Log
+        LogJournalisation::create([
+            'action'      => $action,
+            'ip_address'  => $request->ip(),
+            'user_agent'  => $request->header('User-Agent'),
+            'user_id'     => $userId,
+            'user_name'   => (string) ($userName ?: $user?->email),
+            'date_action' => now(),
+        ]);
+
+        if ($success) {
+            if ($user && $user->active == 1) {
+                return response()->json([
+                    'success' => true,
+                    'data'    => $result[1],
+                    'message' => 'Utilisateur authentifié avec succès! 😁'
+                ], 200);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Compte inactif!',
+                'errors'  => ['failed' => 'Votre compte est inactif. Contactez un administrateur']
+            ], 403);
+        }
+
+        // Cas d’échec
+        switch ($messageBack) {
+            case 'erreurs identifiants':
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Identifiants incorrects!',
+                    'errors'  => ['failed' => 'Identifiants incorrects']
+                ], 401);
+
+            case 'inactif':
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Compte inactif!',
+                    'errors'  => ['failed' => 'Votre compte est inactif. Contactez un administrateur']
+                ], 403);
+
+            default:
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erreur inconnue',
+                    'errors'  => [
+                        'exception' => $result[1]['exception'] ?? 'Erreur interne',
+                        'details'   => $result[1]['message'] ?? 'Erreur interne'
+                    ]
+                ], 500);
+        }
+    } catch (\Exception $e) {
+        // Attraper toute exception non gérée
+        LogJournalisation::create([
+            'action'      => 'Erreur login',
+            'ip_address'  => $request->ip(),
+            'user_agent'  => $request->header('User-Agent'),
+            'user_id'     => $request->user()?->id,
+            'user_name'   => $request->user()?->name ?? 'N/A',
+            'date_action' => now(),
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Erreur serveur',
+            'errors'  => [
+                'exception' => $e->getMessage(),
+                'trace'     => $e->getTraceAsString()
+            ]
+        ], 500);
+    }
+}
 
 
     //-------------------- Fonction de déconnexion (logout)

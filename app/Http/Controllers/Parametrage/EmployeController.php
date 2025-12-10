@@ -12,6 +12,8 @@ use App\Models\LogJournalisation;
 use App\Models\User;
 use App\Services\Auth\AuthService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
+
 
 /**
  * @OA\Tag(
@@ -131,34 +133,36 @@ class EmployeController extends Controller
         $rules = [
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
-            // 'nullable' permet la valeur NULL
+
             'telephone' => [
                 'nullable',
                 'string',
                 'max:20',
-                // La règle UNIQUE passe si la valeur est NULL (comportement par défaut)
-                'unique:employes,telephone', 
+                Rule::unique('employes', 'telephone')->where(function ($query) {
+                    return $query->where('isdeleted', false);
+                }),
             ],
             'email' => [
                 'nullable',
                 'string',
                 'email',
                 'max:255',
-                // La règle UNIQUE passe si la valeur est NULL
-                'unique:employes,email',
+                Rule::unique('employes', 'email')->where(function ($query) {
+                    return $query->where('isdeleted', false);
+                }),
             ],
         ];
-        
+
         // 2. Définition des messages personnalisés en français
         $messages = [
             // Règle d'unicité pour le téléphone
             'telephone.unique' => 'Le numéro de téléphone que vous avez saisi est déjà utilisé par un autre employé.',
             'telephone.max'    => 'Le numéro de téléphone ne peut dépasser 20 caractères.',
-            
+
             // Règle d'unicité pour l'email
             'email.unique'     => "L'adresse email est déjà associée à un autre compte employé. Veuillez en saisir une nouvelle.",
             'email.email'      => 'Veuillez saisir une adresse email valide.',
-            
+
             // Messages génériques
             'nom.required'     => 'Le nom est obligatoire.',
             'prenom.required'  => 'Le prénom est obligatoire.',

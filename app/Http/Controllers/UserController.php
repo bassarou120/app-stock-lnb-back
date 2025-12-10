@@ -76,6 +76,7 @@ class UserController extends Controller
                 Mail::to($user->email)->send(new UserRegisteredMail($user, $generatedPassword));
                 $emailStatus = 'E-mail envoyé.';
             } catch (\Exception $e) {
+                dd($e->getMessage());
                 $emailStatus = 'Échec de l\'envoi de l\'e-mail: ' . $e->getMessage();
                 LogJournalisation::create([
                     'action'     => 'Création utilisateur échouée',
@@ -103,7 +104,7 @@ class UserController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-
+dd($e->getMessage());
             // 📝 LOG → Création échouée (exception)
             $employeId = $validatedData['employe_id'] ?? 'N/A';
             LogJournalisation::create([
