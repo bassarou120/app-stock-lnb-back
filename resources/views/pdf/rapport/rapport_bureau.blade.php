@@ -243,7 +243,7 @@
   </div>
 
   <div class="table-section">
-    @if($rapportData->isEmpty())
+    @if($immobilisations->isEmpty())
       <div style="text-align: center; font-size: 10pt; margin-top: 20px;">
         Aucun bureau trouvé pour les critères de recherche spécifiés.
       </div>

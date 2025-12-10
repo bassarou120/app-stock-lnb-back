@@ -486,7 +486,7 @@ class StockRapportController extends Controller
 
         foreach ($articles as $article) {
             if ($article->stock) {
-                $rapportArticle = $this->genererRapportCompletArticle($article, $dateDebut, $dateFin);
+                $rapportArticle = $this->genererRapportCompletArticle($article, $dateDebut, $dateFin, $request);
                 $rapportArticles[] = $rapportArticle;
             } else {
                 \Log::warning("Article ID {$article->id} - {$article->libelle} n'a pas d'enregistrement de stock associé pour l'impression du rapport d'état.");
@@ -592,7 +592,7 @@ class StockRapportController extends Controller
 
         foreach ($articles as $article) {
             if ($article->stock) {
-                $rapportArticle = $this->genererRapportCompletArticle($article, $dateDebut, $dateFin);
+                $rapportArticle = $this->genererRapportCompletArticle($article, $dateDebut, $dateFin, $request);
                 $rapportArticles[] = $rapportArticle;
             } else {
                 \Log::warning("Article ID {$article->id} - {$article->libelle} n'a pas d'enregistrement de stock associé.");
