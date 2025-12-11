@@ -20,7 +20,12 @@ class PermissionController extends Controller
     {
         // Récupérer toutes les permissions avec leurs relations
         $permissions = Permission::where('isdeleted', false)
-            ->with(['role', 'module', 'fonctionnalite'])
+            ->with([
+                'role',
+                'module',
+                'fonctionnalite',
+                'fonctionnalite.module' // 🔥 Charger le module de la fonctionnalité
+            ])
             ->get();
 
         // Filtrer les permissions valides
@@ -28,17 +33,18 @@ class PermissionController extends Controller
             return $permission->role !== null 
                 && $permission->module !== null 
                 && $permission->fonctionnalite !== null
+                && $permission->fonctionnalite->module !== null // 🔥 Vérifier le module de la fonctionnalité
                 && $permission->role->isdeleted == false
                 && $permission->module->isdeleted == false
                 && $permission->fonctionnalite->isdeleted == false;
         });
 
-        // 🔥 TRI CRUCIAL : Trier par role_id, puis module_id, puis fonctionnalite_id
+        // 🔥 TRI CRUCIAL : Trier par role_id, puis par le module_id de la fonctionnalité
         $sortedPermissions = $validPermissions->sortBy([
             ['role.id', 'asc'],
-            ['module.id', 'asc'],
+            ['fonctionnalite.module.id', 'asc'], // 🔥 Trier par le module de la fonctionnalité
             ['fonctionnalite.id', 'asc']
-        ])->values(); // values() pour réindexer le tableau
+        ])->values();
 
         LogJournalisation::create([
             "action"      => "Affichage de la liste des permissions",
