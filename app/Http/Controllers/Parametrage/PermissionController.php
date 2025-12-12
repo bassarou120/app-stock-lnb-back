@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Parametrage\Permission;
+use App\Models\Parametrage\Role;
 use App\Models\LogJournalisation;
 use App\Models\User;
 use App\Services\Auth\AuthService;
@@ -14,9 +15,36 @@ use Illuminate\Support\Facades\Auth;
 
 class PermissionController extends Controller
 {
+
     public function index(Request $request)
     {
-        $permissions = Permission::with(['role', 'module', 'fonctionnalite'])->where('isdeleted', false)->latest()->paginate(200);
+        // Récupérer toutes les permissions avec leurs relations
+        $permissions = Permission::where('isdeleted', false)
+            ->with([
+                'role',
+                'module',
+                'fonctionnalite',
+                'fonctionnalite.module' // 🔥 Charger le module de la fonctionnalité
+            ])
+            ->get();
+
+        // Filtrer les permissions valides
+        $validPermissions = $permissions->filter(function ($permission) {
+            return $permission->role !== null 
+                && $permission->module !== null 
+                && $permission->fonctionnalite !== null
+                && $permission->fonctionnalite->module !== null // 🔥 Vérifier le module de la fonctionnalité
+                && $permission->role->isdeleted == false
+                && $permission->module->isdeleted == false
+                && $permission->fonctionnalite->isdeleted == false;
+        });
+
+        // 🔥 TRI CRUCIAL : Trier par role_id, puis par le module_id de la fonctionnalité
+        $sortedPermissions = $validPermissions->sortBy([
+            ['role.id', 'asc'],
+            ['fonctionnalite.module.id', 'asc'], // 🔥 Trier par le module de la fonctionnalité
+            ['fonctionnalite.id', 'asc']
+        ])->values();
 
         LogJournalisation::create([
             "action"      => "Affichage de la liste des permissions",
@@ -25,8 +53,12 @@ class PermissionController extends Controller
             "user_id"     => Auth::id(),
             "date_action" => now()
         ]);
-        
-        return new PostResource(true, 'Liste des permissions', $permissions);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Liste des permissions',
+            'data'    => $sortedPermissions
+        ]);
     }
 
     // Créer une nouvelle permission
@@ -59,7 +91,7 @@ class PermissionController extends Controller
             "user_id"     => Auth::id(),
             "date_action" => now()
         ]);
-        
+
         return new PostResource(true, 'Permission créée avec succès', $permission);
     }
 

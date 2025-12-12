@@ -657,6 +657,15 @@ class MouvementStockController extends Controller
      * ),
      *
      * @OA\Property(
+     *  property="ref_m_request",
+     *  type="string",
+     *  nullable=true,
+     *  example="REF-M-20250115-0001",
+     *  description="Référence manuelle de la demande (champ optionnel)"
+     * ),
+    *
+     * 
+     * @OA\Property(
      * property="email_personnel",
      * type="string",
      * format="email",

@@ -161,7 +161,7 @@ class ArticleController extends Controller
             // Cependant, la logique de génération du code unique est faite dans le code ci-dessous.
             // On s'assure de l'unicité via le verrouillage DB (lockForUpdate).
             'articles.*.description' => 'nullable|string|max:255',
-            //'articles.*.demande_intermittent' => 'nullable|string|max:255',
+            'articles.*.demande_intermittent' => 'nullable|string|max:255',
             'articles.*.stock_alerte' => 'required|integer|min:0',
             // Note: 'articles.*.code_article' n'est pas requis car il est généré par le serveur
         ]);
@@ -214,13 +214,21 @@ class ArticleController extends Controller
                 // Générer le code article final
                 $codeArticle = "ART-{$prefix}-{$newNumber}-{$year}";
 
+                // Convertir oui/non en booléen
+                $demandeIntermittent = false;
+
+                if (isset($articleData['demande_intermittent'])) {
+                    $value = strtolower($articleData['demande_intermittent']);
+                    $demandeIntermittent = in_array($value, ['oui', 'true', '1']);
+                }
+
                 // 5️⃣ Création des enregistrements
                 $article = Article::create([
                     'id_cat' => $articleData['id_cat'],
                     'libelle' => $articleData['libelle'],
                     'code_article' => $codeArticle, // Code unique généré
                     'description' => $articleData['description'],
-                    'demande_intermittent' => false,
+                    'demande_intermittent' => $demandeIntermittent,
                     'stock_alerte' => $articleData['stock_alerte'],
                     'id_exercice' => $exerciceOuvert->id
                 ]);
@@ -323,7 +331,7 @@ class ArticleController extends Controller
             'id_cat' => 'required|exists:categorie_articles,id',
             'libelle' => 'required|string|max:255',
             'description' => 'nullable|string|max:255',
-            //'demande_intermittent' => 'nullable|string|max:255',
+            'demande_intermittent' => 'nullable|string|max:255',
             'stock_alerte' => 'required|integer|min:0',
         ]);
 
@@ -335,12 +343,20 @@ class ArticleController extends Controller
 
         DB::beginTransaction();
         try {
+
+            $demandeIntermittent = false;
+
+            if ($request->has('demande_intermittent')) {
+                $value = strtolower($request->demande_intermittent);
+                $demandeIntermittent = in_array($value, ['oui', 'true', '1']);
+            }
+
             // 2. Mise à jour de l'article
             $article->update([
                 'id_cat' => $request->id_cat,
                 'libelle' => $request->libelle,
                 'description' => $request->description,
-                //'demande_intermittent' => $request->demande_intermittent,
+                'demande_intermittent' => $demandeIntermittent,
                 'stock_alerte' => $request->stock_alerte,
             ]);
 
@@ -603,6 +619,13 @@ class ArticleController extends Controller
                 }
 
                 $annee_exercice = trim($row[5]);
+                $raw = trim($row[6] ?? 'non');
+
+                // Nettoyage et normalisation : "Oui", " O U I ", "oui" → "oui"
+                $demande = strtolower(str_replace(' ', '', $raw));
+
+                // oui, true ou 1 → true / sinon false
+                $demandeBool = in_array($demande, ['oui', 'true', '1']);
 
                 // Vérifier si l'année est valide
                 if (empty($annee_exercice) || !is_numeric($annee_exercice)) {
@@ -654,7 +677,8 @@ class ArticleController extends Controller
                     'code_article' => $code_article,
                     'description' => trim($row[3] ?? ''),
                     'stock_alerte' => trim($row[4]),
-                    'id_exercice' => $id_exercice // Ajout de l'id de l'exercice
+                    'id_exercice' => $id_exercice, // Ajout de l'id de l'exercice
+                    'demande_intermittent' => $demandeBool,
                 ]);
 
                 // Initialiser l'entrée de stock pour cet article
