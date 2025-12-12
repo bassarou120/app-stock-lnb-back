@@ -18,31 +18,29 @@ class PermissionController extends Controller
 
     public function index(Request $request)
     {
-        // Récupérer toutes les permissions avec leurs relations
+        // ✅ Charger uniquement les relations qui existent
         $permissions = Permission::where('isdeleted', false)
             ->with([
                 'role',
                 'module',
-                'fonctionnalite',
-                'fonctionnalite.module' // 🔥 Charger le module de la fonctionnalité
+                'fonctionnalite'
             ])
             ->get();
 
         // Filtrer les permissions valides
         $validPermissions = $permissions->filter(function ($permission) {
-            return $permission->role !== null 
-                && $permission->module !== null 
+            return $permission->role !== null
+                && $permission->module !== null
                 && $permission->fonctionnalite !== null
-                && $permission->fonctionnalite->module !== null // 🔥 Vérifier le module de la fonctionnalité
                 && $permission->role->isdeleted == false
                 && $permission->module->isdeleted == false
                 && $permission->fonctionnalite->isdeleted == false;
         });
 
-        // 🔥 TRI CRUCIAL : Trier par role_id, puis par le module_id de la fonctionnalité
+        // 🔥 Trier par role_id, puis par module_id, puis par fonctionnalite_id
         $sortedPermissions = $validPermissions->sortBy([
             ['role.id', 'asc'],
-            ['fonctionnalite.module.id', 'asc'], // 🔥 Trier par le module de la fonctionnalité
+            ['module.id', 'asc'],
             ['fonctionnalite.id', 'asc']
         ])->values();
 
