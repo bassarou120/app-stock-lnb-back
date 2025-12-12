@@ -14,6 +14,7 @@ use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use Barryvdh\DomPDF\Facade\Pdf; // Assurez-vous que c'est bien la façade Pdf et non '\Pdf'
 use Illuminate\Pagination\LengthAwarePaginator;
+use App\Models\LogJournalisation;
 
 class ImmobilisationRapportController extends Controller
 {
@@ -633,96 +634,6 @@ public function imprimerRapportData(Request $request)
 
             return $pdf->download($filename);
     }
-
-
-/*     public function getCodesImmoEtVehicule(Request $request)
-    {
-        try {
-            // 1. Récupérer les codes des immobilisations avec le champ 'type'
-            $codesImmo = Immobilisation::select('id', 'code')
-                ->addSelect(\DB::raw("'immobilisation' as type")) // Ajoute le type 'immobilisation'
-                ->get();
-
-            // 2. Récupérer les codes des véhicules avec le champ 'type'
-            $codesVehicule = Vehicule::select('id', 'code')
-                ->where('isdeleted', false)
-                ->addSelect(\DB::raw("'vehicule' as type")) // Ajoute le type 'vehicule'
-                ->get();
-
-            // 3. Fusionner les deux collections sans écraser (méthode concat)
-            $codesCombinés = $codesImmo->concat($codesVehicule);
-
-            // Renvoyer la collection combinée
-            $result = [
-                'codes' => $codesCombinés->values()
-            ];
-
-            return new PostResource(true, 'Liste combinée des codes récupérée avec succès.', $result);
-
-        } catch (\Exception $e) {
-            return new PostResource(false, 'Erreur lors de la récupération des codes : ' . $e->getMessage());
-        }
-    } */
-
-    /* public function getCodesImmoEtVehicule(Request $request)
-    {
-    try {
-        // --- 1. Requête Immobilisations : Code et Designation ---
-        $codesImmo = Immobilisation::select('id', 'code', 'designation')
-            ->addSelect(\DB::raw("'immobilisation' as type"))
-            ->addSelect(\DB::raw('designation as designation_complete'))
-            ->get(); // Récupère la collection de modèles (avec les champs ajoutés)
-
-        // Convertir la collection en un tableau PHP brut et conserver uniquement les colonnes nécessaires
-        $immoArray = $codesImmo->map(function ($immo) {
-            return [
-                'id' => $immo->id,
-                'code' => $immo->code,
-                'type' => $immo->type,
-                'designation_complete' => $immo->designation_complete,
-            ];
-        })->toArray(); // <-- Conversion en tableau PHP brut
-
-
-        // --- 2. Requête Véhicules : Code, Marque et Modèle pour construire la Designation ---
-        $codesVehicule = Vehicule::with(['marque', 'modele'])
-            ->select('id', 'code', 'marque_id', 'modele_id')
-            ->where('isdeleted', false)
-            ->addSelect(\DB::raw("'vehicule' as type"))
-            ->get();
-
-        // 3. Transformation des Véhicules et Fusion
-
-        // Transformer les véhicules et créer le tableau PHP brut
-        $vehiculeArray = $codesVehicule->map(function($vehicule) {
-
-            $marque = optional($vehicule->marque)->libelle ?? 'N/A';
-            $modele = optional($vehicule->modele)->libelle_modele ?? 'N/A';
-            $designationComplete = $marque . ' - ' . $modele;
-
-            return [
-                'id' => $vehicule->id,
-                'code' => $vehicule->code,
-                'type' => $vehicule->type,
-                'designation_complete' => $designationComplete
-            ];
-        })->toArray(); // <-- Conversion en tableau PHP brut
-
-        // 3b. Fusionner les deux tableaux bruts et reconvertir en Collection Laravel
-        $mergedArray = array_merge($immoArray, $vehiculeArray);
-        $codesCombinés = collect($mergedArray); // On reconvertit en collection pour l'envoi final
-
-        // 4. Renvoyer la collection combinée
-        $result = [
-            'codes' => $codesCombinés->values()
-        ];
-
-        return new PostResource(true, 'Liste combinée des codes/désignations récupérée avec succès.', $result);
-
-        } catch (\Exception $e) {
-            return new PostResource(false, 'Erreur lors de la récupération des codes : ' . $e->getMessage());
-        }
-    } */
 
         public function getCodesImmoEtVehicule(Request $request)
         {

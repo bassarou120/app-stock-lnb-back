@@ -54,6 +54,53 @@ class UserController extends Controller
             // On trouve l'employé pour récupérer ses informations
             $employe = Employe::findOrFail($validatedData['employe_id']);
 
+            // --- NOUVEAU BLOC : Gérer la Réactivation (Recréation) ---
+        // On cherche si un utilisateur existe déjà pour cet Employé, mais est marqué comme soft-deleted.
+        $existingSoftDeletedUser = User::where('employe_id', $employe->id)
+        ->where('isdeleted', true)
+        ->first();
+
+        if ($existingSoftDeletedUser) {
+        // Utilisateur soft-deleted trouvé : on le réactive (restauration)
+
+        $existingSoftDeletedUser->name = $employe->nom;
+        $existingSoftDeletedUser->surname = $employe->prenom ?? null;
+        $existingSoftDeletedUser->email = $employe->email;
+        $existingSoftDeletedUser->phone = $employe->telephone;
+        $existingSoftDeletedUser->password = Hash::make($generatedPassword); // Générer un nouveau mot de passe
+        $existingSoftDeletedUser->role_id = $validatedData['role_id'];
+        $existingSoftDeletedUser->active = $validatedData['active'] ?? true; // Rétablir le statut actif/souhaité
+        $existingSoftDeletedUser->isdeleted = false; // Rétablir l'état non supprimé (RESTAURATION)
+        $existingSoftDeletedUser->save();
+
+        DB::commit();
+
+        // Envoi de l'e-mail avec le nouveau mot de passe (logique de mail inchangée)
+        try {
+        Mail::to($existingSoftDeletedUser->email)->send(new UserRegisteredMail($existingSoftDeletedUser, $generatedPassword));
+        $emailStatus = 'E-mail de réactivation envoyé.';
+        } catch (\Exception $e) {
+        // Gérer l'échec de l'envoi de l'e-mail
+        // ... (Votre logique de log d'échec de mail)
+        $emailStatus = 'Échec de l\'envoi de l\'e-mail lors de la réactivation.';
+        }
+
+        // 📝 LOG → Réactivation réussie
+        LogJournalisation::create([
+        'action'     => 'Réactivation utilisateur réussie (Restauration)',
+        'ip_address' => $request->ip(),
+        'user_agent' => $request->header('User-Agent'),
+        'user_id'    => $request->user()->id,
+        'user_name'   => $request->user()->name,
+        'date_action'=> now(),
+        //'details'    => "User ID: {$existingSoftDeletedUser->id}, Email: {$existingSoftDeletedUser->email}. {$emailStatus}"
+        ]);
+
+        return response()->json($existingSoftDeletedUser->load('role'), 200); // Retour 200 (OK/Mis à jour)
+
+        }
+        // --- FIN NOUVEAU BLOC ---
+
             // Création de l'utilisateur
             $user = User::create([
                 'name' => $employe->nom,
@@ -104,7 +151,7 @@ class UserController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-dd($e->getMessage());
+            dd($e->getMessage());
             // 📝 LOG → Création échouée (exception)
             $employeId = $validatedData['employe_id'] ?? 'N/A';
             LogJournalisation::create([
@@ -271,6 +318,49 @@ dd($e->getMessage());
             ]);
 
             return response()->json(['message' => 'Erreur lors de la suppression de l\'utilisateur.'], 500);
+        }
+    }
+
+    public function toggleActiveStatus(Request $request, User $user)
+    {
+        DB::beginTransaction();
+        try {
+            // Le statut est simplement l'inverse du statut actuel
+            $newStatus = !$user->active;
+            $user->active = $newStatus;
+            $user->save();
+
+            DB::commit();
+
+            $action = $newStatus ? 'Activation' : 'Désactivation';
+            $message = "Utilisateur {$action} avec succès";
+
+            // 📝 LOG → Changement de statut réussi
+            LogJournalisation::create([
+                'action'     => "{$action} utilisateur réussie",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+            ]);
+
+            return response()->json(['message' => $message], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            // 📝 LOG → Échec du changement de statut
+            LogJournalisation::create([
+                'action'     => 'Échec du changement de statut d\'activité utilisateur (exception)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+            ]);
+
+            return response()->json(['message' => 'Erreur lors du changement de statut.'], 500);
         }
     }
 }
