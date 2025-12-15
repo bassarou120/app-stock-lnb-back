@@ -24,7 +24,14 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'employe_id' => 'required|exists:employes,id|unique:users,employe_id',
+            'employe_id' => [
+                'required',
+                'exists:employes,id',
+                Rule::unique('users', 'employe_id')->where(function ($query) {
+                    // La contrainte d'unicité ne s'applique qu'aux utilisateurs NON supprimés
+                    return $query->where('isdeleted', false);
+                }),
+            ],
             // 'name' => 'required',
             // 'email' => 'required|email|unique:users,email',
             // 'phone' => 'required|unique:users,phone',
