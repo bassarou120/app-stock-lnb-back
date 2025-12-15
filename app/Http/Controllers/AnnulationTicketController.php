@@ -153,7 +153,7 @@ class AnnulationTicketController extends Controller
 
         return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Ticket".', []);
     }
-
+ 
     public function getMouvementInfo($idMouvement, Request $request)
     {
         $mouvement = MouvementTicket::with(['compagniePetrolier', 'coupon_ticket'])
