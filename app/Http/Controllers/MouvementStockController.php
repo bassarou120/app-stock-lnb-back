@@ -36,6 +36,8 @@ use Illuminate\Support\Facades\Response;
  * @OA\Tag(
  *     name="Les Mouvement de stock",
  *     description="Gestion des Mouvement de stock"
+ *
+ *     security={{"bearerAuth":{}}}
  * )
  */
 
@@ -307,7 +309,7 @@ class MouvementStockController extends Controller
             $stock->save();
 
             LogJournalisation::create([
-                'action'     => 'Création du mouvement de stock ' . $codeMouvement . 
+                'action'     => 'Création du mouvement de stock ' . $codeMouvement .
                 ' (' . $typeMouvement->libelle_type_mouvement . ', Article: ' . $article->libelle . ', Qté: ' . $qte_mouvement . ')',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
@@ -664,7 +666,7 @@ class MouvementStockController extends Controller
      *  description="Référence manuelle de la demande (champ optionnel)"
      * ),
     *
-     * 
+     *
      * @OA\Property(
      * property="email_personnel",
      * type="string",
@@ -1676,8 +1678,8 @@ class MouvementStockController extends Controller
         }
 
         // ✅ LOG → Succès total
-        $logAction .= ($statut_lower === 'accordé') 
-        ? "Succès total. {$nombreAffectationsCrees} affectation(s) créée(s)." 
+        $logAction .= ($statut_lower === 'accordé')
+        ? "Succès total. {$nombreAffectationsCrees} affectation(s) créée(s)."
         : "Succès total de la mise à jour du statut.";
 
         LogJournalisation::create([
