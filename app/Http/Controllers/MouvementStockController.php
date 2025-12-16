@@ -37,18 +37,7 @@ use Illuminate\Support\Facades\Response;
  *     name="Les Mouvement de stock",
  *     description="Gestion des Mouvement de stock"
  *
- *     security={{"bearerAuth":{}}}
- * )
- */
-
-
-/**
- * @OA\SecurityScheme(
- *     securityScheme="bearerAuth",
- *     type="http",
- *     scheme="bearer",
- *     bearerFormat="JWT",
- *     description="Entrez votre token JWT sous la forme: Bearer {token}"
+ *
  * )
  */
 
@@ -647,7 +636,7 @@ class MouvementStockController extends Controller
      * summary="Créer une demande de fourniture",
      * description="Permet de créer une nouvelle demande de sortie avec la liste des articles demandés.",
      * tags={"Demande de fourniture"},
-     *  security={{"bearerAuth":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      * @OA\RequestBody(
      * required=true,
