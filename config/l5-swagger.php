@@ -171,6 +171,13 @@ return [
         */
         'securityDefinitions' => [
             'securitySchemes' => [
+
+                'bearerAuth' => [
+                    'type' => 'http',
+                    'scheme' => 'bearer',
+                    'bearerFormat' => 'JWT',
+                    'description' => 'Entrez le token sous la forme: Bearer {token}',
+                ],
                 /*
                  * Examples of Security schemes
                  */
