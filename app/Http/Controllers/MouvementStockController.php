@@ -1757,7 +1757,7 @@ class MouvementStockController extends Controller
         if ($allAccordees) {
             // All lines are 'Accordé', so we can generate the file.
             try {
-                return $this->genererFicheDemande($codeMouvement);
+                return $this->genererFicheDemande($codeMouvement, request());
             } catch (\Exception $e) {
                 return response()->json([
                     'message' => 'Demandes traitées, mais une erreur est survenue lors de la génération du fichier.',
