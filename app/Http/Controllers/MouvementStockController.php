@@ -307,7 +307,7 @@ class MouvementStockController extends Controller
             $stock->save();
 
             LogJournalisation::create([
-                'action'     => 'Création du mouvement de stock ' . $codeMouvement . 
+                'action'     => 'Création du mouvement de stock ' . $codeMouvement .
                 ' (' . $typeMouvement->libelle_type_mouvement . ', Article: ' . $article->libelle . ', Qté: ' . $qte_mouvement . ')',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
@@ -664,7 +664,7 @@ class MouvementStockController extends Controller
      *  description="Référence manuelle de la demande (champ optionnel)"
      * ),
     *
-     * 
+     *
      * @OA\Property(
      * property="email_personnel",
      * type="string",
@@ -1272,7 +1272,7 @@ class MouvementStockController extends Controller
                 "statut" => 'En attente',
                 "code_mouvement" => $code_mouvement,
                 'id_exercice' => $exerciceOuvert->id,
-                "ref_m_request" => null,
+                "ref_m_request" => $request->ref_m_request,
             ]);
 
             $mouvements[] = $mouvement;
@@ -1676,8 +1676,8 @@ class MouvementStockController extends Controller
         }
 
         // ✅ LOG → Succès total
-        $logAction .= ($statut_lower === 'accordé') 
-        ? "Succès total. {$nombreAffectationsCrees} affectation(s) créée(s)." 
+        $logAction .= ($statut_lower === 'accordé')
+        ? "Succès total. {$nombreAffectationsCrees} affectation(s) créée(s)."
         : "Succès total de la mise à jour du statut.";
 
         LogJournalisation::create([
