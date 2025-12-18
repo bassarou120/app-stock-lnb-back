@@ -66,7 +66,11 @@ class RetourTicketController extends Controller
             "retours_coupons.*.compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
             // 'qte_retournee' est le nom du champ de saisie du Frontend (qui devient 'qte' dans la DB)
             "retours_coupons.*.qte_retournee" => 'required|integer|min:1',
+            "retours_coupons.*.date_retour" => 'required|date',
         ]);
+
+        dd($request->all());
+        echo "Debugging Info:" . $request->all();
 
         if ($validator->fails()) {
             // 📝 LOG → Échec de validation (création)
@@ -95,6 +99,7 @@ class RetourTicketController extends Controller
                     'compagnie_petrolier_id' => $retourData['compagnie_petrolier_id'],
                     'coupon_ticket_id' => $retourData['coupon_ticket_id'],
                     'qte' => $retourData['qte_retournee'], // qte_retournee du front -> qte de la DB
+                    'date_retour'             => $retourData['date_retour'],
                 ]);
                 $retours_ids[] = $retour->id;
 

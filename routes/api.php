@@ -58,6 +58,8 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+Route::apiResource('roles', RoleController::class);
+Route::apiResource('permissions', PermissionController::class);
 
     Route::post('register', [AuthentificationController::class, 'register']);
     Route::post('login', [AuthentificationController::class, 'login'])->name("login");
@@ -108,9 +110,9 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('sous_type_immos', SousTypeImmoController::class);
     Route::apiResource('groupe_type_immos', GroupeTypeImmoController::class);
     Route::apiResource('modules', ModuleController::class);
-    Route::apiResource('roles', RoleController::class);
+    //Route::apiResource('roles', RoleController::class);
     Route::apiResource('fonctionnalites', FonctionnaliteController::class);
-    Route::apiResource('permissions', PermissionController::class);
+    //Route::apiResource('permissions', PermissionController::class);
     Route::post('permissions/toggle', [PermissionController::class, 'togglePermission']);
     Route::middleware('auth:api')->group(function () {
         Route::apiResource('articles', ArticleController::class);

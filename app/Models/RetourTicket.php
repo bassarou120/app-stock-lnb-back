@@ -12,7 +12,7 @@ class RetourTicket extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['mouvementTicket_id', 'coupon_ticket_id', 'compagnie_petrolier_id', 'qte'];
+    protected $fillable = ['mouvementTicket_id', 'coupon_ticket_id', 'compagnie_petrolier_id', 'qte', 'date_retour', 'employe_id', 'vehicule_id'];
 
 
     // Relation avec le modèle Article
