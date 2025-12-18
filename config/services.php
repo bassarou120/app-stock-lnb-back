@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'm_request' => [
+        'base_url' => env('URL_M_REQUEST'),
+    ],
+
 ];

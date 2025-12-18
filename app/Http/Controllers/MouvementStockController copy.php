@@ -1481,6 +1481,7 @@ class MouvementStockController extends Controller
         return new PostResource(true, 'Sortie de stock mise à jour avec succès !', $mouvement);
     }
 
+
 //1
 
     public function updateDemandeStock(Request $request, $id)
@@ -1489,8 +1490,6 @@ class MouvementStockController extends Controller
 
         $date_mouvement = $request->input('date_mouvement');
         $statut = $request->input('statut');
-        $statutLower = strtolower($statut);
-
         $mouvementStock->statut = $statut;
 
         // Vérifier la quantité disponible en stock
@@ -1498,87 +1497,71 @@ class MouvementStockController extends Controller
                     ->latest()
                     ->first();
 
-        // ================== SI STATUT = ACCORDÉ ==================
-        if ($statutLower === 'accordé') {
+        // Si le statut est "Accordé"
+        if (strtolower($statut) === 'accordé') {
 
+            // Vérifier si la quantité est fournie
             if (!$request->has('qte')) {
-                return response()->json([
-                    'error' => 'La quantité (qte) est requise lorsque le statut est "Accordé".'
-                ], 422);
+                return response()->json(['error' => 'La quantité (qte) est requise lorsque le statut est "Accordé".'], 422);
             }
 
             $qte = $request->input('qte');
 
-            if (!$stock || $stock->Qte_actuel < $qte) {
 
+
+            if (!$stock || $stock->Qte_actuel < $qte) {
                 LogJournalisation::create([
-                    'action'      => "Échec: Stock insuffisant - Qté demandée: {$qte}",
-                    'ip_address'  => $request->ip(),
-                    'user_agent'  => $request->header('User-Agent'),
-                    'user_id'     => $request->user()->id,
+                    'action'     => "Échec: (Stock insuffisant - Qté demandée: {$qte})",
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->header('User-Agent'),
+                    'user_id'    => $request->user()->id,
                     'user_name'   => $request->user()->name,
-                    'date_action' => now(),
+                    'date_action'=> now(),
                 ]);
 
-                return response()->json([
-                    'error' => 'Quantité insuffisante en stock.'
-                ], 400);
+                return response()->json(['error' => 'Quantité insuffisante en stock.'], 400);
             }
 
-            // Mise à jour mouvement & stock
+            // Mettre à jour la quantité du mouvement et du stock
             $mouvementStock->qte = $qte;
             $mouvementStock->date_mouvement = $date_mouvement;
-
             $stock->Qte_actuel -= $qte;
             $stock->save();
 
-            // Création affectation
+            // Créer l'affectation si employé et bureau sont présents
             if (!empty($mouvementStock->id_employe) && !empty($mouvementStock->bureau_id)) {
-
-                $type_affectation = TypeAffectation::where(
-                    'libelle_type_affectation',
-                    "Affectation d'Article"
-                )->latest()->first();
+                $type_affectation = TypeAffectation::where('libelle_type_affectation', "Affectation d'Article")->latest()->first();
 
                 if ($type_affectation) {
                     AffectationArticle::create([
-                        'description'        => $mouvementStock->description,
-                        'id_article'         => $mouvementStock->id_Article,
-                        'id_type_affectation'=> $type_affectation->id,
-                        'id_bureau'          => $mouvementStock->bureau_id,
-                        'id_employe'         => $mouvementStock->id_employe,
-                        'id_mouvement'       => $mouvementStock->id,
+                        'description' => $mouvementStock->description,
+                        'id_article' => $mouvementStock->id_Article,
+                        'id_type_affectation' => $type_affectation->id,
+                        'id_bureau' => $mouvementStock->bureau_id,
+                        'id_employe' => $mouvementStock->id_employe,
+                        'id_mouvement' => $mouvementStock->id,
                     ]);
                 }
             }
+
+
+
         }
 
-        // ================== SAUVEGARDE LOCALE ==================
         $mouvementStock->save();
 
-        // ================== APPEL API M_REQUEST ==================
-        $url_test = null; // 🔹 Variable pour récupérer l'URL
-
-        if (in_array($statutLower, ['accordé', 'refusé'])) {
-            // On utilise la fonction notifierMRequest qui retourne l'URL
-            $url_test = $this->notifierMRequest($mouvementStock, $statutLower);
-        }
-
-        // ================== LOG ==================
         LogJournalisation::create([
-            'action'      => "Action sur demande de fourniture ({$statut})",
-            'ip_address'  => $request->ip(),
-            'user_agent'  => $request->header('User-Agent'),
-            'user_id'     => $request->user()->id,
+            'action'     => "Action sur demande de forniture",
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => $request->user()->id,
             'user_name'   => $request->user()->name,
-            'date_action' => now(),
+            'date_action'=> now(),
         ]);
 
-        // 🔹 Retourne l'URL pour vérification
         return response()->json([
-            'message'  => 'Demande mise à jour avec succès.',
-            'url_test' => $url_test,
-            'data'     => $mouvementStock
+            'message' => 'Demande mise à jour avec succès.',
+            'data' => $mouvementStock
         ]);
     }
 
@@ -1598,41 +1581,42 @@ class MouvementStockController extends Controller
         $code = $request->input('code_mouvement');
         $dateMouvement = $request->input('date_mouvement');
         $statut = $request->input('statut');
-        $statutLower = strtolower($statut);
 
-        $tousLesMouvements = MouvementStock::where('code_mouvement', $code)->get();
+        // Récupérer tous les mouvements pour le code donné, y compris ceux qui ne sont pas en attente
+        $tousLesMouvements = MouvementStock::where('code_mouvement', $code)
+            ->get();
+
+        // Filtrer les mouvements à traiter (ceux qui sont en attente)
         $mouvementsATraiter = $tousLesMouvements->where('statut', 'En attente');
 
         if ($mouvementsATraiter->isEmpty()) {
             return response()->json([
-                'message' => "Aucune demande en attente pour le code {$code}.",
+                'message' => "Aucune demande en attente pour le code {$code} n'a pu être traitée.",
                 'code_mouvement' => $code,
             ], 200);
         }
 
         $errors = [];
         $nombreTraites = 0;
-        $urls_test = []; // 🔹 Pour stocker toutes les URL M_REQUEST
 
+        // Boucle sur les mouvements à traiter
         foreach ($mouvementsATraiter as $mouvement) {
-
+            // Appliquer le statut et la date à chaque mouvement en attente
             $mouvement->statut = $statut;
             $mouvement->date_mouvement = $dateMouvement;
 
-            if ($statutLower === 'accordé') {
+            // Si le statut est "Accordé", on procède à la déduction du stock et à l'affectation
+            if (strtolower($statut) === 'accordé') {
                 $qte = $mouvement->qteDemande;
+                $article = $mouvement->article;
+                $articleCode = $article ? $article->code_article : "inconnu";
+
                 $stock = Stock::where('id_Article', $mouvement->id_Article)->latest()->first();
 
                 if (!$stock || $stock->Qte_actuel < $qte) {
-                    $errors[] = "Quantité insuffisante pour l'article {$mouvement->article?->code_article}";
+                    $errors[] = "Quantité insuffisante en stock pour l'article {$articleCode}.";
                     $mouvement->statut = 'Refusé';
                     $mouvement->save();
-                    $nombreTraites++;
-
-                    // Appel API M_REQUEST pour refusé
-                    $url = $this->notifierMRequest($mouvement, 'refusé');
-                    if ($url) $urls_test[] = $url;
-
                     continue;
                 }
 
@@ -1644,100 +1628,79 @@ class MouvementStockController extends Controller
                     $type_affectation = TypeAffectation::where('libelle_type_affectation', "Affectation d'Article")->latest()->first();
                     if ($type_affectation) {
                         AffectationArticle::create([
-                            'description'        => $mouvement->description,
-                            'id_article'         => $mouvement->id_Article,
-                            'id_type_affectation'=> $type_affectation->id,
-                            'id_bureau'          => $mouvement->bureau_id,
-                            'id_employe'         => $mouvement->id_employe,
-                            'id_mouvement'       => $mouvement->id,
+                            'description' => $mouvement->description,
+                            'id_article' => $mouvement->id_Article,
+                            'id_type_affectation' => $type_affectation->id,
+                            'id_bureau' => $mouvement->bureau_id,
+                            'id_employe' => $mouvement->id_employe,
+                            'id_mouvement' => $mouvement->id,
                         ]);
                     }
                 }
             }
-
             $mouvement->save();
             $nombreTraites++;
-
-            // Appel API M_REQUEST pour accordé ou refusé
-            if (in_array($statutLower, ['accordé', 'refusé'])) {
-                $url = $this->notifierMRequest($mouvement, $statutLower);
-                if ($url) $urls_test[] = $url; // 🔹 On récupère l'URL
-            }
         }
 
+        // On vérifie si toutes les demandes en attente ont été traitées.
+        // Si le nombre de demandes traitées (avec succès ou refusées pour manque de stock)
+        // est égal au nombre initial de demandes en attente,
+        // on met à jour les autres lignes à "Accordé".
+
+        // Récupérer le nombre total de lignes dans le groupe.
         $nombreTotalLignes = MouvementStock::where('code_mouvement', $code)->count();
+        // Construction du message de journalisation
+        $logAction = "Validation groupée du code {$code} par l'utilisateur " . Auth::id() . ". ";
+        $logAction .= "Statut appliqué: {$statut}. ";
+        $logAction .= "Lignes traitées: {$nombreTraites}. ";
+
+        // Si le statut est "Accordé" et qu'il n'y a pas d'erreurs, on met à jour
+        // les lignes non encore traitées (celles qui ont été ignorées par la boucle `continue`).
+        if ($statut === 'Accordé' && empty($errors)) {
+            MouvementStock::where('code_mouvement', $code)
+                          ->where('statut', 'En attente') // Pour le cas où le statut serait différent de 'Accordé'
+                          ->update(['statut' => 'Accordé']);
+        }
+
+        if (!empty($errors)) {
+            $logAction .= "ATTENTION: Succès partiel/Échec. {$nombreRefusesParStock} ligne(s) refusée(s) pour stock insuffisant.";
+            LogJournalisation::create([
+                'action'     => $logAction,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+            ]);
+
+            return response()->json([
+                'message' => "Certaines demandes n'ont pas pu être traitées.",
+                'errors' => $errors,
+                'code_mouvement' => $code,
+                'nombre_demandes_traitees' => $nombreTraites,
+            ], 400);
+        }
+
+        // ✅ LOG → Succès total
+        $logAction .= ($statut_lower === 'accordé')
+        ? "Succès total. {$nombreAffectationsCrees} affectation(s) créée(s)."
+        : "Succès total de la mise à jour du statut.";
 
         LogJournalisation::create([
-            'action'     => "Validation groupée du code {$code} par " . $request->user()->name,
+            'action'     => $logAction,
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
             'user_id'    => $request->user()->id,
-            'user_name'  => $request->user()->name,
+            'user_name'   => $request->user()->name,
             'date_action'=> now(),
         ]);
 
-        // 🔹 Retourne aussi toutes les URL M_REQUEST pour vérification
-        $responseData = [
-            'urls_test' => $urls_test,
+        return response()->json([
+            'message' => "Toutes les demandes en attente pour le code {$code} ont été traitées avec succès.",
             'code_mouvement' => $code,
             'nombre_demandes_traitees' => $nombreTraites,
             'nombre_total_demandes' => $nombreTotalLignes,
-        ];
-
-        if (!empty($errors)) {
-            $responseData['message'] = "Certaines demandes n'ont pas pu être traitées.";
-            $responseData['errors'] = $errors;
-            return response()->json($responseData, 400);
-        }
-
-        $responseData['message'] = "Toutes les demandes en attente pour le code {$code} ont été traitées avec succès.";
-        return response()->json($responseData);
-    }
-
-    //3
-    protected function notifierMRequest(MouvementStock $mouvement, string $decision)
-    {
-        $reference = $mouvement->ref_m_request;
-        $baseUrl = rtrim(config('services.m_request.base_url'), '/');
-
-        if (empty($reference) || empty($baseUrl)) {
-            logger()->warning('URL M_REQUEST non construite : base URL ou référence manquante.', [
-                'reference' => $reference,
-                'baseUrl'   => $baseUrl,
-            ]);
-            return null; // 🔹 URL non construite
-        }
-
-        $url = "{$baseUrl}/api/demandes/" . urlencode($reference) . "/traiter";
-
-        // 🔹 Log de vérification
-        logger()->info("URL M_REQUEST construite : {$url}");
-
-        try {
-            $response = Http::timeout(5)->post($url, [
-                'statut'          => 'traité',
-                'decision'        => $decision,
-                'date_traitement' => now()->toDateTimeString(),
-            ]);
-
-            if ($response->failed()) {
-                logger()->error('❌ Échec appel M_REQUEST', [
-                    'url'      => $url,
-                    'payload'  => [
-                        'statut'   => 'traité',
-                        'decision' => $decision
-                    ],
-                    'response' => $response->body()
-                ]);
-            }
-        } catch (\Throwable $e) {
-            logger()->error('❌ Exception appel M_REQUEST', [
-                'url'   => $url,
-                'error' => $e->getMessage()
-            ]);
-        }
-
-        return $url; // 🔹 On retourne l'URL pour affichage/test
+        ]);
     }
 
 
