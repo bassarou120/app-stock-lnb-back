@@ -48,7 +48,8 @@ class PermissionController extends Controller
             "action"      => "Affichage de la liste des permissions",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -86,7 +87,8 @@ class PermissionController extends Controller
             "action"      => "Création de permission",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -120,7 +122,8 @@ class PermissionController extends Controller
             "action"      => "Mise à jour de permission ID: " . $permission->id,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -136,7 +139,8 @@ class PermissionController extends Controller
             "action"      => "Suppression de permission ID: " . $permission->id,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Permission supprimée avec succès', null);

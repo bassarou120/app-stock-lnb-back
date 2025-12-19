@@ -26,7 +26,8 @@ class RoleController extends Controller
             "action"      => "Affichage de la liste des rôles",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Liste des rôles', $roles);
@@ -81,7 +82,8 @@ public function store(Request $request)
             "action"      => "Mise à jour du rôle : " . $role->libelle_role . " (ID: " . $role->id . ")",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => auth()->id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -97,7 +99,8 @@ public function store(Request $request)
             "action"      => "Suppression du rôle : " . $role->libelle_role . " (ID: " . $role->id . ")",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => auth()->id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Rôle supprimé avec succès', null);

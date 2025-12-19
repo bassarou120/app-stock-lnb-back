@@ -25,7 +25,8 @@ class CompagniePetrolierController extends Controller
             "action"      => "Consultation de la liste des compagnies pétrolières",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         // Retourner la réponse formatée avec PostResource
@@ -55,7 +56,8 @@ class CompagniePetrolierController extends Controller
             "action"      => "Création de la compagnie pétrolière : " . $compagnie->libelle . " (ID: " . $compagnie->id . ")",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -86,7 +88,8 @@ class CompagniePetrolierController extends Controller
             "action"      => "Mise à jour de la compagnie pétrolière : " . $compagnie_petrolier->libelle . " (ID: " . $compagnie_petrolier->id . ")",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         // Retourner la réponse formatée avec PostResource, indiquant que la mise à jour a réussi
@@ -104,7 +107,8 @@ class CompagniePetrolierController extends Controller
             "action"      => "Suppression de la compagnie pétrolière : " . $compagnie_petrolier->libelle . " (ID: " . $compagnie_petrolier->id . ")",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Compagnie pétrolière supprimée avec succès', null);
@@ -119,7 +123,8 @@ class CompagniePetrolierController extends Controller
             "action"      => "Impression de la liste des compagnies pétrolières",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return $pdf->download('liste_compagnies_petrolieres.pdf');

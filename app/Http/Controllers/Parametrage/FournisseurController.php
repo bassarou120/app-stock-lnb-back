@@ -24,7 +24,8 @@ class FournisseurController extends Controller
             "action"      => "Affichage de la liste des fournisseurs",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Liste des fournisseurs', $fournisseurs);
@@ -52,7 +53,8 @@ class FournisseurController extends Controller
             "action"      => "Création de fournisseur",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Fournisseur créé avec succès', $fournisseur);
@@ -81,7 +83,8 @@ class FournisseurController extends Controller
             "action"      => "Mise à jour de fournisseur ID: " . $fournisseur->id,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Fournisseur mis à jour avec succès', $fournisseur);
@@ -96,7 +99,8 @@ class FournisseurController extends Controller
             "action"      => "Suppression de fournisseur ID: " . $fournisseur->id,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Fournisseur supprimé avec succès', null);
@@ -112,7 +116,8 @@ class FournisseurController extends Controller
             "action"      => "Impression de la liste des fournisseurs",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return $pdf->download('liste_fournisseurs.pdf');
