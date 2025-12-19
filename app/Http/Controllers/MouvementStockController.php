@@ -1741,7 +1741,6 @@ class MouvementStockController extends Controller
     }
 
 
-
     public function deleteSortieStock($id, Request $request)
     {
         // Trouver le mouvement
