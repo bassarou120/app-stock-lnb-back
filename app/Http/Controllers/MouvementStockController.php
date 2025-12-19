@@ -2043,14 +2043,18 @@ class MouvementStockController extends Controller
         // 3. Renvoie le fichier en tant que téléchargement en utilisant le chemin absolu.
         $filePath = Storage::disk('public')->path($mouvement->demandevalidesigne);
 
-            LogJournalisation::create([
-                'action'     => "Télécharger fichier mouvement stock",
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
-            ]);
+        // ✅ PROTECTION CONTRE user() NULL
+        $user = $request->user();
+
+        LogJournalisation::create([
+            'action'      => "Téléchargement fichier mouvement stock",
+            'ip_address'  => $request->ip(),
+            'user_agent'  => $request->header('User-Agent'),
+            'user_id'     => $user ? $user->id : null,
+            'user_name'   => $user ? $user->name : 'Invité',
+            'date_action' => now(),
+        ]);
+
         return response()->download($filePath);
     }
 

@@ -77,7 +77,7 @@ Route::apiResource('permissions', PermissionController::class);
         ]);
     });
 
-
+Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController::class, 'downloadGroupedFile']);
 
 Route::middleware('auth:api')->group(function () {
 
@@ -281,7 +281,7 @@ Route::middleware('auth:api')->group(function () {
 
     Route::get('/view-file', [MouvementStockController::class, 'viewFile']);
 
-    Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController::class, 'downloadGroupedFile']);
+    
 
     Route::get('/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']);
 
