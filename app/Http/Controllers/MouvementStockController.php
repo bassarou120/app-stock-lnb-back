@@ -1004,6 +1004,7 @@ class MouvementStockController extends Controller
         )
             ->where('id_type_mouvement', $type_mouvement->id)
             ->where('isdeleted', false)
+            ->where('statut', 'Cloturé') // ← Ajout du filtre
             ->groupBy('code_mouvement')
             ->orderBy('created_at', 'desc')
             ->get();
@@ -1061,6 +1062,7 @@ class MouvementStockController extends Controller
             }])
             ->where('id_type_mouvement', $type_mouvement->id)
             ->where('isdeleted', false)
+            ->where('statut', 'Cloturé') // ← Ajout du filtre
             ->latest()
             ->paginate(1000);
 
@@ -1112,10 +1114,12 @@ class MouvementStockController extends Controller
                         ->selectRaw("CONCAT(nom, ' ', prenom) as full_name");
                 }
             ])
-            ->where('id_type_mouvement', 2)
+            ->where('id_type_mouvement', $type_mouvement->id)
             ->where('isdeleted', false)
+            ->where('statut', 'Cloturé') // ← Même filtre que côté Angular
             ->latest()
             ->get();
+
             // 📝 JOURNALISATION : Enregistrement de l'action d'impression
             LogJournalisation::create([
                 'action'     => 'Impression de la liste des sorties de stock (PDF)',
@@ -2024,7 +2028,7 @@ class MouvementStockController extends Controller
         );
     }
 
-    public function downloadGroupedFile($code_mouvement)
+    public function downloadGroupedFile($code_mouvement, Request $request)
     {
         // 1. Trouver une ligne avec ce code de mouvement pour obtenir le chemin du fichier.
         $mouvement = MouvementStock::where('code_mouvement', $code_mouvement)

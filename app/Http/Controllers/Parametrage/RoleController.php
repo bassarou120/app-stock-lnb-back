@@ -22,44 +22,45 @@ class RoleController extends Controller
     {
         $roles = Role::latest()->where('isdeleted', false)->paginate(200);
 
+        $user = $request->user();
+
         LogJournalisation::create([
             "action"      => "Affichage de la liste des rôles",
-            "ip_address"  => request()->ip(),
-            "user_agent"  => request()->userAgent(),
-            'user_id'    => $request->user()->id,
-            'user_name'   => $request->user()->name,
+            "ip_address"  => $request->ip(),
+            "user_agent"  => $request->userAgent(),
+            'user_id'    => $user ? $user->id : null,
+            'user_name'   => $user ? $user->name : 'Invité',
             "date_action" => now()
         ]);
         return new PostResource(true, 'Liste des rôles', $roles);
     }
 
     // Créer un nouveau rôle
-public function store(Request $request)
-{
-    $role = Role::create([
-        'libelle_role' => $request->libelle_role,
-        'isdeleted' => false,
-    ]);
+    public function store(Request $request)
+    {
+        $role = Role::create([
+            'libelle_role' => $request->libelle_role,
+            'isdeleted' => false,
+        ]);
 
-    // Charger tous les modules et fonctionnalités
-    $modules = Module::where('isdeleted', false)->get();
-    $fonctions = Fonctionnalite::where('isdeleted', false)->get();
+        // Charger tous les modules et fonctionnalités
+        $modules = Module::where('isdeleted', false)->get();
+        $fonctions = Fonctionnalite::where('isdeleted', false)->get();
 
-    foreach ($modules as $module) {
-        foreach ($fonctions as $fonction) {
-            Permission::create([
-                'role_id' => $role->id,
-                'module_id' => $module->id,
-                'fonctionnalite_id' => $fonction->id,
-                'is_active' => false,
-                'isdeleted' => false,
-            ]);
+        foreach ($modules as $module) {
+            foreach ($fonctions as $fonction) {
+                Permission::create([
+                    'role_id' => $role->id,
+                    'module_id' => $module->id,
+                    'fonctionnalite_id' => $fonction->id,
+                    'is_active' => false,
+                    'isdeleted' => false,
+                ]);
+            }
         }
+
+        return new PostResource(true, 'Rôle créé avec ses permissions', $role);
     }
-
-    return new PostResource(true, 'Rôle créé avec ses permissions', $role);
-}
-
 
     // Mettre à jour un rôle
     public function update(Request $request, Role $role)

@@ -27,6 +27,8 @@ class PermissionController extends Controller
             ])
             ->get();
 
+            $user = $request->user();
+
         // Filtrer les permissions valides
         $validPermissions = $permissions->filter(function ($permission) {
             return $permission->role !== null
@@ -48,8 +50,8 @@ class PermissionController extends Controller
             "action"      => "Affichage de la liste des permissions",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            'user_id'    => $request->user()->id,
-            'user_name'   => $request->user()->name,
+            'user_id'    => $user ? $user->id : null,
+            'user_name'   => $user ? $user->name : 'Invité',
             "date_action" => now()
         ]);
 
