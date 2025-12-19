@@ -124,35 +124,87 @@ class AnnulationTicketController extends Controller
         return new PostResource(true, 'Annulation de Ticket supprimée avec succès !', null);
     }
 
+    public function getDetailsMouvementPourAnnulation($id)
+    {
+        // On récupère le mouvement avec ses détails (table mouvement_ticket_details)
+        // Note : Vérifie bien si ta relation s'appelle 'details' ou 'ticket_details'
+        $mouvement = MouvementTicket::with(['details.coupon', 'details.compagniePetrolier'])
+            ->findOrFail($id);
+
+        $detailsAafficher = [];
+
+        foreach ($mouvement->details as $detail) {
+            // On vérifie si CETTE ligne spécifique (Mouvement + Coupon) est déjà dans les annulations
+            $dejaAnnule = AnnulationTicket::where('mouvementTicket_id', $id)
+                ->where('coupon_ticket_id', $detail->coupon_ticket_id)
+                ->where('isdeleted', false)
+                ->exists();
+
+            // Si ce n'est pas encore annulé, on l'ajoute à la liste des choix possibles
+            if (!$dejaAnnule) {
+                $detailsAafficher[] = [
+                    'mouvement_ticket_id'    => $id,
+                    'coupon_ticket_id'       => $detail->coupon_ticket_id,
+                    'compagnie_petrolier_id' => $detail->compagnie_petrolier_id,
+                    'libelle_coupon'         => $detail->coupon->libelle,
+                    'libelle_compagnie'      => $detail->compagniePetrolier->libelle,
+                    'qte_origine'            => $detail->qte,
+                ];
+            }
+        }
+
+        return response()->json($detailsAafficher);
+    }
+
     public function getAllSortieTicketWhereNotInAnnulation(Request $request)
     {
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Ticket')->first();
 
         if ($type_mouvement) {
-            $mouvementsAvecAnnulation = AnnulationTicket::pluck('mouvementTicket_id')->toArray();
-
-            $mouvements = MouvementTicket::with(['employe', 'compagniePetrolier', 'vehicule', 'coupon_ticket'])
-                ->where('id_type_mouvement', $type_mouvement->id)
-                ->whereNotIn('id', $mouvementsAvecAnnulation)
+            // Correction ici : On groupe par 'reference' pour n'avoir qu'une ligne par code mouvement
+            $mouvements = MouvementTicket::where('id_type_mouvement', $type_mouvement->id)
                 ->where('isdeleted', false)
-                ->latest()
-                ->paginate(1000);
+                ->select('reference') // On ne prend que la référence
+                ->distinct()          // On évite les doublons
+                ->orderBy('reference', 'desc')
+                ->get();
 
-                // 📝 LOG → Consultation des mouvements de sortie non annulés
-                LogJournalisation::create([
-                    'action'     => 'Consultation des mouvements de sortie de ticket non annulés',
-                    'ip_address' => $request->ip(),
-                    'user_agent' => $request->header('User-Agent'),
-                    'user_id'    => $request->user()->id,
-                    'user_name'   => $request->user()->name,
-                    'date_action'=> now(),
-                ]);
-
-            return new PostResource(true, 'Liste des mouvements de sortie de Ticket non annulés', $mouvements);
+            return new PostResource(true, 'Liste des références uniques', $mouvements);
         }
 
-        return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Ticket".', []);
+        return new PostResource(false, 'Aucun mouvement trouvé', []);
     }
+
+    public function getDetailsMouvementParReference($reference)
+    {
+    $lignes = MouvementTicket::with(['coupon_ticket', 'compagniePetrolier'])
+        ->where('reference', $reference)
+        ->where('isdeleted', false)
+        ->get();
+
+    if ($lignes->isEmpty()) {
+        return response()->json(['message' => 'Aucun mouvement trouvé'], 404);
+    }
+
+    $resultat = [];
+    foreach ($lignes as $ligne) {
+        $existeDeja = AnnulationTicket::where('mouvementTicket_id', $ligne->id)
+            ->where('isdeleted', false)
+            ->exists();
+
+        if (!$existeDeja) {
+            $resultat[] = [
+                'id' => $ligne->id,
+                'coupon_ticket' => $ligne->coupon_ticket,
+                'compagnie_petrolier' => $ligne->compagniePetrolier,
+                'qte' => $ligne->qte,
+                'reference' => $ligne->reference
+            ];
+        }
+    }
+
+    return response()->json($resultat);
+}
 
     public function getMouvementInfo($idMouvement, Request $request)
     {

@@ -133,6 +133,8 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('transferts', TransfertController::class);
     Route::apiResource('retour-ticket', RetourTicketController::class);
     Route::apiResource('annulation-ticket', AnnulationTicketController::class);
+    // Dans routes/api.php
+    Route::get('details-mouvement/{reference}', [AnnulationTicketController::class, 'getDetailsMouvementParReference']);
     Route::apiResource('trajets', TrajetController::class);
     Route::apiResource('exercices', ExerciceController::class);
     Route::apiResource('categorieSortieTicket', CategorieSortieTicketController::class);
