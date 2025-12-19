@@ -22,7 +22,8 @@ class StatusImmoController extends Controller
             "action"      => "Affichage de la liste des statuts immobiliers",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Liste des statuts immobiliers', $status_immos);
@@ -46,7 +47,8 @@ class StatusImmoController extends Controller
             "action"      => "Création du statut immobilier : " . $status_immo->libelle_status_immo,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -72,7 +74,8 @@ class StatusImmoController extends Controller
             "action"      => "Mise à jour du statut immobilier : " . $status_immo->libelle_status_immo,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Statut immobilier mis à jour avec succès', $status_immo);
@@ -88,7 +91,8 @@ class StatusImmoController extends Controller
             "action"      => "Suppression du statut immobilier : " . $status_immo->libelle_status_immo,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Statut immobilier supprimé avec succès', null);

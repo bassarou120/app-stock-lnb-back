@@ -24,7 +24,8 @@ class SousTypeImmoController extends Controller
             "action"      => "Affichage de la liste des sous-types d'immo",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Liste des sous-types d\'immos', $sous_type_immos);
@@ -53,7 +54,8 @@ class SousTypeImmoController extends Controller
             "action"      => "Création du sous-type d'immo : " . $sous_type_immo->libelle,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -83,7 +85,8 @@ class SousTypeImmoController extends Controller
             "action"      => "Mise à jour du sous-type d'immo : " . $sous_type_immo->libelle,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
 
@@ -99,7 +102,8 @@ class SousTypeImmoController extends Controller
             "action"      => "Suppression du sous-type d'immo : " . $sous_type_immo->libelle,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(), // ou Auth::id() si tu as importé Auth
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Sous-type d\'immo supprimé avec succès', null);

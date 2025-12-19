@@ -77,7 +77,7 @@ Route::apiResource('permissions', PermissionController::class);
         ]);
     });
 
-
+Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController::class, 'downloadGroupedFile']);
 
 Route::middleware('auth:api')->group(function () {
 
@@ -133,6 +133,8 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('transferts', TransfertController::class);
     Route::apiResource('retour-ticket', RetourTicketController::class);
     Route::apiResource('annulation-ticket', AnnulationTicketController::class);
+    // Dans routes/api.php
+    Route::get('details-mouvement/{reference}', [AnnulationTicketController::class, 'getDetailsMouvementParReference']);
     Route::apiResource('trajets', TrajetController::class);
     Route::apiResource('exercices', ExerciceController::class);
     Route::apiResource('categorieSortieTicket', CategorieSortieTicketController::class);
@@ -281,7 +283,7 @@ Route::middleware('auth:api')->group(function () {
 
     Route::get('/view-file', [MouvementStockController::class, 'viewFile']);
 
-    Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController::class, 'downloadGroupedFile']);
+    
 
     Route::get('/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']);
 
@@ -324,8 +326,15 @@ Route::middleware('auth:api')->group(function () {
 
 
     Route::prefix('logs')->group(function () {
-        Route::post('/', [LogJournalisationController::class, 'store']);
+
+        // 1. ROUTE SPÉCIFIQUE (Doit être en premier)
+        Route::get('/export', [LogJournalisationController::class, 'exportLogs']); // La route qui était manuelle.
+
+        // 2. Route pour la liste (filtrable)
         Route::get('/', [LogJournalisationController::class, 'index']);
+
+        // 3. Routes CRUD standard (Les routes avec des paramètres jokers DOIVENT être en dernier)
+        Route::post('/', [LogJournalisationController::class, 'store']);
         Route::get('/{id}', [LogJournalisationController::class, 'show']);
         Route::delete('/{id}', [LogJournalisationController::class, 'destroy']);
     });

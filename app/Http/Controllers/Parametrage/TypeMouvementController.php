@@ -22,7 +22,8 @@ class TypeMouvementController extends Controller
             "action"      => "Affichage de la liste des types de mouvement",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Liste des types de mouvement', $typesMouvement);
@@ -48,7 +49,8 @@ class TypeMouvementController extends Controller
             "action"      => "Création du type de mouvement : " . $typeMouvement->libelle_type_mouvement,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Type de mouvement créé avec succès', $typeMouvement);
@@ -75,7 +77,8 @@ class TypeMouvementController extends Controller
             "action"      => "Mise à jour du type de mouvement : " . $typeMouvement->libelle_type_mouvement,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Type de mouvement mis à jour avec succès', $typeMouvement);
@@ -90,7 +93,8 @@ class TypeMouvementController extends Controller
             "action"      => "Suppression du type de mouvement : " . $typeMouvement->libelle_type_mouvement,
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Type de mouvement supprimé avec succès', null);

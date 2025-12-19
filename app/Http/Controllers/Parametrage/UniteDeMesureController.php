@@ -22,7 +22,8 @@ class UniteDeMesureController extends Controller
             "action"      => "Affichage de la liste des Unites De Mesure",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'Liste des Unites De Mesure', $uniteDeMesures);
@@ -46,7 +47,8 @@ class UniteDeMesureController extends Controller
             "action"      => "Création d'un nouveau Unite De Mesure",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'unite De Mesure créé avec succès', $uniteDeMesure);
@@ -71,7 +73,8 @@ class UniteDeMesureController extends Controller
             "action"      => "Mise à jour d'un Unite De Mesure",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'UniteDeMesure mis à jour avec succès', $unite_de_mesure);
@@ -86,7 +89,8 @@ class UniteDeMesureController extends Controller
             "action"      => "Suppression d'un Unite De Mesure",
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
-            "user_id"     => Auth::id(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
         return new PostResource(true, 'unite_de_mesure supprimé avec succès', null);
