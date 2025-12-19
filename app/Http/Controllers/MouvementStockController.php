@@ -1802,13 +1802,13 @@ class MouvementStockController extends Controller
     {
         // Check if any line in the group is not 'Accordé'
         $allAccordees = MouvementStock::where('code_mouvement', $codeMouvement)
-                                      ->where('statut', '!=', 'Accordé')
-                                      ->doesntExist();
+                                    ->where('statut', '!=', 'Accordé')
+                                    ->doesntExist();
 
         if ($allAccordees) {
             // All lines are 'Accordé', so we can generate the file.
             try {
-                return $this->genererFicheDemande($codeMouvement);
+                return $this->genererFicheDemande($codeMouvement, request());
             } catch (\Exception $e) {
                 return response()->json([
                     'message' => 'Demandes traitées, mais une erreur est survenue lors de la génération du fichier.',
@@ -2029,7 +2029,7 @@ class MouvementStockController extends Controller
         // 1. Trouver une ligne avec ce code de mouvement pour obtenir le chemin du fichier.
         $mouvement = MouvementStock::where('code_mouvement', $code_mouvement)
                                    ->whereNotNull('demandevalidesigne') // S'assurer qu'un fichier a été téléchargé
-                                   ->first();
+                                    ->first();
 
         // 2. Vérifier si un mouvement a été trouvé et si le chemin du fichier existe.
         if (!$mouvement || !Storage::disk('public')->exists($mouvement->demandevalidesigne)) {

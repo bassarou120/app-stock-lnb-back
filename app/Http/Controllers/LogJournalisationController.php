@@ -40,6 +40,10 @@ class LogJournalisationController extends Controller
         $user = $request->user();
         $userName = $user ? $user->name : null;
 
+        // Récupérer le nom de l'utilisateur authentifié si l'ID n'est pas fourni (ou si c'est une action interne)
+        $user = $request->user();
+        $userName = $user ? $user->name : null;
+
         $log = LogJournalisation::create([
             'action' => $request->action,
             // Utiliser l'IP du client si non fournie dans la requête
@@ -79,7 +83,7 @@ class LogJournalisationController extends Controller
             $searchTerm = '%' . $request->action . '%';
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('log_journalisations.action', 'like', $searchTerm)
-                  ->orWhere('log_journalisations.ip_address', 'like', $searchTerm);
+                    ->orWhere('log_journalisations.ip_address', 'like', $searchTerm);
             });
         }
 
@@ -87,7 +91,6 @@ class LogJournalisationController extends Controller
         if ($request->filled('user_id')) {
             $query->where('log_journalisations.user_id', $request->user_id);
         }
-
         // 3. Filtrage par Période (Date de début)
         if ($request->filled('date_debut')) {
             // S'assurer que l'heure est minuit (début du jour)
@@ -101,7 +104,6 @@ class LogJournalisationController extends Controller
             $dateFin = Carbon::parse($request->date_fin)->endOfDay();
             $query->where('date_action', '<=', $dateFin);
         }
-
         // Exécution de la requête
         $logs = $query->get();
 
@@ -131,7 +133,7 @@ class LogJournalisationController extends Controller
             $searchTerm = '%' . $request->action . '%';
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('log_journalisations.action', 'like', $searchTerm)
-                  ->orWhere('log_journalisations.ip_address', 'like', $searchTerm);
+                    ->orWhere('log_journalisations.ip_address', 'like', $searchTerm);
             });
         }
 

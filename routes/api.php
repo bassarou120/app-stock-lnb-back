@@ -324,9 +324,16 @@ Route::middleware('auth:api')->group(function () {
 
 
     Route::prefix('logs')->group(function () {
-        Route::post('/', [LogJournalisationController::class, 'store']);
+        
+        // 1. ROUTE SPÉCIFIQUE (Doit être en premier)
+        Route::get('/export', [LogJournalisationController::class, 'exportLogs']); // La route qui était manuelle.
+
+        // 2. Route pour la liste (filtrable)
         Route::get('/', [LogJournalisationController::class, 'index']);
-        Route::get('/{id}', [LogJournalisationController::class, 'show']);
+        
+        // 3. Routes CRUD standard (Les routes avec des paramètres jokers DOIVENT être en dernier)
+        Route::post('/', [LogJournalisationController::class, 'store']);
+        Route::get('/{id}', [LogJournalisationController::class, 'show']); 
         Route::delete('/{id}', [LogJournalisationController::class, 'destroy']);
     });
 
