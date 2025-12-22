@@ -929,7 +929,7 @@ class MouvementStockController extends Controller
     }
 
     // index sortieStock regroupé par code_mouvement
-/*     public function indexSortieStockGrouped()
+    public function indexSortieStockGrouped()
     {
         // Récupérer l'ID du type de mouvement "Sortie de Stock"
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Stock')->first();
@@ -980,8 +980,9 @@ class MouvementStockController extends Controller
 
         // Si le type de mouvement n'existe pas, retourner une réponse vide ou un message d'erreur
         return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Stock".', []);
-    } */
+    } 
 
+/*
     public function indexSortieStockGrouped(Request $request)
     {
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Stock')->first();
@@ -1046,7 +1047,7 @@ class MouvementStockController extends Controller
 
         return new PostResource(true, 'Liste des mouvements groupés', $formattedResult);
     }
-
+*/
 
     // index sortieStock
     public function indexSortieStock(Request $request)
