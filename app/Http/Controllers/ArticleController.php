@@ -619,6 +619,8 @@ class ArticleController extends Controller
                 }
 
                 $annee_exercice = trim($row[5]);
+                $quantite = trim($row[7] ?? '0'); // Quantité actuelle, par défaut à 0 si non fourni
+                $cump = trim($row[8] ?? '0'); // récupère et nettoie la valeur, 0 par défaut
                 $raw = trim($row[6] ?? 'non');
 
                 // Nettoyage et normalisation : "Oui", " O U I ", "oui" → "oui"
@@ -634,6 +636,8 @@ class ArticleController extends Controller
                 }
 
                 $annee_exercice = (int) $annee_exercice; // Cast seulement après validation
+                $quantite_en_int = (int) $quantite; // Cast seulement après validation
+                $cump_en_float = (float) $cump;   // cast en float après validation
                 $code_article = trim($row[0]);
                 $designation_article = trim($row[1]);
 
@@ -682,23 +686,223 @@ class ArticleController extends Controller
                 ]);
 
                 // Initialiser l'entrée de stock pour cet article
-                Stock::create([
-                    'id_Article' => $article->id,
-                    'Qte_actuel' => 0,
-                    'id_exercice' => $id_exercice,
-                ]);
+                // Stock::create([
+                //     'id_Article' => $article->id,
+                //     'Qte_actuel' => $quantite_en_int,
+                //     'id_exercice' => $id_exercice,
+                // ]);
+
+                 Stock::create([
+                        'id_Article' => $article->id,
+                        'Qte_actuel' => $quantite_en_int,
+                        'cout_moyen_pondere' => $cump_en_float,
+                        'id_exercice' => $id_exercice,
+                    ]);
 
                 // Ajouter une entrée dans la table article_exercice
                 DB::table('article_exercice')->insert([
                     'id_article' => $article->id,
                     'id_exercice' => $id_exercice,
-                    'stock_debut_exercice' => 0,
-                    'stock_fin_exercice' => 0,
+                    'stock_debut_exercice' => $quantite_en_int,
+                    'stock_fin_exercice' => $quantite_en_int,
                     'created_at' => now(),
                     'updated_at' => now(),
-                    'cmp_debut_exercice' => 0,
-                    'cmp_fin_exercice' => 0,
+                    'cmp_debut_exercice' => $cump_en_float,
+                    'cmp_fin_exercice' => $cump_en_float,
                 ]);
+
+                $successCount++; // Incrémenter le compteur de succès
+            }
+
+            DB::commit();
+
+            // 4️⃣ Construction du message de retour final
+            $summary = "Importation terminée. " . $successCount . " article(s) ajouté(s) sur " . $totalDataRows . " ligne(s) de données traitée(s).";
+
+            if (!empty($ignoredRows)) {
+                $summary .= " Attention : " . count($ignoredRows) . " ligne(s) ont été ignorée(s).";
+            }
+
+            LogJournalisation::create([
+                'action' => 'Début de l\'importation des articles via Excel',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action' => now(),
+            ]);
+
+            return response()->json([
+                'message' => $summary,
+                'success_count' => $successCount,
+                'total_rows_processed' => $totalDataRows,
+                'ignored' => $ignoredRows
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            LogJournalisation::create([
+                'action' => 'Échec de l\'importation des articles: ' . $e->getMessage(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action' => now(),
+            ]);
+
+            Log::error('Erreur lors de l\'importation des articles: ' . $e->getMessage() . ' à la ligne ' . $e->getLine());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Une erreur critique est survenue lors de l\'importation.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    //  Attention, cette methode est à utiliser pour l'import après la mise à jours pour ne pas
+    // agir sur la table  article_exercice
+    public function import_au_utiliser_apres(Request $request)
+    {
+        // 1️⃣ Validation du fichier
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|mimes:xlsx,xls',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $spreadsheet = IOFactory::load($request->file('file'));
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray();
+
+        // 2️⃣ Initialisation des compteurs et du tableau de rapport
+        $totalDataRows = 0; // Renommé pour ne compter que les lignes de données réelles
+        $successCount = 0;
+        $ignoredRows = [];
+
+        // Pré-charger tous les exercices pour éviter des requêtes répétées dans la boucle
+        $exercices = Exercice::all()->pluck('id', 'annee');
+
+        // Démarre une transaction pour garantir que toutes les opérations sont réussies ou annulées
+        DB::beginTransaction();
+
+        try {
+            // 3️⃣ Boucle de traitement des lignes
+            foreach ($rows as $index => $row) {
+                if ($index === 0) continue; // Ignorer la ligne d'en-tête
+
+                // NOUVELLE VÉRIFICATION : Ignorer les lignes entièrement vides
+                $nonEmptyCells = array_filter($row, function ($cell) {
+                    return trim($cell) !== '';
+                });
+
+                if (empty($nonEmptyCells)) {
+                    continue; // Ignorer la ligne vide et passer à la suivante
+                }
+
+                $excelRowNumber = $index + 1;
+                $totalDataRows++; // Compter uniquement les lignes de données réelles
+
+                // La nouvelle colonne 'année' est à l'index 5 (la 6ème colonne)
+                if (count($row) < 6) {
+                    $ignoredRows[] = "Ligne " . $excelRowNumber . " ignorée : colonnes insuffisantes (" . count($row) . "). L'année d'exercice est manquante.";
+                    continue;
+                }
+
+                $annee_exercice = trim($row[5]);
+                $quantite = trim($row[7] ?? '0'); // Quantité actuelle, par défaut à 0 si non fourni
+                $cump = trim($row[8] ?? '0'); // récupère et nettoie la valeur, 0 par défaut
+                $raw = trim($row[6] ?? 'non');
+
+                // Nettoyage et normalisation : "Oui", " O U I ", "oui" → "oui"
+                $demande = strtolower(str_replace(' ', '', $raw));
+
+                // oui, true ou 1 → true / sinon false
+                $demandeBool = in_array($demande, ['oui', 'true', '1']);
+
+                // Vérifier si l'année est valide
+                if (empty($annee_exercice) || !is_numeric($annee_exercice)) {
+                    $ignoredRows[] = "Ligne " . $excelRowNumber . " ignorée : année invalide ou vide.";
+                    continue;
+                }
+
+                $annee_exercice = (int) $annee_exercice; // Cast seulement après validation
+                $quantite_en_int = (int) $quantite; // Cast seulement après validation
+                $cump_en_float = (float) $cump;   // cast en float après validation
+                $code_article = trim($row[0]);
+                $designation_article = trim($row[1]);
+
+                // Vérifier si un article avec le même code ou libellé existe déjà
+                // Attention: L'utilisation de orWhere peut être lente si la table est grande et non indexée.
+                $articleExistant = Article::where('code_article', $code_article)
+                    ->orWhere('libelle', $designation_article)
+                    ->first();
+
+                if ($articleExistant) {
+                    $ignoredRows[] = "Ligne " . $excelRowNumber . " ignorée : article avec code '$code_article' ou nom '$designation_article' déjà existant.";
+                    Log::info("Importation ignorée - Ligne " . $excelRowNumber . ": article avec code '$code_article' ou nom '$designation_article' déjà existant.");
+                    continue;
+                }
+
+                // Vérifier si l'année de l'exercice existe dans la base de données.
+                if (!isset($exercices[$annee_exercice])) {
+                    // Créer un nouvel exercice pour cette année
+                    $newExercice = Exercice::create([
+                        'annee' => $annee_exercice,
+                        'date_debut' => Carbon::create($annee_exercice, 1, 1)->toDateString(),
+                        'date_fin' => Carbon::create($annee_exercice, 12, 31)->toDateString(),
+                        'statut' => 'cloture', // Les exercices importés sont considérés comme clôturés
+                    ]);
+
+                    // Mettre à jour notre collection d'exercices pour la suite de l'importation
+                    $exercices[$annee_exercice] = $newExercice->id;
+                }
+
+                $id_exercice = $exercices[$annee_exercice];
+
+                // Trouver ou créer la catégorie
+                $categorie = CategorieArticle::firstOrCreate([
+                    'libelle_categorie_article' => trim($row[2])
+                ]);
+
+                // Créer l'article avec l'id_exercice récupéré
+                $article = Article::create([
+                    'id_cat' => $categorie->id,
+                    'libelle' => $designation_article,
+                    'code_article' => $code_article,
+                    'description' => trim($row[3] ?? ''),
+                    'stock_alerte' => trim($row[4]),
+                    'id_exercice' => $id_exercice, // Ajout de l'id de l'exercice
+                    'demande_intermittent' => $demandeBool,
+                ]);
+
+                // Initialiser l'entrée de stock pour cet article
+                // Stock::create([
+                //     'id_Article' => $article->id,
+                //     'Qte_actuel' => $quantite_en_int,
+                //     'id_exercice' => $id_exercice,
+                // ]);
+
+                 Stock::create([
+                        'id_Article' => $article->id,
+                        'Qte_actuel' => $quantite_en_int,
+                        'cout_moyen_pondere' => $cump_en_float,
+                        'id_exercice' => $id_exercice,
+                    ]);
+
+                // Ajouter une entrée dans la table article_exercice
+                // DB::table('article_exercice')->insert([
+                //     'id_article' => $article->id,
+                //     'id_exercice' => $id_exercice,
+                //     'stock_debut_exercice' => $quantite_en_int,
+                //     'stock_fin_exercice' => $quantite_en_int,
+                //     'created_at' => now(),
+                //     'updated_at' => now(),
+                //     'cmp_debut_exercice' => $cump_en_float,
+                //     'cmp_fin_exercice' => $cump_en_float,
+                // ]);
 
                 $successCount++; // Incrémenter le compteur de succès
             }
