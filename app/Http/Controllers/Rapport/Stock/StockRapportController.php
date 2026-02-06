@@ -20,13 +20,14 @@ use App\Services\Auth\AuthService;
 use Illuminate\Support\Facades\Auth;
 
 
+
 class StockRapportController extends Controller
 {
     /**
      * Récupère les mouvements de stock filtrés pour le rapport en fonction du type de rapport.
      * Gère à la fois les rapports d'entrée et de sortie.
      */
-    
+
     public function getRapportData(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -215,8 +216,8 @@ class StockRapportController extends Controller
 
         // 🧾 LOG : capture du type demandé + période
         LogJournalisation::create([
-            "action"      => "Demande d’impression du rapport stock (" . $request->id_type_rapport . ") du " . 
-                            Carbon::parse($request->date_debut)->format('d/m/Y') . " au " . 
+            "action"      => "Demande d’impression du rapport stock (" . $request->id_type_rapport . ") du " .
+                            Carbon::parse($request->date_debut)->format('d/m/Y') . " au " .
                             Carbon::parse($request->date_fin)->format('d/m/Y'),
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
@@ -512,7 +513,7 @@ class StockRapportController extends Controller
             'nombre_articles' => count($rapportArticles),
             'periode_analysee' => $dateDebut->format('d/m/Y') . ' au ' . $dateFin->format('d/m/Y')
         ];
-        
+
         LogJournalisation::create([
             "action"      => "Téléchargement du rapport d'état stock" .
             ($idArticle ? " pour l'article ID {$idArticle}" : "") .
