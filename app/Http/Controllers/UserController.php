@@ -11,19 +11,31 @@ use Illuminate\Support\Str;
 use App\Models\Parametrage\Employe;
 use Illuminate\Http\Request;
 use App\Models\Role; // Si tu as besoin d'inclure le rôle
+use Illuminate\Support\Facades\DB; // Ajout pour les transactions
+use Illuminate\Support\Facades\Auth; // Ajout pour l'utilisateur connecté
+use App\Models\LogJournalisation; // Ajout du modèle de journalisation
 
 class UserController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
 
         $users = User::with('role')
             ->orderBy('created_at', 'desc')
             ->where('isdeleted', false)
             ->paginate(10);
+
+            LogJournalisation::create([
+                'action'     => "Consultation de la liste des utilisateurs",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+            ]);
         return response()->json($users);
     }
 
@@ -32,35 +44,128 @@ class UserController extends Controller
      */
     public function store(RegisterRequest $request)
     {
-        // La validation est maintenant entièrement gérée par RegisterRequest.
-        // On récupère les données déjà validées.
+        // La validation est gérée par RegisterRequest.
         $validatedData = $request->validated();
+        $generatedPassword = Str::random(10); // Mot de passe généré
 
-        // On trouve l'employé pour récupérer ses informations
-        $employe = Employe::findOrFail($validatedData['employe_id']);
+        DB::beginTransaction();
 
-        // Génération automatique du mot de passe
-        $generatedPassword = Str::random(10); // Génère une chaîne aléatoire de 10 caractères
+        try {
+            // On trouve l'employé pour récupérer ses informations
+            $employe = Employe::findOrFail($validatedData['employe_id']);
 
-        // Création de l'utilisateur avec les données de l'employé et les données validées
-        $user = User::create([
-            'name' => $employe->nom,
-            'surname' => $employe->prenom ?? null, // Utilisez 'prenom' si votre modèle Employe l'a, sinon null
-            'email' => $employe->email,
-            'phone' => $employe->telephone,
-            // 'sexe' => $validatedData['sexe'], // Cette valeur vient de la validation de RegisterRequest
-            'password' => Hash::make($generatedPassword), // Hashage du mot de passe généré
-            'role_id' => $validatedData['role_id'], // Cette valeur vient de la validation de RegisterRequest
-            'active' => $validatedData['active'] ?? true, // Utilise la valeur validée, ou true par défaut
-            'employe_id' => $employe->id,
-            // 'photo' => ..., // Logique pour la photo si elle est gérée
+            // --- NOUVEAU BLOC : Gérer la Réactivation (Recréation) ---
+        // On cherche si un utilisateur existe déjà pour cet Employé, mais est marqué comme soft-deleted.
+        $existingSoftDeletedUser = User::where('employe_id', $employe->id)
+        ->where('isdeleted', true)
+        ->first();
+
+        if ($existingSoftDeletedUser) {
+        // Utilisateur soft-deleted trouvé : on le réactive (restauration)
+
+        $existingSoftDeletedUser->name = $employe->nom;
+        $existingSoftDeletedUser->surname = $employe->prenom ?? null;
+        $existingSoftDeletedUser->email = $employe->email;
+        $existingSoftDeletedUser->phone = $employe->telephone;
+        $existingSoftDeletedUser->password = Hash::make($generatedPassword); // Générer un nouveau mot de passe
+        $existingSoftDeletedUser->role_id = $validatedData['role_id'];
+        $existingSoftDeletedUser->active = $validatedData['active'] ?? true; // Rétablir le statut actif/souhaité
+        $existingSoftDeletedUser->isdeleted = false; // Rétablir l'état non supprimé (RESTAURATION)
+        $existingSoftDeletedUser->save();
+
+        DB::commit();
+
+        // Envoi de l'e-mail avec le nouveau mot de passe (logique de mail inchangée)
+        try {
+        Mail::to($existingSoftDeletedUser->email)->send(new UserRegisteredMail($existingSoftDeletedUser, $generatedPassword));
+        $emailStatus = 'E-mail de réactivation envoyé.';
+        } catch (\Exception $e) {
+        // Gérer l'échec de l'envoi de l'e-mail
+        // ... (Votre logique de log d'échec de mail)
+        $emailStatus = 'Échec de l\'envoi de l\'e-mail lors de la réactivation.';
+        }
+
+        // 📝 LOG → Réactivation réussie
+        LogJournalisation::create([
+        'action'     => 'Réactivation utilisateur réussie (Restauration)',
+        'ip_address' => $request->ip(),
+        'user_agent' => $request->header('User-Agent'),
+        'user_id'    => $request->user()->id,
+        'user_name'   => $request->user()->name,
+        'date_action'=> now(),
+        //'details'    => "User ID: {$existingSoftDeletedUser->id}, Email: {$existingSoftDeletedUser->email}. {$emailStatus}"
         ]);
 
-        // Envoi de l'e-mail avec le mot de passe en clair
-        Mail::to($user->email)->send(new UserRegisteredMail($user, $generatedPassword));
+        return response()->json($existingSoftDeletedUser->load('role'), 200); // Retour 200 (OK/Mis à jour)
 
-        // Retourne la réponse JSON
-        return response()->json($user->load('role'), 201);
+        }
+        // --- FIN NOUVEAU BLOC ---
+
+            // Création de l'utilisateur
+            $user = User::create([
+                'name' => $employe->nom,
+                'surname' => $employe->prenom ?? null,
+                'email' => $employe->email,
+                'phone' => $employe->telephone,
+                'password' => Hash::make($generatedPassword), // Hashage du mot de passe généré
+                'role_id' => $validatedData['role_id'],
+                'active' => $validatedData['active'] ?? true,
+                'employe_id' => $employe->id,
+            ]);
+
+            // Envoi de l'e-mail avec le mot de passe en clair (Doit se faire après le commit ou géré séparément)
+            // Pour des raisons de robustesse, on garde l'envoi de mail après le commit ou géré par queue.
+            // Ici, nous le faisons après la création réussie.
+
+            DB::commit();
+
+            try {
+                Mail::to($user->email)->send(new UserRegisteredMail($user, $generatedPassword));
+                $emailStatus = 'E-mail envoyé.';
+            } catch (\Exception $e) {
+                dd($e->getMessage());
+                $emailStatus = 'Échec de l\'envoi de l\'e-mail: ' . $e->getMessage();
+                LogJournalisation::create([
+                    'action'     => 'Création utilisateur échouée',
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->header('User-Agent'),
+                    'user_id'    => null,
+                    'user_name'   => null,
+                    'date_action'=> now(),
+                    //'details'    => "User , Email: {$user->email}"
+                ]);
+            }
+
+            // 📝 LOG → Création réussie
+            LogJournalisation::create([
+                'action'     => 'Création utilisateur réussie',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+                //'details'    => "User ID: {$user->id}, Email: {$user->email}, Rôle: {$user->role_id}. {$emailStatus}"
+            ]);
+
+            return response()->json($user->load('role'), 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            dd($e->getMessage());
+            // 📝 LOG → Création échouée (exception)
+            $employeId = $validatedData['employe_id'] ?? 'N/A';
+            LogJournalisation::create([
+                'action'     => 'Création utilisateur échouée (exception)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+                //'details'    => "Employé ID: {$employeId}. Erreur: " . $e->getMessage()
+            ]);
+
+            return response()->json(['message' => 'Erreur lors de la création de l\'utilisateur.'], 500);
+        }
     }
 
     /**
@@ -84,47 +189,178 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        $validatedData = $request->validate([
-            'name' => 'sometimes|nullable|string|max:255',
-            'surname' => 'sometimes|nullable|string|max:255',
-            'email' => 'sometimes|nullable|string|email|max:255|unique:users,email,' . $user->id,
-            'phone' => 'sometimes|nullable|string|max:20|unique:users,phone,' . $user->id,
-            'sexe' => 'sometimes|nullable|in:Masculin,Féminin',
-            'password' => 'sometimes|nullable|string|min:8', // Mot de passe optionnel
-            'role_id' => 'sometimes|required|exists:roles,id',
-            'active' => 'sometimes|boolean',
-        ]);
+        $oldUserData = $user->toJson();
 
-        if (isset($validatedData['password']) && !empty($validatedData['password'])) {
-            $validatedData['password'] = bcrypt($validatedData['password']);
-        } else {
-            unset($validatedData['password']); // Ne pas mettre à jour le mot de passe s'il est vide
+        try {
+            $validatedData = $request->validate([
+                'name' => 'sometimes|nullable|string|max:255',
+                'surname' => 'sometimes|nullable|string|max:255',
+                'email' => 'sometimes|nullable|string|email|max:255|unique:users,email,' . $user->id,
+                'phone' => 'sometimes|nullable|string|max:20|unique:users,phone,' . $user->id,
+                'sexe' => 'sometimes|nullable|in:Masculin,Féminin',
+                'password' => 'sometimes|nullable|string|min:8', // Mot de passe optionnel
+                'role_id' => 'sometimes|required|exists:roles,id',
+                'active' => 'sometimes|boolean',
+            ]);
+
+            if (isset($validatedData['password']) && !empty($validatedData['password'])) {
+                $validatedData['password'] = bcrypt($validatedData['password']);
+                $passwordChanged = true;
+            } else {
+                unset($validatedData['password']);
+                $passwordChanged = false;
+            }
+
+            DB::beginTransaction();
+
+            $user->update($validatedData);
+
+            DB::commit();
+
+            // 📝 LOG → Mise à jour réussie
+            LogJournalisation::create([
+                'action'     => 'Mise à jour utilisateur réussie',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+                //'details'    => "User ID: {$user->id}, Email: {$user->email}. PWD changé: " . ($passwordChanged ? 'Oui' : 'Non') . ". Anciennes données: {$oldUserData}."
+            ]);
+
+            return response()->json($user->load('role'));
+
+        } catch (ValidationException $e) {
+            // 📝 LOG → Échec de validation
+            LogJournalisation::create([
+                'action'     => 'Échec validation (mise à jour utilisateur)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+                //'details'    => "User ID: {$user->id}. Erreurs: " . json_encode($e->errors())
+            ]);
+            throw $e; // Renvoyer l'exception de validation après le log
+        } catch (\Exception $e) {
+            DB::rollBack();
+            // 📝 LOG → Mise à jour échouée (exception)
+            LogJournalisation::create([
+                'action'     => 'Mise à jour utilisateur échouée (exception)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+                //'details'    => "User ID: {$user->id}. Erreur: " . $e->getMessage()
+            ]);
+
+            return response()->json(['message' => 'Erreur lors de la mise à jour de l\'utilisateur.'], 500);
         }
-
-        $user->update($validatedData);
-
-        return response()->json($user->load('role'));
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(string $id, Request $request) // Ajout de Request pour la journalisation
     {
-        $user = User::find($id); // Trouve l'utilisateur par son ID (UUID ou ID auto-incrémenté)
+        $user = User::find($id);
 
         if (!$user) {
+            // 📝 LOG → Échec suppression (non trouvé)
+            LogJournalisation::create([
+                'action'     => 'Échec suppression utilisateur (non trouvé)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+                //'details'    => "User ID: {$id} introuvable."
+            ]);
             return response()->json(['message' => 'Utilisateur non trouvé'], 404);
         }
 
+        DB::beginTransaction();
+        $detailsLog = "User ID: {$user->id}, Email: {$user->email}";
+
         try {
+            // Suppression logique (Soft Delete)
             $user->isdeleted = true;
             $user->save();
+
+            DB::commit();
+
+            // 📝 LOG → Suppression réussie
+            LogJournalisation::create([
+                'action'     => 'Suppression utilisateur réussie (soft delete)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+                //'details'    => $detailsLog
+            ]);
+
             return response()->json(['message' => 'Utilisateur supprimé avec succès'], 200);
+
         } catch (\Exception $e) {
-            // Log l'erreur pour le débogage (optionnel mais recommandé)
-            \Log::error('Erreur lors de la suppression de l\'utilisateur ID ' . $id . ': ' . $e->getMessage());
+            DB::rollBack();
+
+            // 📝 LOG → Suppression échouée (exception)
+            LogJournalisation::create([
+                'action'     => 'Suppression utilisateur échouée (exception)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+                //'details'    => $detailsLog . ". Erreur: " . $e->getMessage()
+            ]);
+
             return response()->json(['message' => 'Erreur lors de la suppression de l\'utilisateur.'], 500);
+        }
+    }
+
+    public function toggleActiveStatus(Request $request, User $user)
+    {
+        DB::beginTransaction();
+        try {
+            // Le statut est simplement l'inverse du statut actuel
+            $newStatus = !$user->active;
+            $user->active = $newStatus;
+            $user->save();
+
+            DB::commit();
+
+            $action = $newStatus ? 'Activation' : 'Désactivation';
+            $message = "Utilisateur {$action} avec succès";
+
+            // 📝 LOG → Changement de statut réussi
+            LogJournalisation::create([
+                'action'     => "{$action} utilisateur réussie",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+            ]);
+
+            return response()->json(['message' => $message], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            // 📝 LOG → Échec du changement de statut
+            LogJournalisation::create([
+                'action'     => 'Échec du changement de statut d\'activité utilisateur (exception)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+            ]);
+
+            return response()->json(['message' => 'Erreur lors du changement de statut.'], 500);
         }
     }
 }

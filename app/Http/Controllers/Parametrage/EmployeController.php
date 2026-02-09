@@ -8,6 +8,12 @@ use App\Models\Parametrage\Employe;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
+
 
 /**
  * @OA\Tag(
@@ -44,9 +50,17 @@ class EmployeController extends Controller
      *     )
      * )
      */
-    public function index()
+    public function index(Request $request)
     {
         $employes = Employe::latest()->where('isdeleted', false)->paginate(500);
+        LogJournalisation::create([
+            "action"      => "Affichage de la liste des employés",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Liste des employés', $employes);
     }
 
@@ -84,7 +98,7 @@ class EmployeController extends Controller
  * )
  */
 
-    public function store(Request $request)
+/*     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'nom' => 'required|string|max:255',
@@ -105,7 +119,87 @@ class EmployeController extends Controller
         ]);
 
         return new PostResource(true, 'Employe créé avec succès', $employe);
+    } */
+
+    public function store(Request $request)
+    {
+        // 0. Nettoyage des entrées : Convertir les chaînes vides en NULL
+        // Ceci est crucial pour la règle 'nullable' et pour la cohérence de la BDD.
+        $request->merge([
+            'telephone' => $request->telephone === '' ? null : $request->telephone,
+            'email' => $request->email === '' ? null : $request->email,
+        ]);
+
+        // 1. Définition des règles de validation
+        $rules = [
+            'nom' => 'required|string|max:255',
+            'prenom' => 'required|string|max:255',
+
+            'telephone' => [
+                'nullable',
+                'string',
+                'max:20',
+                Rule::unique('employes', 'telephone')->where(function ($query) {
+                    return $query->where('isdeleted', false);
+                }),
+            ],
+            'email' => [
+                'nullable',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('employes', 'email')->where(function ($query) {
+                    return $query->where('isdeleted', false);
+                }),
+            ],
+        ];
+
+        // 2. Définition des messages personnalisés en français
+        $messages = [
+            // Règle d'unicité pour le téléphone
+            'telephone.unique' => 'Le numéro de téléphone que vous avez saisi est déjà utilisé par un autre employé.',
+            'telephone.max'    => 'Le numéro de téléphone ne peut dépasser 20 caractères.',
+
+            // Règle d'unicité pour l'email
+            'email.unique'     => "L'adresse email est déjà associée à un autre compte employé. Veuillez en saisir une nouvelle.",
+            'email.email'      => 'Veuillez saisir une adresse email valide.',
+
+            // Messages génériques
+            'nom.required'     => 'Le nom est obligatoire.',
+            'prenom.required'  => 'Le prénom est obligatoire.',
+        ];
+
+        // 3. Création du validateur avec les règles ET les messages
+        $validator = Validator::make($request->all(), $rules, $messages);
+
+        // 4. Gestion de l'échec de la validation
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        // 5. Création de l'employé
+        $employe = Employe::create([
+            'nom' => $request->nom,
+            'prenom' => $request->prenom,
+            // Les valeurs sont déjà NULL si elles étaient vides grâce au merge
+            'telephone' => $request->telephone,
+            'email' => $request->email,
+        ]);
+
+        LogJournalisation::create([
+            "action"      => "Création d'un employé",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
+
+        // 6. Succès
+        return new PostResource(true, 'Employé créé avec succès', $employe);
     }
+
+
 
  /**
  * @OA\Put(
@@ -166,6 +260,14 @@ class EmployeController extends Controller
             'telephone' => $request->telephone,
             'email' => $request->email,
         ]);
+        LogJournalisation::create([
+            "action"      => "Mise à jour d'un employé",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
 
         return new PostResource(true, 'Employé mis à jour avec succès', $employe);
     }
@@ -191,10 +293,18 @@ class EmployeController extends Controller
      * )
      */
 
-    public function destroy(Employe $employe)
+    public function destroy(Employe $employe, Request $request)
     {
         $employe->isdeleted = true;
         $employe->save();
+        LogJournalisation::create([
+            "action"      => "Suppression d'un employé",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Employe supprimé avec succès', null);
     }
 
@@ -213,12 +323,19 @@ class EmployeController extends Controller
      *     )
      * )
      */
-    public function imprimer()
+    public function imprimer(Request $request)
     {
         $employes = Employe::all()->where('isdeleted', false);
 
         $pdf = Pdf::loadView('pdf.employes', compact('employes'));
-
+        LogJournalisation::create([
+            "action"      => "Impression de la liste des employés",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
         return $pdf->download('liste_personnels.pdf');
     }
 }

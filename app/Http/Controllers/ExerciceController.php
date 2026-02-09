@@ -14,91 +14,96 @@ use App\Models\ArticleExercice;
 use App\Models\Parametrage\CouponTicket;
 use App\Models\Parametrage\CompagniePetrolier;
 use App\Models\ExerciceMouvementTicket;
+use App\Models\LogJournalisation;
+use Illuminate\Support\Facades\Auth;
 
 class ExerciceController extends Controller
 {
-    //  Lister tous les exercices
-    public function index()
+    // Liste des exercices
+    public function index(Request $request)
     {
-        //$exercices = Exercice::latest()->paginate(100);
-        $exercices = Exercice::orderBy('annee', 'desc')->paginate(100);
+        try {
+            $exercices = Exercice::orderBy('annee', 'desc')->paginate(100);
 
-        return new PostResource(true, 'Liste des exercices', $exercices);
+            // 🔥 Log succès
+            LogJournalisation::create([
+                'action'     => 'Consultation liste des exercices',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+            ]);
+
+            return new PostResource(true, 'Liste des exercices', $exercices);
+
+        } catch (\Exception $e) {
+
+            // ❌ Log erreur
+            LogJournalisation::create([
+                'action'     => 'Erreur consultation exercices : ' . $e->getMessage(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+            ]);
+
+            throw $e;
+        }
     }
 
-    public function articlesExercices()
-    {
-        $exercices = Exercice::with(['articles' => function ($query) {
-            $query->select('articles.id', 'libelle', 'code_article');
-        }])
-        ->orderBy('statut', 'desc') // 'ouvert' will come before 'cloture'
-        ->orderBy('annee', 'desc')
-        ->get();
 
-        return new PostResource(true, 'Liste des exercices avec leurs articles', $exercices);
+    public function articlesExercices(Request $request)
+    {
+        try {
+            $exercices = Exercice::with(['articles' => function ($query) {
+                $query->select('articles.id', 'libelle', 'code_article');
+            }])
+            ->orderBy('statut', 'desc')
+            ->orderBy('annee', 'desc')
+            ->get();
+
+            // 🔥 Log succès
+            LogJournalisation::create([
+                'action'     => 'Consultation exercices + articles',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+            ]);
+
+            return new PostResource(true, 'Liste des exercices avec articles', $exercices);
+
+        } catch (\Exception $e) {
+
+            // ❌ Log erreur
+            LogJournalisation::create([
+                'action'     => 'Erreur consultation exercices articles : ' . $e->getMessage(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+            ]);
+
+            throw $e;
+        }
     }
 
-    //  Créer un exercice
+
+    // Créer un exercice
     public function store(Request $request)
     {
-        $request->validate([
-            'date_debut' => 'required|date',
-            'date_fin'   => 'required|date|after:date_debut',
-        ]);
+        try {
+            $request->validate([
+                'date_debut' => 'required|date',
+                'date_fin'   => 'required|date|after:date_debut',
+            ]);
 
-        // Déterminer l'année à partir des dates
-        $anneeDebut = date('Y', strtotime($request->date_debut));
-        $anneeFin   = date('Y', strtotime($request->date_fin));
-
-        if ($anneeDebut !== $anneeFin) {
-            return response()->json([
-                'message' => "L'exercice doit être sur une seule année (ex: 01/01/2025 au 31/12/2025)"
-            ], 422);
-        }
-
-        // 1. Déterminer l'année en cours pour la comparaison
-        $anneeActuelle = Carbon::now()->year;
-
-        // 2. Définir le statut par défaut
-        // S'il s'agit de l'année en cours, le statut est 'ouvert', sinon il est 'cloture'.
-        $statut = ($anneeDebut == $anneeActuelle) ? 'ouvert' : 'cloture';
-
-        // 3. Si le nouvel exercice est "ouvert", fermer tous les autres exercices
-        if ($statut === 'ouvert') {
-            Exercice::where('statut', 'ouvert')->update(['statut' => 'cloture']);
-        }
-
-        // 4. Créer le nouvel exercice avec le statut déterminé
-        $exercice = Exercice::create([
-            'date_debut' => $request->date_debut,
-            'date_fin'   => $request->date_fin,
-            'annee'      => $anneeDebut,
-            'statut'     => $statut
-        ]);
-
-        return new PostResource(true, 'Type exercice créé avec succès', $exercice);
-    }
-
-    //  Modifier un exercice
-    public function update(Request $request, $id)
-    {
-        $exercice = Exercice::findOrFail($id);
-
-        $request->validate([
-            'date_debut' => 'sometimes|date',
-            'date_fin'   => 'sometimes|date|after:date_debut',
-            'statut'     => 'in:ouvert,cloture',
-        ]);
-
-        $data = $request->all();
-
-        //  recalculer l'année si date_debut ou date_fin changent
-        if ($request->has('date_debut') || $request->has('date_fin')) {
-            $dateDebut = $request->date_debut ?? $exercice->date_debut;
-            $dateFin   = $request->date_fin ?? $exercice->date_fin;
-
-            $anneeDebut = date('Y', strtotime($dateDebut));
-            $anneeFin   = date('Y', strtotime($dateFin));
+            $anneeDebut = date('Y', strtotime($request->date_debut));
+            $anneeFin   = date('Y', strtotime($request->date_fin));
 
             if ($anneeDebut !== $anneeFin) {
                 return response()->json([
@@ -106,122 +111,112 @@ class ExerciceController extends Controller
                 ], 422);
             }
 
-            $data['annee'] = $anneeDebut;
+            $anneeActuelle = Carbon::now()->year;
+            $statut = ($anneeDebut == $anneeActuelle) ? 'ouvert' : 'cloture';
+
+            if ($statut === 'ouvert') {
+                Exercice::where('statut', 'ouvert')->update(['statut' => 'cloture']);
+            }
+
+            $exercice = Exercice::create([
+                'date_debut' => $request->date_debut,
+                'date_fin'   => $request->date_fin,
+                'annee'      => $anneeDebut,
+                'statut'     => $statut
+            ]);
+
+            // 🔥 Log succès
+            LogJournalisation::create([
+                'action'     => 'Création exercice ' . $anneeDebut,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+            ]);
+
+            return new PostResource(true, 'Type exercice créé avec succès', $exercice);
+
+        } catch (\Exception $e) {
+
+            // ❌ Log erreur
+            LogJournalisation::create([
+                'action'     => 'Erreur création exercice : ' . $e->getMessage(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+            ]);
+
+            throw $e;
         }
-
-        $exercice->update($data);
-
-        return new PostResource(true, 'exercice modifié avec succès', $exercice);
     }
 
-/*     public function changeStatus(Request $request, $id)
+
+    // Modifier un exercice
+    public function update(Request $request, $id)
     {
-        $request->validate([
-            'statut' => 'required|in:ouvert,cloture',
-        ]);
+        try {
+            $exercice = Exercice::findOrFail($id);
 
-        $exercice = Exercice::findOrFail($id);
-        $nouvStatut = $request->input('statut');
+            $request->validate([
+                'date_debut' => 'sometimes|date',
+                'date_fin'   => 'sometimes|date|after:date_debut',
+                'statut'     => 'in:ouvert,cloture',
+            ]);
 
-        DB::transaction(function () use ($exercice, $nouvStatut) {
-            if ($nouvStatut === 'ouvert') {
-                Exercice::where('id', '!=', $exercice->id)->update(['statut' => 'cloture']);
-                $exercice->statut = 'ouvert';
-                $exercice->save();
-            }
+            $data = $request->all();
 
-            if ($nouvStatut === 'cloture') {
-                // Clôturer l'exercice actuel
-                $exercice->statut = 'cloture';
-                $exercice->save();
+            if ($request->has('date_debut') || $request->has('date_fin')) {
 
-                // Créer le nouvel exercice pour l'année suivante
-                $nouvelExercice = Exercice::create([
-                    'annee' => $exercice->annee + 1,
-                    'statut' => 'ouvert',
-                    'date_debut' => Carbon::create($exercice->annee + 1, 1, 1),
-                    'date_fin' => Carbon::create($exercice->annee + 1, 12, 31),
-                ]);
+                $dateDebut = $request->date_debut ?? $exercice->date_debut;
+                $dateFin   = $request->date_fin ?? $exercice->date_fin;
 
-                // --- GESTION DES ARTICLES (inchangé) ---
-                $articlesExercice = DB::table('article_exercice')
-                    ->where('id_exercice', $exercice->id)
-                    ->get();
+                $anneeDebut = date('Y', strtotime($dateDebut));
+                $anneeFin   = date('Y', strtotime($dateFin));
 
-                foreach ($articlesExercice as $article) {
-                    // ... (Votre logique de clôture d'articles reste inchangée)
-                    $stock = Stock::where('id_Article', $article->id_article)
-                        ->where('id_exercice', $exercice->id)
-                        ->first();
-                    $stock_fin = $stock ? $stock->Qte_actuel : 0;
-
-                    $dernierMouvement = MouvementStock::where('id_Article', $article->id_article)
-                        ->where('id_exercice', $exercice->id)
-                        ->latest('date_mouvement')
-                        ->first();
-                    $cmp_fin = $dernierMouvement ? $dernierMouvement->cout_moyen_pondere : 0;
-
-                    DB::table('article_exercice')
-                        ->where('id_article', $article->id_article)
-                        ->where('id_exercice', $exercice->id)
-                        ->update([
-                            'stock_fin_exercice' => $stock_fin,
-                            'cmp_fin_exercice' => $cmp_fin,
-                            'updated_at' => now(),
-                        ]);
-
-                    DB::table('article_exercice')->insert([
-                        'id_article' => $article->id_article,
-                        'id_exercice' => $nouvelExercice->id,
-                        'stock_debut_exercice' => $stock_fin,
-                        'stock_fin_exercice' => 0,
-                        'cmp_debut_exercice' => $cmp_fin,
-                        'cmp_fin_exercice' => 0,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-
-                    Stock::create([
-                        'id_Article' => $article->id_article,
-                        'Qte_actuel' => $stock_fin,
-                        'id_exercice' => $nouvelExercice->id,
-                    ]);
+                if ($anneeDebut !== $anneeFin) {
+                    return response()->json([
+                        'message' => "L'exercice doit être sur une seule année"
+                    ], 422);
                 }
 
-                // --- GESTION DES MOUVEMENTS DE TICKETS (CORRIGÉE) ---
-                // 1. Récupérer tous les coupons de tickets et toutes les compagnies pétrolières
-                $allCouponTickets = CouponTicket::all();
-                $allCompagnies = CompagniePetrolier::all();
-
-                // 2. Boucler sur chaque combinaison pour créer les enregistrements
-                foreach ($allCouponTickets as $couponTicket) {
-                    foreach ($allCompagnies as $compagnie) {
-                        // Calculer le stock final pour la combinaison (coupon, compagnie) pour l'exercice qui se clôture.
-                        // Pour cela, on agrège les quantités des mouvements de tickets de cet exercice.
-                        $stockFinal = MouvementTicket::where('exercice_id', $exercice->id)
-                            ->where('coupon_ticket_id', $couponTicket->id)
-                            ->where('compagnie_petrolier_id', $compagnie->id)
-                            ->sum('qte');
-
-                        // Créer l'enregistrement dans la table de jointure pour le nouvel exercice
-                        ExerciceMouvementTicket::create([
-                            'exercice_id' => $nouvelExercice->id,
-                            'coupon_ticket_id' => $couponTicket->id,
-                            'compagnie_petrolier_id' => $compagnie->id,
-                            'qte_actuel' => $stockFinal,
-                        ]);
-                    }
-                }
+                $data['annee'] = $anneeDebut;
             }
-        });
 
-        return response()->json([
-            'success' => true,
-            'exercice' => Exercice::find($id),
-        ]);
-    } */
+            $exercice->update($data);
+
+            // 🔥 Log succès
+            LogJournalisation::create([
+                'action'     => 'Modification exercice ID=' . $id,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+            ]);
+
+            return new PostResource(true, 'Exercice modifié avec succès', $exercice);
+
+        } catch (\Exception $e) {
+
+            // ❌ Log erreur
+            LogJournalisation::create([
+                'action'     => 'Erreur modification exercice : ' . $e->getMessage(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+            ]);
+
+            throw $e;
+        }
+    }
 
 
+    // Changer statut
     public function changeStatus(Request $request, $id)
     {
         $request->validate([
@@ -323,6 +318,14 @@ class ExerciceController extends Controller
                 }
             }
         });
+        LogJournalisation::create([
+            'action'     => "Changement de statut de l'exercice ID: {$exercice->id} vers '{$nouvStatut}'",
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            'date_action'=> now(),
+        ]);
 
         return response()->json([
             'success' => true,
@@ -331,30 +334,39 @@ class ExerciceController extends Controller
     }
 
 
-    public function getExerciceOuvert()
+    // Supprimer un exercice
+    public function destroy(Request $request, $id)
     {
-        // Récupérer l'exercice ouvert
-        $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
+        try {
+            $exercice = Exercice::findOrFail($id);
+            $exercice->delete();
 
-        if (!$exerciceOuvert) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Aucun exercice ouvert trouvé.'
-            ], 404);
+            // 🔥 Log succès
+            LogJournalisation::create([
+                'action'     => 'Suppression exercice ID=' . $id,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+            ]);
+
+            return new PostResource(true, 'Exercice supprimé avec succès', null);
+
+        } catch (\Exception $e) {
+
+            // ❌ Log erreur
+            LogJournalisation::create([
+                'action'     => 'Erreur suppression exercice : ' . $e->getMessage(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+            ]);
+
+            throw $e;
         }
-
-        return response()->json([
-            'success' => true,
-            'exercice' => $exerciceOuvert,
-        ]);
     }
-
-    //  Supprimer un exercice
-    public function destroy($id)
-    {
-        $exercice = Exercice::findOrFail($id);
-        $exercice->delete();
-
-        return new PostResource(true, 'Exercice supprimé avec succès', null);
-    }
+    
 }

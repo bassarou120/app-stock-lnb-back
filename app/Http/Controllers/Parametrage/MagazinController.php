@@ -7,14 +7,27 @@ use Illuminate\Http\Request;
 use App\Models\Parametrage\Magazin;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class MagazinController extends Controller
 {
     // Afficher la liste des magasins
-    public function index()
+    public function index(Request $request)
     {
         $magazins = Magazin::latest()->where('isdeleted', false)->paginate(100);
-
+        
+        LogJournalisation::create([
+            "action"      => "Affichage de la liste des magasins",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
+        
         return new PostResource(true, 'Liste des magasins', $magazins);
     }
 
@@ -35,6 +48,15 @@ class MagazinController extends Controller
             'localisation' => $request->localisation,
         ]);
 
+        LogJournalisation::create([
+            "action"      => "Création de magasin",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
+        
         return new PostResource(true, 'Magasin créé avec succès', $magazin);
     }
 
@@ -55,14 +77,33 @@ class MagazinController extends Controller
             'localisation' => $request->localisation,
         ]);
 
+        LogJournalisation::create([
+            "action"      => "Mise à jour de magasin ID: " . $magazin->id,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
+        
         return new PostResource(true, 'Magasin mis à jour avec succès', $magazin);
     }
 
     // Supprimer un magasin
-    public function destroy(Magazin $magazin)
+    public function destroy(Magazin $magazin, Request $request)
     {
         $magazin->isdeleted = true;
         $magazin->save();
+        
+        LogJournalisation::create([
+            "action"      => "Suppression de magasin ID: " . $magazin->id,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
+        
         return new PostResource(true, 'Magasin supprimé avec succès', null);
     }
 }

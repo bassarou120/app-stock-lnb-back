@@ -8,13 +8,25 @@ use App\Http\Resources\PostResource;
 use App\Models\Parametrage\Module;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class ModuleController extends Controller
 {
     // Liste des modules
-    public function index()
+    public function index(Request $request)
     {
         $modules = Module::latest()->where('isdeleted', false)->paginate(200);
+        LogJournalisation::create([
+            "action"      => "Affichage de la liste des modules",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Liste des modules', $modules);
     }
 
@@ -31,6 +43,15 @@ class ModuleController extends Controller
 
         $module = Module::create([
             "libelle_module" => $request->libelle_module,
+        ]);
+
+        LogJournalisation::create([
+            "action"      => "Création de module",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
         ]);
 
         return new PostResource(true, 'Module enregistré avec succès', $module);
@@ -51,14 +72,33 @@ class ModuleController extends Controller
             "libelle_module" => $request->libelle_module,
         ]);
 
+        LogJournalisation::create([
+            "action"      => "Mise à jour de module ID: " . $module->id,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
+
         return new PostResource(true, 'Module mis à jour avec succès', $module);
     }
 
     // Suppression d'un module
-    public function destroy(Module $module)
+    public function destroy(Module $module, Request $request)
     {
         $module->isdeleted = true;
         $module->save();
+
+        LogJournalisation::create([
+            "action"      => "Suppression de module ID: " . $module->id,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
+        
         return new PostResource(true, 'Module supprimé avec succès', null);
     }
 }

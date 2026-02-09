@@ -363,7 +363,8 @@
                         <td>{{ $item->description ?? '-' }}</td>
                     @elseif($typeRapport === 'retour ticket')
                         <td>{{ $item->mouvement->reference ?? '-' }}</td>
-                        <td>{{ $item->created_at ? \Carbon\Carbon::parse($item->date_retour)->format('d/m/Y') : '-' }}</td>
+                        <!-- <td>{{ $item->created_at ? \Carbon\Carbon::parse($item->date_retour)->format('d/m/Y') : '-' }}</td> -->
+                        <td>{{ $item->date_retour ? \Carbon\Carbon::parse($item->date_retour)->format('d/m/Y') : '-' }}</td>
                         <td>{{ $item->coupon->libelle ?? '-' }}</td>
                         <td>{{ $item->compagnie->libelle ?? '-' }}</td>
                         <td>{{ $item->qte }}</td>

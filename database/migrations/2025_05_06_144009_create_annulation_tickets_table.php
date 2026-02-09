@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('coupon_ticket_id')->nullable()->constrained('coupon_tickets')->onDelete('cascade');
             $table->foreignId('compagnie_petrolier_id')->nullable()->constrained('compagnie_petroliers')->onDelete('cascade');
             $table->integer('qte')->nullable();
+            $table->boolean('isdeleted')->default(false);
             $table->timestamps();
         });
     }

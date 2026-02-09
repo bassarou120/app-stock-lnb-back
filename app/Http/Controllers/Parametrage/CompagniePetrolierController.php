@@ -8,16 +8,27 @@ use App\Models\Parametrage\CompagniePetrolier;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 
 class CompagniePetrolierController extends Controller
 {
     // Afficher la liste des compagnies pétrolières
-    public function index()
+    public function index(Request $request)
     {
         // Récupérer toutes les compagnies pétrolières triées par ordre décroissant
         $compagnies = CompagniePetrolier::latest()->where('isdeleted', false)->paginate(1000);
-
+        LogJournalisation::create([
+            "action"      => "Consultation de la liste des compagnies pétrolières",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
         // Retourner la réponse formatée avec PostResource
         return new PostResource(true, 'Liste des compagnies pétrolières', $compagnies);
     }
@@ -40,6 +51,14 @@ class CompagniePetrolierController extends Controller
         $compagnie = CompagniePetrolier::create([
             'libelle' => $request->libelle,
             'adresse' => $request->adresse,
+        ]);
+        LogJournalisation::create([
+            "action"      => "Création de la compagnie pétrolière : " . $compagnie->libelle . " (ID: " . $compagnie->id . ")",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
         ]);
 
         // Retourner la réponse formatée avec PostResource, indiquant que la création a réussi
@@ -65,27 +84,49 @@ class CompagniePetrolierController extends Controller
             'libelle' => $request->libelle,
             'adresse' => $request->adresse,
         ]);
-
+        LogJournalisation::create([
+            "action"      => "Mise à jour de la compagnie pétrolière : " . $compagnie_petrolier->libelle . " (ID: " . $compagnie_petrolier->id . ")",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
         // Retourner la réponse formatée avec PostResource, indiquant que la mise à jour a réussi
         return new PostResource(true, 'Compagnie pétrolière modifiée avec succès', $compagnie_petrolier);
     }
 
     // Supprimer une compagnie pétrolière
-    public function destroy(CompagniePetrolier $compagnie_petrolier)
+    public function destroy(CompagniePetrolier $compagnie_petrolier, Request $request)
     {
         // Supprimer la compagnie pétrolière
         $compagnie_petrolier->isdeleted = true;
         $compagnie_petrolier->save();
         // Retourner la réponse formatée avec PostResource, indiquant que la suppression a réussi
+        LogJournalisation::create([
+            "action"      => "Suppression de la compagnie pétrolière : " . $compagnie_petrolier->libelle . " (ID: " . $compagnie_petrolier->id . ")",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Compagnie pétrolière supprimée avec succès', null);
     }
 
-    public function imprimer()
+    public function imprimer(Request $request)
     {
         $compagnies = CompagniePetrolier::all()->where('isdeleted', false);
 
         $pdf = Pdf::loadView('pdf.compagnies', compact('compagnies'));
-
+        LogJournalisation::create([
+            "action"      => "Impression de la liste des compagnies pétrolières",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
         return $pdf->download('liste_compagnies_petrolieres.pdf');
     }
 }

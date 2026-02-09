@@ -7,11 +7,15 @@ use Illuminate\Http\Request;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Parametrage\TypeIntervention;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class InterventionController extends Controller
 {
    // Afficher la liste des intervention
-   public function index()
+   public function index(Request $request)
    {
        $interventions = Intervention::with([
            'typeIntervention',
@@ -20,15 +24,35 @@ class InterventionController extends Controller
        ->where('isdeleted', false)
        ->latest()->paginate(100);
 
+           // 📝 LOG → Consultation de la liste des interventions
+        LogJournalisation::create([
+            'action'     => 'Consultation de la liste des interventions',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            'date_action'=> now(),
+        ]);
+
        return new PostResource(true, 'Liste des interventions', $interventions);
    }
 
-    public function Intervention_immo()
+    public function Intervention_immo(Request $request)
     {
         $interventions = TypeIntervention::where("applicable_seul_vehicule", false)
         ->latest()
         ->where('isdeleted', false)
         ->paginate(100);
+
+        // 📝 LOG → Consultation des interventions "immos"
+        LogJournalisation::create([
+            'action'     => 'Consultation des interventions immos',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            'date_action'=> now(),
+        ]);
 
         return new PostResource(true, 'Liste des interventions immos', $interventions);
     }
@@ -51,6 +75,15 @@ class InterventionController extends Controller
 
        $intervention = Intervention::create($request->all());
 
+        LogJournalisation::create([
+            'action'     => 'Création d\'une intervention ID ' . $intervention->id . ' (Titre: ' . $intervention->titre . ')',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            'date_action'=> now(),
+        ]);
+
        return new PostResource(true, 'intervention créée avec succès', $intervention);
    }
 
@@ -72,19 +105,37 @@ class InterventionController extends Controller
 
        $intervention->update($request->all());
 
+        LogJournalisation::create([
+            'action'     => 'Mise à jour de l\'intervention ID ' . $intervention->id . ' (Titre: ' . $intervention->titre . ')',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            'date_action'=> now(),
+        ]);
+
        return new PostResource(true, 'intervention mise à jour avec succès', $intervention);
    }
 
    // Supprimer une intervention
-   public function destroy(Intervention $intervention)
+   public function destroy(Intervention $intervention, Request $request)
    {
        $intervention->isdeleted = true;
        $intervention->save();
 
+        LogJournalisation::create([
+            'action'     => 'Suppression de l\'intervention ID ' . $intervention->id . ' (Titre: ' . $intervention->titre . ')',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            'date_action'=> now(),
+        ]);
+
        return new PostResource(true, 'intervention supprimée avec succès', null);
    }
 
-   public function imprimerInterventions()
+   public function imprimerInterventions(Request $request)
     {
         $interventions = Intervention::with([
             'typeIntervention',
@@ -93,7 +144,14 @@ class InterventionController extends Controller
         ->latest()->get();
 
         $pdf = \Pdf::loadView('pdf.interventions', compact('interventions'));
-
+        LogJournalisation::create([
+                'action'     => 'Impression de la liste des interventions',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+            ]);
         return $pdf->download('liste_interventions.pdf');
     }
 }

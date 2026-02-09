@@ -13,6 +13,10 @@ use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class RapportParcController extends Controller
 {
@@ -69,6 +73,16 @@ class RapportParcController extends Controller
                 }
 
                 $data = $query->latest()->paginate(1000);
+
+                LogJournalisation::create([
+                    "action"      => "Génération du rapport : " . ucfirst($typeRapport),
+                    "ip_address"  => request()->ip(),
+                    "user_agent"  => request()->userAgent(),
+                    'user_id'    => $request->user()->id,
+                    'user_name'   => $request->user()->name,
+                    "date_action" => now()
+                ]);
+
                 $message = 'Rapport des véhicules généré avec succès.';
                 break;
 
@@ -97,6 +111,16 @@ class RapportParcController extends Controller
 
                 $data = $query->latest()->paginate(1000); // Utilisons 1000 pour la cohérence, ou 100 si c'est suffisant
                 $message = 'Rapport des interventions sur véhicules généré avec succès.';
+                
+                LogJournalisation::create([
+                    "action"      => "Génération du rapport : " . ucfirst($typeRapport),
+                    "ip_address"  => request()->ip(),
+                    "user_agent"  => request()->userAgent(),
+                    'user_id'    => $request->user()->id,
+                    'user_name'   => $request->user()->name,
+                    "date_action" => now()
+                ]);
+
                 break;
 
                 case 'vehicule_intervention_expirante':
@@ -128,6 +152,16 @@ class RapportParcController extends Controller
 
                     $data = $query->latest('date_expiration')->paginate(1000);
                     $message = 'Rapport des interventions expirant dans la période sélectionnée généré avec succès.';
+                    
+                    LogJournalisation::create([
+                        "action"      => "Génération du rapport : " . ucfirst($typeRapport),
+                        "ip_address"  => request()->ip(),
+                        "user_agent"  => request()->userAgent(),
+                        'user_id'    => $request->user()->id,
+                        'user_name'   => $request->user()->name,
+                        "date_action" => now()
+                    ]);
+                    
                     break;
 
 
@@ -199,6 +233,15 @@ class RapportParcController extends Controller
                     $marque = Marque::find($request->marque_id);
                     $filterLabels['marque'] = $marque ? $marque->libelle : 'Non trouvée';
                 }
+                LogJournalisation::create([
+                    "action"      => "Impression du rapport des: " . ucfirst($typeRapport),
+                    "ip_address"  => request()->ip(),
+                    "user_agent"  => request()->userAgent(),
+                    'user_id'    => $request->user()->id,
+                    'user_name'   => $request->user()->name,
+                    "date_action" => now()
+                ]);
+
                 break;
 
             case 'intervention_vehicule':
@@ -242,6 +285,15 @@ class RapportParcController extends Controller
                     $typeIntervention = TypeIntervention::find($request->type_intervention_id);
                     $filterLabels['type_intervention'] = $typeIntervention ? $typeIntervention->libelle_type_intervention : 'Non trouvé';
                 }
+
+                LogJournalisation::create([
+                    "action"      => "Impression du rapport des: " . ucfirst($typeRapport),
+                    "ip_address"  => request()->ip(),
+                    "user_agent"  => request()->userAgent(),
+                    'user_id'    => $request->user()->id,
+                    'user_name'   => $request->user()->name,
+                    "date_action" => now()
+                ]);
                 break;
 
                 case 'vehicule_intervention_expirante':
@@ -284,6 +336,16 @@ class RapportParcController extends Controller
                         $typeIntervention = TypeIntervention::find($request->type_intervention_id);
                         $filterLabels['type_intervention'] = $typeIntervention ? $typeIntervention->libelle_type_intervention : 'Non trouvé';
                     }
+
+                    LogJournalisation::create([
+                        "action"      => "Impression du rapport des: " . ucfirst($typeRapport),
+                        "ip_address"  => request()->ip(),
+                        "user_agent"  => request()->userAgent(),
+                        'user_id'    => $request->user()->id,
+                        'user_name'   => $request->user()->name,
+                        "date_action" => now()
+                    ]);
+
                 break;
 
 

@@ -7,29 +7,52 @@ use App\Models\ArticleExercice;
 use App\Models\Article;
 use App\Models\Exercice;
 use App\Http\Resources\PostResource;
-
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class Article_ExoController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         // Récupère toutes les entrées de la table pivot
         $articleExercices = ArticleExercice::all();
+
+        // 📝 LOG → Consultation de la liste des articles
+        LogJournalisation::create([
+            'action'     => 'Consultation de la liste des articles par exercices',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            'date_action'=> now(),
+        ]);
 
         // Retourne la vue avec les données
         return new PostResource(true, 'Liste des articles', $articleExercices);
     }
 
-    public function articlesExercices()
+    public function articlesExercices(Request $request)
     {
         // Eager load the 'article' and 'exercice' relationships.
         // This fetches the related data in a single query for each relationship.
         $articlesExercices = ArticleExercice::with(['article', 'exercice'])
         ->orderBy('id_exercice', 'desc')
         ->get();
+
+        // 📝 LOG → Consultation de la liste complète des articles_exercices
+        LogJournalisation::create([
+            'action'     => 'Consultation de la liste complète des articles_exercices',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            'date_action'=> now(),
+        ]);
 
         // Return the data as a JSON response.
         return new PostResource(true, 'Liste complète des articles_exercices', $articlesExercices);
@@ -58,6 +81,15 @@ class Article_ExoController extends Controller
 
         // Crée une nouvelle instance de l'association
         $articleExercice = ArticleExercice::create($request->all());
+        // 📝 LOG → Création d'une nouvelle association Article ↔ Exercice
+        LogJournalisation::create([
+            'action'     => 'Création de l\'association Article-Exercice ID Article: '.$request->id_article.' / ID Exercice: '.$request->id_exercice,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            'date_action'=> now(),
+        ]);
 
         // Redirection avec un message de succès
         return redirect()->route('article_exercice.index')->with('success', 'Association créée avec succès.');
@@ -68,12 +100,22 @@ class Article_ExoController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Article $article, Exercice $exercice)
+    public function show(Article $article, Exercice $exercice, Request $request)
     {
         // Recherche l'entrée spécifique en utilisant les IDs des deux clés
         $articleExercice = ArticleExercice::where('id_article', $article->id)
                                           ->where('id_exercice', $exercice->id)
                                           ->firstOrFail();
+
+        // 📝 LOG → Consultation d'une association Article ↔ Exercice spécifique
+        LogJournalisation::create([
+            'action'     => 'Consultation de l\'association Article ID: '.$article->id.' ↔ Exercice ID: '.$exercice->id,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            'date_action'=> now(),
+        ]);
 
         // Retourne la vue avec l'entrée spécifique
         return new PostResource(true, 'Liste des articles', $articleExercice);
@@ -108,6 +150,16 @@ class Article_ExoController extends Controller
         // Met à jour l'entrée avec les nouvelles données
         $articleExercice->update($request->all());
 
+        // 📝 LOG → Mise à jour d'une association Article ↔ Exercice
+        LogJournalisation::create([
+            'action'     => 'Mise à jour de l\'association Article ID: '.$article->id.' ↔ Exercice ID: '.$exercice->id,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            'date_action'=> now(),
+        ]);
+
         // Redirection avec un message de succès
         // return redirect()->route('article_exercice.show', [$article, $exercice])->with('success', 'Association mise à jour avec succès.');
         return new PostResource(true, 'Association mise à jour avec succès.', $articleExercice);
@@ -116,7 +168,7 @@ class Article_ExoController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(string $id, Request $request)
     {
         //
     }

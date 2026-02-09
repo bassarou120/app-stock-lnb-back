@@ -214,16 +214,42 @@
                 }
             }
         },
-        "/api/immobilisations": {
-            "get": {
+        "/api/login": {
+            "post": {
                 "tags": [
-                    "Immobilisations"
+                    "Authentification"
                 ],
-                "summary": "Liste des immobilisations",
-                "operationId": "4c65654d2af9005b61a847f66dc19222",
+                "summary": "Authentification d’un utilisateur",
+                "description": "Permet à un utilisateur de se connecter et d’obtenir un token d'accès.",
+                "operationId": "274778df8559ae95b9b9d5983bdcc333",
+                "requestBody": {
+                    "description": "Identifiants de connexion",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "example": "user@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
-                        "description": "Liste récupérée avec succès",
+                        "description": "Connexion réussie",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -232,242 +258,127 @@
                                             "type": "boolean",
                                             "example": true
                                         },
+                                        "data": {
+                                            "description": "Détails de l’utilisateur et token",
+                                            "properties": {
+                                                "token": {
+                                                    "type": "string",
+                                                    "example": "eyJ0eXAiOiJKV1QiLCJhbGciOi..."
+                                                },
+                                                "user": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 12
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "Jean Dupont"
+                                                        },
+                                                        "email": {
+                                                            "type": "string",
+                                                            "example": "user@example.com"
+                                                        },
+                                                        "active": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
                                         "message": {
                                             "type": "string",
-                                            "example": "Liste des immobilisations"
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/Immobilisation"
-                                            }
+                                            "example": "Utilisateur authentifié avec succès! 😁"
                                         }
                                     },
                                     "type": "object"
                                 }
                             }
                         }
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "Immobilisations"
-                ],
-                "summary": "Créer une nouvelle immobilisation",
-                "operationId": "3d18686d6e5c6863bbdab8b9afe3336e",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "id_groupe_type_immo",
-                                    "id_sous_type_immo",
-                                    "id_status_immo"
-                                ],
-                                "properties": {
-                                    "designation": {
-                                        "type": "string",
-                                        "example": "Scanner HP"
-                                    },
-                                    "code": {
-                                        "type": "string",
-                                        "example": "IMMO-2025-002"
-                                    },
-                                    "montant_ttc": {
-                                        "type": "integer",
-                                        "example": 250000
-                                    },
-                                    "date_acquisition": {
-                                        "type": "string",
-                                        "format": "date"
-                                    },
-                                    "date_mise_en_service": {
-                                        "type": "string",
-                                        "format": "date"
-                                    },
-                                    "id_groupe_type_immo": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "id_sous_type_immo": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "id_status_immo": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "fournisseur_id": {
-                                        "type": "integer"
-                                    },
-                                    "employe_id": {
-                                        "type": "integer"
-                                    },
-                                    "bureau_id": {
-                                        "type": "integer"
-                                    },
-                                    "vehicule_id": {
-                                        "type": "integer"
-                                    },
-                                    "isVehicule": {
-                                        "type": "boolean",
-                                        "example": false
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Immobilisation créée",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/PostResourceImmobilisationResponse"
-                                }
-                            }
-                        }
                     },
-                    "422": {
-                        "description": "Erreur de validation"
-                    }
-                }
-            }
-        },
-        "/api/immobilisations/{id}": {
-            "put": {
-                "tags": [
-                    "Immobilisations"
-                ],
-                "summary": "Mettre à jour une immobilisation",
-                "operationId": "830b3ac5530f952c093862fa78258215",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "ID de l'immobilisation",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "id_groupe_type_immo",
-                                    "id_sous_type_immo",
-                                    "id_status_immo"
-                                ],
-                                "properties": {
-                                    "designation": {
-                                        "type": "string",
-                                        "example": "Scanner HP"
-                                    },
-                                    "code": {
-                                        "type": "string",
-                                        "example": "IMMO-2025-002"
-                                    },
-                                    "montant_ttc": {
-                                        "type": "integer",
-                                        "example": 250000
-                                    },
-                                    "date_acquisition": {
-                                        "type": "string",
-                                        "format": "date"
-                                    },
-                                    "date_mise_en_service": {
-                                        "type": "string",
-                                        "format": "date"
-                                    },
-                                    "id_groupe_type_immo": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "id_sous_type_immo": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "id_status_immo": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "fournisseur_id": {
-                                        "type": "integer"
-                                    },
-                                    "employe_id": {
-                                        "type": "integer"
-                                    },
-                                    "bureau_id": {
-                                        "type": "integer"
-                                    },
-                                    "vehicule_id": {
-                                        "type": "integer"
-                                    },
-                                    "isVehicule": {
-                                        "type": "boolean",
-                                        "example": false
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Immobilisation mise à jour",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/PostResourceImmobilisationResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "Immobilisations"
-                ],
-                "summary": "Supprimer une immobilisation",
-                "operationId": "e1d120152511dc5c8740cbe16025ada9",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Immobilisation supprimée",
+                    "401": {
+                        "description": "Identifiants incorrects",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
                                             "type": "boolean",
-                                            "example": true
+                                            "example": false
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Immobilisation supprimée avec succès"
+                                            "example": "Identifiants incorrects!"
                                         },
-                                        "data": {
-                                            "type": "null",
-                                            "example": null
+                                        "errors": {
+                                            "properties": {
+                                                "failed": {
+                                                    "type": "string",
+                                                    "example": "Identifiants incorrects"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Compte inactif",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Compte inactif!"
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "failed": {
+                                                    "type": "string",
+                                                    "example": "Votre compte est inactif. Contactez un administrateur"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erreur interne serveur",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Une erreur inconnue est survenue."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "failed": {
+                                                    "type": "string",
+                                                    "example": "Erreur interne"
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -694,6 +605,12 @@
                                         "type": "integer",
                                         "example": 3
                                     },
+                                    "ref_m_request": {
+                                        "description": "Référence manuelle de la demande (champ optionnel)",
+                                        "type": "string",
+                                        "example": "REF-M-20250115-0001",
+                                        "nullable": true
+                                    },
                                     "email_personnel": {
                                         "description": "Email du personnel responsable de la demande (référence à la table employes)",
                                         "type": "string",
@@ -764,367 +681,12 @@
                     "404": {
                         "description": "Ressource non trouvée"
                     }
-                }
-            }
-        },
-        "/api/mouvement-ticket/entree": {
-            "get": {
-                "tags": [
-                    "Mouvement Ticket"
-                ],
-                "summary": "Lister les mouvements d'entrée de ticket",
-                "operationId": "740b1bc35d4f6a979ff4f97ccc738fa1",
-                "responses": {
-                    "200": {
-                        "description": "Liste des mouvements d'entrée",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/MouvementTicketResource"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "Mouvement Ticket"
-                ],
-                "summary": "Créer un mouvement d'entrée de ticket",
-                "operationId": "ee19f6eb31e8fe4a292927a9119518a5",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "compagnie_petrolier_id",
-                                    "coupon_ticket_id",
-                                    "qte",
-                                    "date"
-                                ],
-                                "properties": {
-                                    "compagnie_petrolier_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "coupon_ticket_id": {
-                                        "type": "integer",
-                                        "example": 2
-                                    },
-                                    "description": {
-                                        "type": "string",
-                                        "example": "Tickets reçus"
-                                    },
-                                    "objet": {
-                                        "type": "string",
-                                        "example": "Réapprovisionnement"
-                                    },
-                                    "qte": {
-                                        "type": "integer",
-                                        "example": 100
-                                    },
-                                    "date": {
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2025-07-01"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
                 },
-                "responses": {
-                    "201": {
-                        "description": "Mouvement créé",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/MouvementTicketResource"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/mouvement-ticket/entree/{id}": {
-            "put": {
-                "tags": [
-                    "Mouvement Ticket"
-                ],
-                "summary": "Mettre à jour un mouvement d'entrée de ticket",
-                "operationId": "d921e01cecd69439347ff171b6062eb6",
-                "parameters": [
+                "security": [
                     {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
+                        "bearerAuth": []
                     }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/MouvementTicket"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Mouvement mis à jour",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/MouvementTicketResource"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "Mouvement Ticket"
-                ],
-                "summary": "Supprimer un mouvement d'entrée de ticket",
-                "operationId": "e90c6558ca66bbb4d9cd846a3630795a",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Mouvement supprimé",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/MouvementTicketResource"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/mouvement-ticket/sortie": {
-            "get": {
-                "tags": [
-                    "Mouvement Ticket"
-                ],
-                "summary": "Lister les mouvements de sortie de ticket",
-                "operationId": "981a15fd6ffa4a138ba1528ceeca4ba1",
-                "responses": {
-                    "200": {
-                        "description": "Liste des mouvements de sortie",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/MouvementTicketResource"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "Mouvement Ticket"
-                ],
-                "summary": "Créer un mouvement de sortie de ticket",
-                "operationId": "63f3260dd0aed388e1ee994304d80f37",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/MouvementTicket"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Mouvement créé",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/MouvementTicketResource"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/mouvement-ticket/sortie/{id}": {
-            "put": {
-                "tags": [
-                    "Mouvement Ticket"
-                ],
-                "summary": "Mettre à jour un mouvement de sortie de ticket",
-                "operationId": "fb5acc617d7a49b7e346ab69b3f1c5b4",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/MouvementTicket"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Mouvement mis à jour",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/MouvementTicketResource"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "Mouvement Ticket"
-                ],
-                "summary": "Supprimer un mouvement de sortie de ticket",
-                "operationId": "6880eeed1173741c395dc8ef0ffb3fe3",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Mouvement supprimé",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/MouvementTicketResource"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/quantite-disponible-ticket/{idCoupon}/{idCompagnie}": {
-            "get": {
-                "tags": [
-                    "Mouvement Ticket"
-                ],
-                "summary": "Obtenir la quantité disponible d'un ticket",
-                "operationId": "9f251a559d8a0c321c3e8778958f4b62",
-                "parameters": [
-                    {
-                        "name": "idCoupon",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "idCompagnie",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Quantité retournée",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/MouvementTicketResource"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/get-quantite-ticket-attribution": {
-            "post": {
-                "tags": [
-                    "Mouvement Ticket"
-                ],
-                "summary": "Calculer la quantité de ticket nécessaire pour un trajet",
-                "operationId": "3e9ca88d5033d48f6cdf515c0e7ce4c0",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "commune_depart",
-                                    "commune_arriver",
-                                    "trajet_aller_retour",
-                                    "coupon_ticket_id"
-                                ],
-                                "properties": {
-                                    "commune_depart": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "commune_arriver": {
-                                        "type": "integer",
-                                        "example": 2
-                                    },
-                                    "trajet_aller_retour": {
-                                        "type": "boolean",
-                                        "example": true
-                                    },
-                                    "coupon_ticket_id": {
-                                        "type": "integer",
-                                        "example": 3
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Quantité calculée"
-                    }
-                }
+                ]
             }
         },
         "/api/bureaux": {
@@ -2198,6 +1760,14 @@
                 },
                 "type": "object"
             }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+                "description": "Entrez le token sous la forme: Bearer {token}"
+            }
         }
     },
     "tags": [
@@ -2210,8 +1780,8 @@
             "description": "Articles"
         },
         {
-            "name": "Immobilisations",
-            "description": "Immobilisations"
+            "name": "Authentification",
+            "description": "Authentification"
         },
         {
             "name": "Intervention Véhicule",
@@ -2220,10 +1790,6 @@
         {
             "name": "Demande de fourniture",
             "description": "Demande de fourniture"
-        },
-        {
-            "name": "Mouvement Ticket",
-            "description": "Mouvement Ticket"
         },
         {
             "name": "Bureaux",

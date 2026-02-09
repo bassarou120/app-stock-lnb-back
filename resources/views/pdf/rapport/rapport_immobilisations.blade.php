@@ -177,18 +177,29 @@ th, td {
         <tbody>
         @foreach($immobilisations as $index => $immo)
         <tr>
-            <td>{{ $index + 1 }}</td>
-            <td>{{ $immo->code ?? '-' }}</td>
-            <td>{{ $immo->designation ?? '-' }}</td>
-            <td>{{ number_format($immo->montant_ttc, 2, ',', ' ') ?? '-' }}</td>
-            <td>{{ $immo->etat ?? '-' }}</td>
-            <td>{{ $immo->observation ?? '-' }}</td>
-            <td>{{ $immo->groupeTypeImmo->libelle ?? '-' }}</td>
-            <td>{{ $immo->sousTypeImmo->libelle ?? '-' }}</td>
-            <td>{{ $immo->statusImmo->libelle_status_immo ?? '-' }}</td>
-            <td>{{ $immo->employe ? ($immo->employe->nom . ' ' . $immo->employe->prenom) : '-' }}</td>
-            <td>{{ $immo->date_acquisition ? \Carbon\Carbon::parse($immo->date_acquisition)->format('d/m/Y') : '-' }}</td>
-        </tr>
+          <td>{{ $index + 1 }}</td>
+          <td>{{ $immo['code'] ?? '-' }}</td>
+          <td>{{ $immo['designation'] ?? '-' }}</td>
+          <td>{{ isset($immo['montant_ttc']) ? number_format($immo['montant_ttc'], 0, ',', ' ') : '-' }}</td>
+          <td>{{ $immo['etat'] ?? '-' }}</td>
+          <td>{{ $immo['observation'] ?? '-' }}</td>
+          <td>{{ $immo->groupeTypeImmo->libelle ?? '-' }}</td>
+          <td>{{ $immo->sousTypeImmo->libelle ?? '-' }}</td>
+          <td>{{ $immo->statusImmo->libelle_status_immo ?? '-' }}</td>
+          <td>
+              @if(isset($immo['employe']))
+                  {{ $immo['employe']['nom'] ?? '' }} {{ $immo['employe']['prenom'] ?? '' }}
+              @else
+                  -
+              @endif
+          </td>
+          <td>
+              {{ !empty($immo['date_acquisition']) 
+                  ? \Carbon\Carbon::parse($immo['date_acquisition'])->format('d/m/Y') 
+                  : '-' 
+              }}
+          </td>
+      </tr>
         @endforeach
 
         </tbody>

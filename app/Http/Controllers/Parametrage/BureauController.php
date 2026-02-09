@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
     use App\Models\Parametrage\Bureau;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 //Attention ! Attention ! Attention ! Attention ! Attention ! Attention !
 //Update & Destroy demandent "bureaux" et non bureau
@@ -37,9 +41,17 @@ class BureauController extends Controller
  *     )
  * )
  */
-    public function index()
+    public function index(Request $request)
     {
         $bureaux = Bureau::latest()->where('isdeleted', false)->paginate(100);
+        LogJournalisation::create([
+            "action"      => "Consultation de la liste des bureaux",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Liste des bureaux', $bureaux);
     }
 
@@ -84,6 +96,15 @@ class BureauController extends Controller
         $bureau = Bureau::create([
             'libelle_bureau' => $request->libelle_bureau,
             'valeur' => $request->valeur,
+        ]);
+
+        LogJournalisation::create([
+            "action"      => "Création d’un nouveau bureau",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
         ]);
 
         return new PostResource(true, 'Bureau créé avec succès', $bureau);
@@ -139,6 +160,14 @@ class BureauController extends Controller
             'valeur' => $request->valeur,
         ]);
 
+        LogJournalisation::create([
+            "action"      => "Mise à jour d'un bureau",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Bureau mis à jour avec succès', $bureaux);
     }
 
@@ -168,10 +197,18 @@ class BureauController extends Controller
  *     )
  * )
  */
-    public function destroy(Bureau $bureaux)
+    public function destroy(Bureau $bureaux, Request $request)
     {
         $bureaux->isdeleted = true;
         $bureaux->save();
+        LogJournalisation::create([
+            "action"      => "Suppression du bureau : " . $bureaux->libelle_bureau,
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Bureau supprimé avec succès', null);
     }
 }

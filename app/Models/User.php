@@ -89,4 +89,9 @@ class User extends Authenticatable
         // dans la table 'users' qui pointe vers la clé primaire 'id' de la table 'employes'.
         return $this->belongsTo(Employe::class, self::EMPLOYE);
     }
+
+    public function logJournalisations()
+    {
+        return $this->hasMany(LogJournalisation::class, 'user_id', 'id');
+    }
 }

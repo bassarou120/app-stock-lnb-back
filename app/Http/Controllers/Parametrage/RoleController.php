@@ -7,47 +7,59 @@ use Illuminate\Http\Request;
 use App\Models\Parametrage\Role;
 use App\Http\Resources\PostResource;
 use Illuminate\Support\Facades\Validator;
+use App\Models\LogJournalisation;
+use App\Models\User;
+use App\Models\Parametrage\Module;
+use App\Models\Parametrage\Permission;
+use App\Models\Parametrage\Fonctionnalite;
+use App\Services\Auth\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class RoleController extends Controller
 {
     // Afficher une liste paginée des rôles
-    public function index()
+    public function index(Request $request)
     {
         $roles = Role::latest()->where('isdeleted', false)->paginate(200);
+
+        $user = $request->user();
+
+        LogJournalisation::create([
+            "action"      => "Affichage de la liste des rôles",
+            "ip_address"  => $request->ip(),
+            "user_agent"  => $request->userAgent(),
+            'user_id'    => $user ? $user->id : null,
+            'user_name'   => $user ? $user->name : 'Invité',
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Liste des rôles', $roles);
     }
 
     // Créer un nouveau rôle
     public function store(Request $request)
     {
-        // Validation des données
-        $validator = Validator::make($request->all(), [
-            'libelle_role' => 'required|unique:roles,libelle_role',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        // Créer un rôle
         $role = Role::create([
             'libelle_role' => $request->libelle_role,
+            'isdeleted' => false,
         ]);
 
-        // Récupérer toutes les fonctionnalités existantes
-    $fonctionnalites = \App\Models\Parametrage\Fonctionnalite::all();
+        // Charger tous les modules et fonctionnalités
+        $modules = Module::where('isdeleted', false)->get();
+        $fonctions = Fonctionnalite::where('isdeleted', false)->get();
 
-    // Créer une permission désactivée (is_active = false) pour chaque fonctionnalité
-    foreach ($fonctionnalites as $fonctionnalite) {
-        \App\Models\Parametrage\Permission::create([
-            'role_id' => $role->id,
-            'module_id' => $fonctionnalite->module_id,
-            'fonctionnalite_id' => $fonctionnalite->id,
-            'is_active' => false,
-        ]);
-    }
+        foreach ($modules as $module) {
+            foreach ($fonctions as $fonction) {
+                Permission::create([
+                    'role_id' => $role->id,
+                    'module_id' => $module->id,
+                    'fonctionnalite_id' => $fonction->id,
+                    'is_active' => false,
+                    'isdeleted' => false,
+                ]);
+            }
+        }
 
-        return new PostResource(true, 'Rôle créé avec succès', $role);
+        return new PostResource(true, 'Rôle créé avec ses permissions', $role);
     }
 
     // Mettre à jour un rôle
@@ -67,14 +79,31 @@ class RoleController extends Controller
             'libelle_role' => $request->libelle_role,
         ]);
 
+        LogJournalisation::create([
+            "action"      => "Mise à jour du rôle : " . $role->libelle_role . " (ID: " . $role->id . ")",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
+
         return new PostResource(true, 'Rôle mis à jour avec succès', $role);
     }
 
     // Supprimer un rôle
-    public function destroy(Role $role)
+    public function destroy(Role $role, Request $request)
     {
         $role->isdeleted = true;
         $role->save();
+        LogJournalisation::create([
+            "action"      => "Suppression du rôle : " . $role->libelle_role . " (ID: " . $role->id . ")",
+            "ip_address"  => request()->ip(),
+            "user_agent"  => request()->userAgent(),
+            'user_id'    => $request->user()->id,
+            'user_name'   => $request->user()->name,
+            "date_action" => now()
+        ]);
         return new PostResource(true, 'Rôle supprimé avec succès', null);
     }
 }
