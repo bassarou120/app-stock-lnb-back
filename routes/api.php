@@ -79,6 +79,11 @@ Route::apiResource('permissions', PermissionController::class);
 
 Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController::class, 'downloadGroupedFile']);
 
+Route::get('/site-settings', [SiteSettingController::class, 'index']);
+
+
+
+
 Route::middleware('auth:api')->group(function () {
 
     Route::apiResource('users', UserController::class); // Ceci crée les routes CRUD complètes pour /api/users
@@ -242,7 +247,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/intervention_vehicule', [InterventionVehiculeController::class, 'Intervention_Vehicule']);
 
     // Routes pour les paramètres du site
-    Route::get('/site-settings', [SiteSettingController::class, 'index']);
+
     Route::post('/site-settings/store', [SiteSettingController::class, 'store']); // <-- C'EST LA ROUTE MANQUANTE
     Route::get('/imprimerSorties', [MouvementStockController::class, 'imprimerSortiesStock']);
 
@@ -283,7 +288,7 @@ Route::middleware('auth:api')->group(function () {
 
     Route::get('/view-file', [MouvementStockController::class, 'viewFile']);
 
-    
+
 
     Route::get('/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']);
 
