@@ -510,9 +510,26 @@ class ArticleController extends Controller
 
     public function imprimer(Request $request)
     {
-        $articles = Article::with(['categorie', 'stock'])
-            ->where('isdeleted', false)
-            ->get();
+        // $articles = Article::with(['categorie', 'stock'])
+        //     ->where('isdeleted', false)
+        //     ->get();
+
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
+
+        if (!$exerciceOuvert) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun exercice ouvert trouvé. Veuillez ouvrir un exercice pour consulter le stock.'
+            ], 404);
+        }
+
+        $exerciceId = $exerciceOuvert->id;
+
+
+        $articles = Article::with(['categorie', 'stock' => function ($query) use ($exerciceId) {
+            // C'est la ligne magique ✨
+            $query->where('id_exercice', $exerciceId);
+        }])->get();
                     // 📝 LOG → Impression du stock
         LogJournalisation::create([
             'action'     => 'Impression de l\'état du stock des articles',
