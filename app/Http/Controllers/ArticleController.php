@@ -510,9 +510,26 @@ class ArticleController extends Controller
 
     public function imprimer(Request $request)
     {
-        $articles = Article::with(['categorie', 'stock'])
-            ->where('isdeleted', false)
-            ->get();
+        // $articles = Article::with(['categorie', 'stock'])
+        //     ->where('isdeleted', false)
+        //     ->get();
+
+        $exerciceOuvert = Exercice::where('statut', 'ouvert')->first();
+
+        if (!$exerciceOuvert) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun exercice ouvert trouvé. Veuillez ouvrir un exercice pour consulter le stock.'
+            ], 404);
+        }
+
+        $exerciceId = $exerciceOuvert->id;
+
+
+        $articles = Article::with(['categorie', 'stock' => function ($query) use ($exerciceId) {
+            // C'est la ligne magique ✨
+            $query->where('id_exercice', $exerciceId);
+        }])->get();
                     // 📝 LOG → Impression du stock
         LogJournalisation::create([
             'action'     => 'Impression de l\'état du stock des articles',
@@ -621,6 +638,10 @@ class ArticleController extends Controller
                 $annee_exercice = trim($row[5]);
                 $quantite = trim($row[7] ?? '0'); // Quantité actuelle, par défaut à 0 si non fourni
                 $cump = trim($row[8] ?? '0'); // récupère et nettoie la valeur, 0 par défaut
+
+                // Supprimer espaces (y compris insécables) + remplacer virgule par point
+                $cump = str_replace(["\u{00A0}", ' ', ','], ['', '', '.'], $cump);
+
                 $raw = trim($row[6] ?? 'non');
 
                 // Nettoyage et normalisation : "Oui", " O U I ", "oui" → "oui"
@@ -637,7 +658,7 @@ class ArticleController extends Controller
 
                 $annee_exercice = (int) $annee_exercice; // Cast seulement après validation
                 $quantite_en_int = (int) $quantite; // Cast seulement après validation
-                $cump_en_float = (float) $cump;   // cast en float après validation
+                $cump_en_float = is_numeric($cump) ? (float) $cump : 0;
                 $code_article = trim($row[0]);
                 $designation_article = trim($row[1]);
 
