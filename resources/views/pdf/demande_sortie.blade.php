@@ -247,7 +247,7 @@
 
             <strong style="font-size:12px;">Bureau :</strong> {{ $mouvement->bureau->libelle_bureau ?? '-' }}<br/>
 
-            <strong style="font-size:12px;">Date de la demande: :</strong> {{ \Carbon\Carbon::parse($mouvement->date_mouvement)->format('d/m/Y') }}<br/>
+            <strong style="font-size:12px;">Date de traitement :</strong> {{ \Carbon\Carbon::parse($mouvement->date_mouvement)->format('d/m/Y') }}<br/>
 
         </td>
         <td style="width: 50%;" class="ml-auto p-2 bd-highlight">
@@ -256,7 +256,7 @@
 
             <strong style="font-size:12px;">Nom et Prénom: :</strong> {{ $authUser->name ?? '-' }} <br/>
 
-            <strong style="font-size:12px;">Date de traitement :</strong> {{ \Carbon\Carbon::parse($mouvement->updated_at)->format('d/m/Y') }}<br/>
+            <strong style="font-size:12px;">Date de la demande :</strong> {{ \Carbon\Carbon::parse($mouvement->dateDemande)->format('d/m/Y') }}<br/>
 
             <strong style="font-size:12px;">Statut :</strong> {{ $mouvement->statut ?? '-' }}<br/>
 
