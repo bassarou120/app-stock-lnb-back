@@ -1859,6 +1859,7 @@ class MouvementStockController extends Controller
 
         $mouvementPrincipal = $mouvements->first();
         $authUser = Auth::user();
+        $numeroFiche = $codeMouvement;
 
         $data = [
             'mouvement' => $mouvementPrincipal,
@@ -1891,7 +1892,8 @@ class MouvementStockController extends Controller
         }
 
         // Génère le numéro de fiche unique et le sauvegarde
-        $numeroFiche = $this->generateNewFicheNumber();
+        // $numeroFiche = $this->generateNewFicheNumber();
+        $numeroFiche = $mouvement->code_mouvement;
         $mouvement->update(['numero_fiche_demande' => $numeroFiche]);
 
         // Rafraîchir le modèle pour obtenir le nouveau numéro
