@@ -980,7 +980,7 @@ class MouvementStockController extends Controller
 
         // Si le type de mouvement n'existe pas, retourner une réponse vide ou un message d'erreur
         return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Stock".', []);
-    } 
+    }
 
 /*
     public function indexSortieStockGrouped(Request $request)
@@ -1720,7 +1720,7 @@ class MouvementStockController extends Controller
 
         try {
             $response = Http::timeout(5)->post($url, [
-                'statut'          => 'traité',
+                    'statut'          => 'Traitée',
                 'decision'        => $decision,
                 'date_traitement' => now()->toDateTimeString(),
             ]);

@@ -283,7 +283,7 @@ Route::middleware('auth:api')->group(function () {
 
     Route::get('/view-file', [MouvementStockController::class, 'viewFile']);
 
-    
+
 
     Route::get('/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']);
 

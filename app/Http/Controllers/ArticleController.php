@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ArticleExercice;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Parametrage\CategorieArticle;
@@ -924,6 +925,132 @@ class ArticleController extends Controller
                 //     'cmp_debut_exercice' => $cump_en_float,
                 //     'cmp_fin_exercice' => $cump_en_float,
                 // ]);
+
+                $successCount++; // Incrémenter le compteur de succès
+            }
+
+            DB::commit();
+
+            // 4️⃣ Construction du message de retour final
+            $summary = "Importation terminée. " . $successCount . " article(s) ajouté(s) sur " . $totalDataRows . " ligne(s) de données traitée(s).";
+
+            if (!empty($ignoredRows)) {
+                $summary .= " Attention : " . count($ignoredRows) . " ligne(s) ont été ignorée(s).";
+            }
+
+            LogJournalisation::create([
+                'action' => 'Début de l\'importation des articles via Excel',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action' => now(),
+            ]);
+
+            return response()->json([
+                'message' => $summary,
+                'success_count' => $successCount,
+                'total_rows_processed' => $totalDataRows,
+                'ignored' => $ignoredRows
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            LogJournalisation::create([
+                'action' => 'Échec de l\'importation des articles: ' . $e->getMessage(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action' => now(),
+            ]);
+
+            Log::error('Erreur lors de l\'importation des articles: ' . $e->getMessage() . ' à la ligne ' . $e->getLine());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Une erreur critique est survenue lors de l\'importation.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+
+
+    public function importUpdateCUMP(Request $request)
+    {
+        // 1️⃣ Validation du fichier
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|mimes:xlsx,xls',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $spreadsheet = IOFactory::load($request->file('file'));
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray();
+
+        // 2️⃣ Initialisation des compteurs et du tableau de rapport
+        $totalDataRows = 0; // Renommé pour ne compter que les lignes de données réelles
+        $successCount = 0;
+        $ignoredRows = [];
+
+
+        // Démarre une transaction pour garantir que toutes les opérations sont réussies ou annulées
+        DB::beginTransaction();
+
+        try {
+            // 3️⃣ Boucle de traitement des lignes
+            foreach ($rows as $index => $row) {
+                if ($index === 0) continue; // Ignorer la ligne d'en-tête
+
+                // NOUVELLE VÉRIFICATION : Ignorer les lignes entièrement vides
+                $nonEmptyCells = array_filter($row, function ($cell) {
+                    return trim($cell) !== '';
+                });
+
+                if (empty($nonEmptyCells)) {
+                    continue; // Ignorer la ligne vide et passer à la suivante
+                }
+
+                $excelRowNumber = $index + 1;
+                $totalDataRows++; // Compter uniquement les lignes de données réelles
+
+
+                $cump = trim($row[2] ?? '0'); // récupère et nettoie la valeur, 0 par défaut
+
+                // Supprimer espaces (y compris insécables) + remplacer virgule par point
+                $cump = str_replace(["\u{00A0}", ' ', ','], ['', '', '.'], $cump);
+
+
+                $cump_en_float = is_numeric($cump) ? (float) $cump : 0;
+                $code_article = trim($row[0]);
+                $designation_article = trim($row[1]);
+
+                // Vérifier si un article avec le même code ou libellé existe déjà
+                // Attention: L'utilisation de orWhere peut être lente si la table est grande et non indexée.
+                $articleExistant = Article::where('code_article', $code_article)
+                    ->orWhere('libelle', $designation_article)
+                    ->first();
+
+                $exerc = Exercice::where('annee', 2025)  ->first();
+
+
+                Stock::where('id_Article',  $articleExistant->id)
+                    ->where('id_exercice', $exerc->id) // Optionnel : si vous voulez filtrer aussi par exercice
+                    ->update(['cout_moyen_pondere' => $cump_en_float ]);
+
+                ArticleExercice::where('id_Article' , $articleExistant->id)
+                    ->where('id_exercice', $exerc->id)
+                    ->update(['cmp_debut_exercice' => $cump_en_float,
+                        'cmp_fin_exercice'=> $cump_en_float]);
+
+
+
+
 
                 $successCount++; // Incrémenter le compteur de succès
             }
