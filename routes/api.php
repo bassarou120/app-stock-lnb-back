@@ -41,6 +41,7 @@ use App\Http\Controllers\RetourTicketController;
 use App\Http\Controllers\AnnulationTicketController;
 use App\Http\Controllers\TrajetController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\DemandeImmoController;
 use App\Http\Controllers\Rapport\Stock\StockRapportController;
 use App\Http\Controllers\Rapport\ImmobilisationRapportController;
 use App\Http\Controllers\Rapport\Parc\RapportParcController;
@@ -114,6 +115,7 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('type_immos', TypeImmoController::class);
     Route::apiResource('sous_type_immos', SousTypeImmoController::class);
     Route::apiResource('groupe_type_immos', GroupeTypeImmoController::class);
+    Route::apiResource('demande-immo', DemandeImmoController::class); 
     Route::apiResource('modules', ModuleController::class);
     //Route::apiResource('roles', RoleController::class);
     Route::apiResource('fonctionnalites', FonctionnaliteController::class);
