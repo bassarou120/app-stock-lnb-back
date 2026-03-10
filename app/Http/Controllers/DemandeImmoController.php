@@ -21,7 +21,7 @@ class DemandeImmoController extends Controller
     public function index()
     {
         $demandes = DemandeImmo::where('isdeleted', false)
-            ->with(['employe', 'traiteur', 'immo', 'groupeTypeImmo', 'exercice'])
+            ->with(['employe', 'traiteur', 'immobilisation', 'groupeTypeImmo', 'exercice'])
             ->latest()
             ->paginate(1000);
 
