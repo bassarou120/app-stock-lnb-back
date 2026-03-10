@@ -14,6 +14,8 @@ use App\Http\Resources\PostResource;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use PDF;
+
 
 class DemandeImmoController extends Controller
 {
@@ -208,4 +210,51 @@ class DemandeImmoController extends Controller
             return response()->json(['message' => 'Erreur lors du changement de status: ' . $e->getMessage()], 500);
         }
     }
+
+
+    public function genererFicheDemandeImmo($id, Request $request)
+{
+    $demande = DemandeImmo::with('immobilisation', 'employe')
+        ->find($id);
+
+    if (!$demande) {
+        abort(404, "La demande d'immobilisation n'existe pas.");
+    }
+
+    // Générer numéro de fiche
+    $numeroFiche =  $demande->ref_demande;
+
+    $demande->update([
+        'numero_fiche_demande' => $numeroFiche
+    ]);
+
+    $demande->refresh();
+
+    $authUser = Auth::user();
+
+    $data = [
+        'demande' => $demande,
+        'authUser' => $authUser,
+        'numeroFiche' => $numeroFiche
+    ];
+
+    $pdf = PDF::loadView('pdf.demande_immo', $data);
+
+    LogJournalisation::create([
+        'action'     => "Génération fiche demande immobilisation [ID: {$id}, Fiche: {$numeroFiche}]",
+        'ip_address' => request()->ip(),
+        'user_agent' => request()->header('User-Agent'),
+        'user_id'    => $request->user()->id,
+        'user_name'  => $request->user()->name,
+        'date_action'=> now(),
+    ]);
+
+    return $pdf->download(
+        'Fiche_Demande_Immo_' .
+        $demande->id .
+        '_' .
+        $numeroFiche .
+        '.pdf'
+    );
+}
 }
