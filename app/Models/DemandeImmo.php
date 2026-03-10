@@ -36,6 +36,6 @@ class DemandeImmo extends Model
     }
     public function immobilisation()
     {
-        return $this->belongsTo(Immobilisation::class, 'immo_id');
+        return $this->belongsTo(Immobilisation::class, 'id_immo');
     }
 }
