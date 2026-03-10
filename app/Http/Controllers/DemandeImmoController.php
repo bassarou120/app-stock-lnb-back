@@ -150,6 +150,10 @@ class DemandeImmoController extends Controller
                         ], 422);
                     }
 
+                    // On enregistre l'immo et le traiteur (celui qui valide) dans la demande
+                    $demande->id_immo = $request->immo_id;
+                    // $demande->id_traiteur = $request->user()->id;
+
                     // Préparer un nouveau Request pour le TransfertController
                     $transfertRequest = new Request([
                         'immo_id' => $request->immo_id,
