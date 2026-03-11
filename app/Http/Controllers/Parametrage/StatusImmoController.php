@@ -17,7 +17,7 @@ class StatusImmoController extends Controller
     // Afficher la liste des statuts immobiliers
     public function index(Request $request)
     {
-        $status_immos = StatusImmo::latest()->where('isdeleted', false)->paginate(100);
+        $status_immos = StatusImmo::latest()->where('isdeleted', false)->paginate(10000);
         LogJournalisation::create([
             "action"      => "Affichage de la liste des statuts immobiliers",
             "ip_address"  => request()->ip(),

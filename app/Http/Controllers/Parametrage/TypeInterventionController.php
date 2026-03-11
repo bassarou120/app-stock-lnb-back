@@ -19,7 +19,7 @@ class TypeInterventionController extends Controller
     {
         $types = TypeIntervention::latest()
         ->where('isdeleted', false)
-        ->paginate(100);
+        ->paginate(100000);
 
         LogJournalisation::create([
             "action"      => "Affichage de la liste des types d'intervention",
