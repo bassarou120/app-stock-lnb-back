@@ -118,6 +118,7 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('demande-immo', DemandeImmoController::class);
     Route::post('demande-immo/{id}/change-status', [DemandeImmoController::class, 'changerStatus']);
     Route::get('/demande-immo/fiche/{id}', [DemandeImmoController::class, 'genererFicheDemandeImmo']);
+    Route::get('/demande-imo/groupeTypeImmo', [DemandeImmoController::class, 'groupeTypeImmo']);
     Route::apiResource('modules', ModuleController::class);
     //Route::apiResource('roles', RoleController::class);
     Route::apiResource('fonctionnalites', FonctionnaliteController::class);

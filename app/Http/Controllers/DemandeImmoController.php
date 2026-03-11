@@ -16,10 +16,36 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use PDF;
 
+/**
+ * @OA\Tag(
+ *     name="Demande Immobilisation",
+ *     description="Gestion des demandes d'immobilisation"
+ * )
+ */
+
 
 class DemandeImmoController extends Controller
 {
     // LISTE DES DEMANDES
+
+    /**
+     * @OA\Get(
+     *     path="/api/demande-immo",
+     *     summary="Liste des demandes d'immobilisation",
+     *     description="Retourne la liste paginée des demandes d'immobilisation.",
+     *     tags={"Demande Immobilisation"},
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Liste des demandes récupérée avec succès",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Liste des demandes"),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     )
+     * )
+     */
     public function index()
     {
         $demandes = DemandeImmo::where('isdeleted', false)
@@ -31,7 +57,103 @@ class DemandeImmoController extends Controller
     }
 
 
+
+    //LISTE DES GROUPES TYPES IMMO
+
+    /**
+     * @OA\Get(
+     *     path="/api/demande-imo/groupeTypeImmo",
+     *     summary="Liste des groupes de type immobilisation",
+     *     description="Retourne la liste des groupes de type immobilisation.",
+     *     tags={"Demande Immobilisation"},
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Liste des groupes de type immobilisation",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Liste des groupes de type immo"),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     )
+     * )
+     */
+
+    // Afficher la liste des groupes de type immo
+    public function groupeTypeImmo()
+    {
+        $groupe_type_immos = GroupeTypeImmo::latest()->where('isdeleted', false)->paginate(10000);
+        return new PostResource(true, 'Liste des groupes de type immmo', $groupe_type_immos);
+    }
+
+    // public function show() {
+
+    //     $groupe_type_immos = GroupeTypeImmo::latest()->where('isdeleted', false)->paginate(10000);
+    //     return new PostResource(true, 'Liste des groupes de type immmo', $groupe_type_immos);
+
+    // }
+
     // CREER UNE DEMANDE
+
+    /**
+     * @OA\Post(
+     *     path="/api/demande-immo",
+     *     summary="Créer une demande d'immobilisation",
+     *     description="Permet de créer une nouvelle demande d'immobilisation.",
+     *     tags={"Demande Immobilisation"},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Informations nécessaires pour créer une demande d'immobilisation",
+     *         @OA\JsonContent(
+     *             required={"date_demande"},
+     *
+     *             @OA\Property(
+     *                 property="email_personnel",
+     *                 type="string",
+     *                 format="email",
+     *                 example="employe@example.com",
+     *                 description="Email de l'employé qui fait la demande"
+     *             ),
+     *
+     *             @OA\Property(
+     *                 property="date_demande",
+     *                 type="string",
+     *                 format="date",
+     *                 example="2026-03-11",
+     *                 description="Date de la demande d'immobilisation"
+     *             ),
+     *
+     *             @OA\Property(
+     *                 property="libelle_groupe_type_immo",
+     *                 type="string",
+     *                 example="Matériel informatique",
+     *                 description="Libellé du groupe de type d'immobilisation"
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=201,
+     *         description="Demande d'immobilisation créée avec succès",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Demande créée avec succès"),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=422,
+     *         description="Erreur de validation"
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=400,
+     *         description="Aucun exercice ouvert"
+     *     )
+     * )
+     */
     public function store(Request $request)
     {
 
@@ -217,48 +339,48 @@ class DemandeImmoController extends Controller
 
 
     public function genererFicheDemandeImmo($id, Request $request)
-{
-    $demande = DemandeImmo::with('immobilisation', 'employe')
-        ->find($id);
+    {
+        $demande = DemandeImmo::with('immobilisation', 'employe')
+            ->find($id);
 
-    if (!$demande) {
-        abort(404, "La demande d'immobilisation n'existe pas.");
+        if (!$demande) {
+            abort(404, "La demande d'immobilisation n'existe pas.");
+        }
+
+        // Générer numéro de fiche
+        $numeroFiche =  $demande->ref_demande;
+
+        $demande->update([
+            'ref_demande' => $numeroFiche
+        ]);
+
+        $demande->refresh();
+
+        $authUser = Auth::user();
+
+        $data = [
+            'demande' => $demande,
+            'authUser' => $authUser,
+            'numeroFiche' => $numeroFiche
+        ];
+
+        $pdf = PDF::loadView('pdf.demande_immo', $data);
+
+        LogJournalisation::create([
+            'action'     => "Génération fiche demande immobilisation [ID: {$id}, Fiche: {$numeroFiche}]",
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->header('User-Agent'),
+            'user_id'    => $request->user()->id,
+            'user_name'  => $request->user()->name,
+            'date_action' => now(),
+        ]);
+
+        return $pdf->download(
+            'Fiche_Demande_Immo_' .
+                $demande->id .
+                '_' .
+                $numeroFiche .
+                '.pdf'
+        );
     }
-
-    // Générer numéro de fiche
-    $numeroFiche =  $demande->ref_demande;
-
-    $demande->update([
-        'ref_demande' => $numeroFiche
-    ]);
-
-    $demande->refresh();
-
-    $authUser = Auth::user();
-
-    $data = [
-        'demande' => $demande,
-        'authUser' => $authUser,
-        'numeroFiche' => $numeroFiche
-    ];
-
-    $pdf = PDF::loadView('pdf.demande_immo', $data);
-
-    LogJournalisation::create([
-        'action'     => "Génération fiche demande immobilisation [ID: {$id}, Fiche: {$numeroFiche}]",
-        'ip_address' => request()->ip(),
-        'user_agent' => request()->header('User-Agent'),
-        'user_id'    => $request->user()->id,
-        'user_name'  => $request->user()->name,
-        'date_action'=> now(),
-    ]);
-
-    return $pdf->download(
-        'Fiche_Demande_Immo_' .
-        $demande->id .
-        '_' .
-        $numeroFiche .
-        '.pdf'
-    );
-}
 }
