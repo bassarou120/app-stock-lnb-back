@@ -41,6 +41,7 @@ use App\Http\Controllers\RetourTicketController;
 use App\Http\Controllers\AnnulationTicketController;
 use App\Http\Controllers\TrajetController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\DemandeImmoController;
 use App\Http\Controllers\Rapport\Stock\StockRapportController;
 use App\Http\Controllers\Rapport\ImmobilisationRapportController;
 use App\Http\Controllers\Rapport\Parc\RapportParcController;
@@ -79,6 +80,11 @@ Route::apiResource('permissions', PermissionController::class);
 
 Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController::class, 'downloadGroupedFile']);
 
+Route::get('/site-settings', [SiteSettingController::class, 'index']);
+
+
+
+
 Route::middleware('auth:api')->group(function () {
 
     Route::apiResource('users', UserController::class); // Ceci crée les routes CRUD complètes pour /api/users
@@ -109,6 +115,10 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('type_immos', TypeImmoController::class);
     Route::apiResource('sous_type_immos', SousTypeImmoController::class);
     Route::apiResource('groupe_type_immos', GroupeTypeImmoController::class);
+    Route::apiResource('demande-immo', DemandeImmoController::class);
+    Route::post('demande-immo/{id}/change-status', [DemandeImmoController::class, 'changerStatus']);
+    Route::get('/demande-immo/fiche/{id}', [DemandeImmoController::class, 'genererFicheDemandeImmo']);
+    Route::get('/demande-imo/groupeTypeImmo', [DemandeImmoController::class, 'groupeTypeImmo']);
     Route::apiResource('modules', ModuleController::class);
     //Route::apiResource('roles', RoleController::class);
     Route::apiResource('fonctionnalites', FonctionnaliteController::class);
@@ -242,7 +252,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/intervention_vehicule', [InterventionVehiculeController::class, 'Intervention_Vehicule']);
 
     // Routes pour les paramètres du site
-    Route::get('/site-settings', [SiteSettingController::class, 'index']);
+
     Route::post('/site-settings/store', [SiteSettingController::class, 'store']); // <-- C'EST LA ROUTE MANQUANTE
     Route::get('/imprimerSorties', [MouvementStockController::class, 'imprimerSortiesStock']);
 
