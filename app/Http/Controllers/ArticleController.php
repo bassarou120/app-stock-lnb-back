@@ -1043,7 +1043,7 @@ class ArticleController extends Controller
                     ->where('id_exercice', $exerc->id) // Optionnel : si vous voulez filtrer aussi par exercice
                     ->update(['cout_moyen_pondere' => $cump_en_float ]);
 
-                ArticleExercice::where('id_Article' , $articleExistant->id)
+                ArticleExercice::where('id_article' , $articleExistant->id)
                     ->where('id_exercice', $exerc->id)
                     ->update(['cmp_debut_exercice' => $cump_en_float,
                         'cmp_fin_exercice'=> $cump_en_float]);
@@ -1064,14 +1064,7 @@ class ArticleController extends Controller
                 $summary .= " Attention : " . count($ignoredRows) . " ligne(s) ont été ignorée(s).";
             }
 
-            LogJournalisation::create([
-                'action' => 'Début de l\'importation des articles via Excel',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action' => now(),
-            ]);
+
 
             return response()->json([
                 'message' => $summary,
@@ -1082,14 +1075,6 @@ class ArticleController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            LogJournalisation::create([
-                'action' => 'Échec de l\'importation des articles: ' . $e->getMessage(),
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action' => now(),
-            ]);
 
             Log::error('Erreur lors de l\'importation des articles: ' . $e->getMessage() . ' à la ligne ' . $e->getLine());
 

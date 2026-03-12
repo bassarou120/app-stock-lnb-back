@@ -19,7 +19,7 @@ class GroupeTypeImmoController extends Controller
     // Afficher la liste des groupes de type immo
     public function index(Request $request)
     {
-        $groupe_type_immos = GroupeTypeImmo::latest()->where('isdeleted', false)->paginate(1000);
+        $groupe_type_immos = GroupeTypeImmo::latest()->where('isdeleted', false)->paginate(10000);
 
         LogJournalisation::create([
             "action"      => "Affichage de la liste des groupes de type immo",
@@ -96,7 +96,7 @@ class GroupeTypeImmoController extends Controller
     {
         $groupe_type_immo->isdeleted = true;
         $groupe_type_immo->save();
-        
+
         LogJournalisation::create([
             "action"      => "Suppression de groupe de type immo ID: " . $groupe_type_immo->id,
             "ip_address"  => request()->ip(),
@@ -105,7 +105,7 @@ class GroupeTypeImmoController extends Controller
             'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
-        
+
         return new PostResource(true, 'Groupe de type immo supprimé avec succès', null);
     }
 }

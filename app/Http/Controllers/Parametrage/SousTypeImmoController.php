@@ -18,7 +18,7 @@ class SousTypeImmoController extends Controller
     // Afficher la liste des sous-types d'immo
     public function index(Request $request)
     {
-        $sous_type_immos = SousTypeImmo::with('typeImmo')->where('isdeleted', false)->latest()->paginate(100);
+        $sous_type_immos = SousTypeImmo::with('typeImmo')->where('isdeleted', false)->latest()->paginate(10000);
 
         LogJournalisation::create([
             "action"      => "Affichage de la liste des sous-types d'immo",
