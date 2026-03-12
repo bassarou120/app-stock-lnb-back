@@ -188,9 +188,12 @@ class DemandeImmoController extends Controller
 
                     $file = $request->file('fichier');
                     $filename = 'demande_' . $demande->id . '_' . time() . '.' . $file->getClientOriginalExtension();
-                    $path = $file->storeAs('public/demandes-immo', $filename);
+                    // $path = $file->storeAs('public/demandes-immo', $filename);
+                    $path = $file->storeAs('demandes-immo', $filename, 'public');
 
-                    $demande->url_fiche = asset(str_replace('public/', 'storage/', $path));
+                    // $demande->url_fiche = asset(str_replace('public/', 'storage/', $path));
+                    $demande->url_fiche = asset('storage/' . $path);
+                    $demande->save();
                     break;
             }
 
