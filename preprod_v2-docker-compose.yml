@@ -35,6 +35,8 @@ services:
 
 
 networks:
+  lnb-network:
+    external : true
   default:
     external : true
     name: lnb-network
