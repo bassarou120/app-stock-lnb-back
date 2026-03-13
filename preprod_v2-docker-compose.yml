@@ -6,7 +6,7 @@ services:
     build:
       context: ./
       dockerfile: ./deploy_preprod/Dockerfile
-    .
+
     container_name: backend_lnb_stock_v2
     restart: always
     ports:
