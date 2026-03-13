@@ -1,0 +1,40 @@
+version: "3.4"
+
+services:
+
+  backend:
+    build:
+      context: ./
+      dockerfile: ./deploy_preprod/Dockerfile
+    .
+    container_name: backend_lnb_stock_v2
+    restart: always
+    ports:
+      - "8580:80"
+    depends_on:
+      - postgres_lnb_api_v2
+
+
+
+  postgres_lnb_api_v2:
+    image: postgres:16
+    container_name: postgres_lnb_api_v2
+    restart: always
+    environment:
+      POSTGRES_DB: lnb_api_db
+      POSTGRES_USER: lnb_db_api_user
+      POSTGRES_PASSWORD: 1sCisO3FAoZeKZe
+    ports:
+      - "5439:5432"
+    networks:
+      - lnb-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+
+
+
+networks:
+  default:
+    external : true
+    name: lnb-network
