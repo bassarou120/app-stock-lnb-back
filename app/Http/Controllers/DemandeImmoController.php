@@ -34,6 +34,8 @@ class DemandeImmoController extends Controller
      *     summary="Liste des demandes d'immobilisation",
      *     description="Retourne la liste paginée des demandes d'immobilisation.",
      *     tags={"Demande Immobilisation"},
+     *      security={{"bearerAuth":{}}},
+     *
      *
      *     @OA\Response(
      *         response=200,
@@ -66,6 +68,7 @@ class DemandeImmoController extends Controller
      *     summary="Liste des groupes de type immobilisation",
      *     description="Retourne la liste des groupes de type immobilisation.",
      *     tags={"Demande Immobilisation"},
+     *      security={{"bearerAuth":{}}},
      *
      *     @OA\Response(
      *         response=200,
@@ -101,6 +104,7 @@ class DemandeImmoController extends Controller
      *     summary="Créer une demande d'immobilisation",
      *     description="Permet de créer une nouvelle demande d'immobilisation.",
      *     tags={"Demande Immobilisation"},
+     *      security={{"bearerAuth":{}}},
      *
      *     @OA\RequestBody(
      *         required=true,
