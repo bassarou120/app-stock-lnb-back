@@ -321,6 +321,14 @@ class DemandeImmoController extends Controller
 
             $demande->save();
 
+            if ($status === 'VALIDE') {
+                $this->notifierMRequestDemandeImmo($demande, 'ACCEPTEE');
+            }
+
+            if ($status === 'REJETE') {
+                $this->notifierMRequestDemandeImmo($demande, 'REJETEE');
+            }
+
             // 📝 Journalisation
             LogJournalisation::create([
                 'action'     => "Changement de status demande DI-{$demande->id} à {$status}",
@@ -386,4 +394,61 @@ class DemandeImmoController extends Controller
                 '.pdf'
         );
     }
+
+
+    protected function notifierMRequestDemandeImmo(DemandeImmo $demande, string $decision)
+    {
+        $reference = $demande->mRequest;
+        $baseUrl = rtrim(config('services.m_request.base_url'), '/');
+
+        if (empty($reference) || empty($baseUrl)) {
+
+            logger()->warning('URL M_REQUEST non construite pour DemandeImmo', [
+                'reference' => $reference,
+                'baseUrl'   => $baseUrl,
+                'demande_id'=> $demande->id
+            ]);
+
+            return null;
+        }
+
+        $url = "{$baseUrl}/api/demandes-immo/" . urlencode($reference) . "/traiter";
+
+        // Log URL construite
+        logger()->info("URL M_REQUEST DemandeImmo : {$url}");
+
+        try {
+
+            $response = Http::timeout(5)->post($url, [
+                'statut'          => 'Traitée',
+                'decision'        => $decision,
+                'date_traitement' => now()->toDateTimeString(),
+            ]);
+
+            if ($response->failed()) {
+
+                logger()->error('❌ Échec appel M_REQUEST DemandeImmo', [
+                    'url' => $url,
+                    'payload' => [
+                        'statut'   => 'Traitée',
+                        'decision' => $decision
+                    ],
+                    'response' => $response->body()
+                ]);
+            }
+
+        } catch (\Throwable $e) {
+
+            logger()->error('❌ Exception appel M_REQUEST DemandeImmo', [
+                'url'   => $url,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return $url;
+    }
+
+
+
+
 }
