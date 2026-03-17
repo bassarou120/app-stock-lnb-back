@@ -322,11 +322,17 @@ class DemandeImmoController extends Controller
             $demande->save();
 
             if ($status === 'VALIDE') {
-                $this->notifierMRequestDemandeImmo($demande, 'ACCEPTEE');
+                //$this->notifierMRequestDemandeImmo($demande, 'ACCEPTEE');
+                $url = $this->notifierMRequestDemandeImmo($demande, 'ACCEPTEE');
+                $demande->mRequest = $url;
+                $demande->save();
             }
 
             if ($status === 'REJETE') {
-                $this->notifierMRequestDemandeImmo($demande, 'REJETEE');
+                //$this->notifierMRequestDemandeImmo($demande, 'REJETEE');
+                $url = $this->notifierMRequestDemandeImmo($demande, 'REJETEE');
+                $demande->mRequest = $url;
+                $demande->save();
             }
 
             // 📝 Journalisation
