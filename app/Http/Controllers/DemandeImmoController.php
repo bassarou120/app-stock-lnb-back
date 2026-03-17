@@ -314,13 +314,30 @@ class DemandeImmoController extends Controller
 
                     $file = $request->file('fichier');
                     $filename = 'demande_' . $demande->id . '_' . time() . '.' . $file->getClientOriginalExtension();
-                    $path = $file->storeAs('public/demandes-immo', $filename);
+                    // $path = $file->storeAs('public/demandes-immo', $filename);
+                    $path = $file->storeAs('demandes-immo', $filename, 'public');
 
-                    $demande->url_fiche = asset(str_replace('public/', 'storage/', $path));
+                    // $demande->url_fiche = asset(str_replace('public/', 'storage/', $path));
+                    $demande->url_fiche = asset('storage/' . $path);
+                    $demande->save();
                     break;
             }
 
             $demande->save();
+
+            if ($status === 'VALIDE') {
+                //$this->notifierMRequestDemandeImmo($demande, 'ACCEPTEE');
+                $url = $this->notifierMRequestDemandeImmo($demande, 'ACCEPTEE');
+                $demande->mRequest = $url;
+                $demande->save();
+            }
+
+            if ($status === 'REJETE') {
+                //$this->notifierMRequestDemandeImmo($demande, 'REJETEE');
+                $url = $this->notifierMRequestDemandeImmo($demande, 'REJETEE');
+                $demande->mRequest = $url;
+                $demande->save();
+            }
 
             // 📝 Journalisation
             LogJournalisation::create([
@@ -387,4 +404,61 @@ class DemandeImmoController extends Controller
                 '.pdf'
         );
     }
+
+
+    protected function notifierMRequestDemandeImmo(DemandeImmo $demande, string $decision)
+    {
+        $reference = $demande->mRequest;
+        $baseUrl = rtrim(config('services.m_request.base_url'), '/');
+
+        if (empty($reference) || empty($baseUrl)) {
+
+            logger()->warning('URL M_REQUEST non construite pour DemandeImmo', [
+                'reference' => $reference,
+                'baseUrl'   => $baseUrl,
+                'demande_id'=> $demande->id
+            ]);
+
+            return null;
+        }
+
+        $url = "{$baseUrl}/api/demandes-immo/" . urlencode($reference) . "/traiter";
+
+        // Log URL construite
+        logger()->info("URL M_REQUEST DemandeImmo : {$url}");
+
+        try {
+
+            $response = Http::timeout(5)->post($url, [
+                'statut'          => 'Traitée',
+                'decision'        => $decision,
+                'date_traitement' => now()->toDateTimeString(),
+            ]);
+
+            if ($response->failed()) {
+
+                logger()->error('❌ Échec appel M_REQUEST DemandeImmo', [
+                    'url' => $url,
+                    'payload' => [
+                        'statut'   => 'Traitée',
+                        'decision' => $decision
+                    ],
+                    'response' => $response->body()
+                ]);
+            }
+
+        } catch (\Throwable $e) {
+
+            logger()->error('❌ Exception appel M_REQUEST DemandeImmo', [
+                'url'   => $url,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return $url;
+    }
+
+
+
+
 }
