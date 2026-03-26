@@ -17,7 +17,7 @@ class TypeImmoController extends Controller
     // Afficher la liste des types d'immo
     public function index(Request $request)
     {
-        $type_immos = TypeImmo::latest()->where('isdeleted', false)->paginate(100);
+        $type_immos = TypeImmo::latest()->where('isdeleted', false)->paginate(10000);
         LogJournalisation::create([
             "action"      => "Affichage de la liste des types d'immo",
             "ip_address"  => request()->ip(),

@@ -389,6 +389,148 @@
                 }
             }
         },
+        "/api/demande-immo": {
+            "get": {
+                "tags": [
+                    "Demande Immobilisation"
+                ],
+                "summary": "Liste des demandes d'immobilisation",
+                "description": "Retourne la liste paginée des demandes d'immobilisation.",
+                "operationId": "d272f3780b1763a32296938122112a4d",
+                "responses": {
+                    "200": {
+                        "description": "Liste des demandes récupérée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Liste des demandes"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Demande Immobilisation"
+                ],
+                "summary": "Créer une demande d'immobilisation",
+                "description": "Permet de créer une nouvelle demande d'immobilisation.",
+                "operationId": "9855e64fdd2e11a4b8069ac266d186b0",
+                "requestBody": {
+                    "description": "Informations nécessaires pour créer une demande d'immobilisation",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "date_demande"
+                                ],
+                                "properties": {
+                                    "email_personnel": {
+                                        "description": "Email de l'employé qui fait la demande",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "employe@example.com"
+                                    },
+                                    "date_demande": {
+                                        "description": "Date de la demande d'immobilisation",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-03-11"
+                                    },
+                                    "libelle_groupe_type_immo": {
+                                        "description": "Libellé du groupe de type d'immobilisation",
+                                        "type": "string",
+                                        "example": "Matériel informatique"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Demande d'immobilisation créée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Demande créée avec succès"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    },
+                    "400": {
+                        "description": "Aucun exercice ouvert"
+                    }
+                }
+            }
+        },
+        "/api/demande-imo/groupeTypeImmo": {
+            "get": {
+                "tags": [
+                    "Demande Immobilisation"
+                ],
+                "summary": "Liste des groupes de type immobilisation",
+                "description": "Retourne la liste des groupes de type immobilisation.",
+                "operationId": "35e8374b67158642cd7bb34bc896d661",
+                "responses": {
+                    "200": {
+                        "description": "Liste des groupes de type immobilisation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Liste des groupes de type immo"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/intervention-vehicules": {
             "get": {
                 "tags": [
@@ -601,7 +743,7 @@
                                         "example": "2025-05-27"
                                     },
                                     "id_bureau": {
-                                        "description": "Identifiant du bureau effectuant la demande (référence à la table bureaux)",
+                                        "description": "Identifiant du bureau effectuant la demande",
                                         "type": "integer",
                                         "example": 3
                                     },
@@ -612,7 +754,7 @@
                                         "nullable": true
                                     },
                                     "email_personnel": {
-                                        "description": "Email du personnel responsable de la demande (référence à la table employes)",
+                                        "description": "Email du personnel responsable de la demande",
                                         "type": "string",
                                         "format": "email",
                                         "example": "employe@example.com"
@@ -626,17 +768,17 @@
                                             ],
                                             "properties": {
                                                 "code_article": {
-                                                    "description": "Code unique de l'article concerné (référence à la table articles)",
+                                                    "description": "Code unique de l'article",
                                                     "type": "string",
                                                     "example": "ART-20240526-1"
                                                 },
                                                 "description": {
-                                                    "description": "Description complémentaire de l'article demandé",
+                                                    "description": "Description complémentaire",
                                                     "type": "string",
                                                     "example": "Consommable de bureau"
                                                 },
                                                 "qteDemande": {
-                                                    "description": "Quantité d'article demandée pour la sortie (minimum 1)",
+                                                    "description": "Quantité demandée",
                                                     "type": "integer",
                                                     "example": 10
                                                 }
@@ -676,17 +818,12 @@
                         }
                     },
                     "422": {
-                        "description": "Requête invalide - Erreur de validation"
+                        "description": "Erreur de validation"
                     },
                     "404": {
                         "description": "Ressource non trouvée"
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/api/bureaux": {
@@ -1771,6 +1908,10 @@
         }
     },
     "tags": [
+        {
+            "name": "Demande Immobilisation",
+            "description": "Gestion des demandes d'immobilisation"
+        },
         {
             "name": "Personnel",
             "description": "Gestion du Personnel "
