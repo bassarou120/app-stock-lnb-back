@@ -95,6 +95,10 @@ class VehiculeController extends Controller
         try {
             foreach ($request->vehicules as $vehiculeData) {
                 //dd($vehiculeData);
+                // --- AUTOMATISATION DE LA DURÉE (Basée sur le Taux) ---
+                $tauxSaisi = $vehiculeData['taux_ammortissement'] ?? 0;
+                $nbreAnneeCalcule = ($tauxSaisi > 0) ? round(100 / $tauxSaisi) : 0;
+                // -----------------------------------------------------
                 $vehicule = Vehicule::create([
                     'marque_id' => $vehiculeData['marque_id'],
                     'modele_id' => $vehiculeData['modele_id'],
@@ -196,6 +200,13 @@ class VehiculeController extends Controller
 
         // Gérer l'upload de la nouvelle carte grise
         $data = $request->except(['_method']);
+
+        // --- AUTOMATISATION DE LA DURÉE (Basée sur le Taux) ---
+        if (isset($data['taux_ammortissement']) && $data['taux_ammortissement'] > 0) {
+            $data['nbreannee_amortissement'] = round(100 / $data['taux_ammortissement']);
+        }
+        // -----------------------------------------------------
+
         if ($request->hasFile('carte_grise')) {
             // Supprimer l'ancien fichier s'il existe
             if ($vehicule->carte_grise && Storage::disk('public')->exists($vehicule->carte_grise)) {
@@ -461,6 +472,11 @@ class VehiculeController extends Controller
                 $typeImmoId = TypeImmo::where('libelle_typeImmo', 'Véhicules')->value('id'); // récupère l'id numérique
                 $compte = $row[13];
                 //
+                // --- AUTOMATISATION DE LA DURÉE DANS L'IMPORT (Basée sur le Taux) ---
+                $tauxSaisi = (float)($row[12] ?? 0); 
+                $nbreAnneeAutomatique = ($tauxSaisi > 0) ? round(100 / $tauxSaisi) : 0;
+                // --------------------------------------------------------------------
+
                 $taux_ammortissement = $row[14];
                 $montant_ttc = $row[15];
                 $id_status_immo = $row[16];
