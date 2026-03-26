@@ -1052,36 +1052,49 @@ class MouvementStockController extends Controller
     // index sortieStock
     public function indexSortieStock(Request $request)
     {
-        // Récupérer l'ID du type de mouvement "Sortie de Stock"
+        // 1. Récupérer l'ID du type de mouvement
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Stock')->first();
 
-        // Si le type de mouvement existe, récupérer les mouvements correspondants
-        if ($type_mouvement) {
-            $mouvements = MouvementStock::with(['bureau', 'employe', 'article', 'affectation.bureau', 'affectation.employe' => function ($query) {
-                $query->select('id', 'nom', 'prenom')
-                    ->selectRaw("CONCAT(nom, ' ', prenom) as full_name");
-            }])
+        if (!$type_mouvement) {
+            return new PostResource(false, 'Le type de mouvement "Sortie de Stock" n\'existe pas.', []);
+        }
+
+        /**
+         * 2. Récupération des mouvements groupés par code_mouvement
+         * On utilise selectRaw pour pouvoir grouper tout en gardant des infos globales.
+         * Note: On récupère le premier ID de chaque groupe pour les relations 'with'.
+         */
+        $mouvements = MouvementStock::with([
+                'bureau', 
+                'employe', 
+                'article', 
+                'affectation.bureau', 
+                'affectation.employe' => function ($query) {
+                    $query->select('id', 'nom', 'prenom')
+                        ->selectRaw("CONCAT(nom, ' ', prenom) as full_name");
+                }
+            ])
             ->where('id_type_mouvement', $type_mouvement->id)
             ->where('isdeleted', false)
-            ->where('statut', 'Cloturé') // ← Ajout du filtre
+            ->where('statut', 'Cloturé')
+            // Optionnel : filtrer par exercice si nécessaire
+            // ->where('id_exercice', $exerciceOuvert->id) 
+            ->select('*')
+            ->groupBy('code_mouvement') // Empêche les doublons de bons de sortie dans la liste
             ->latest()
             ->paginate(1000);
 
-            // 📝 JOURNALISATION : Consultation de la liste des sorties de stock
-            LogJournalisation::create([
-                'action'     => 'Consultation de la liste des sorties de stock (liste simple)',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
-            ]);
+        // 3. JOURNALISATION
+        LogJournalisation::create([
+            'action'     => 'Consultation de la liste des sorties de stock (groupée par code)',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id'    => $request->user()->id,
+            'user_name'  => $request->user()->name,
+            'date_action'=> now(),
+        ]);
 
-            return new PostResource(true, 'Liste des mouvements', $mouvements);
-        }
-
-        // Si le type de mouvement n'existe pas, retourner une réponse vide ou un message d'erreur
-        return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Stock".', []);
+        return new PostResource(true, 'Liste des mouvements (Bons de sortie)', $mouvements);
     }
 
 
@@ -2061,5 +2074,115 @@ class MouvementStockController extends Controller
         return response()->download($filePath);
     }
 
+    /**
+     * Créer une correction de stock (Entrée ou Sortie Compensatoire).
+     * Gère l'ajout et le retrait de quantités.
+     */
+    public function createEntreeCompensatoire(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'article_id'      => 'required|exists:articles,id',
+            'quantite'        => 'required|integer|min:1',
+            'motif'           => 'required|string|min:5',
+            'date_correction' => 'required|date',
+            'type_action'     => 'required|in:addition,subtraction', // Nouveau : permet de choisir le sens
+        ]);
 
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        return DB::transaction(function () use ($request) {
+            $user = Auth::user();
+            $article = Article::find($request->article_id);
+            $idExerciceActuel = 3; 
+
+            // Identification de l'employé par email
+            $idEmploye = null;
+            if ($user) {
+                $employe = DB::table('employes')->where('email', $user->email)->first();
+                $idEmploye = $employe ? $employe->id : null;
+            }
+
+            // Détermination du type de mouvement (ex: 1 pour Entrée, 2 pour Sortie)
+            // On peut aussi créer un type spécifique "Correction"
+            $idTypeMouvement = ($request->type_action === 'addition') ? 1 : 2; 
+            $quantiteSignee = ($request->type_action === 'addition') ? $request->quantite : -$request->quantite;
+
+            // 1. Création du mouvement de stock
+            $mouvement = MouvementStock::create([
+                'id_Article'          => $request->article_id, 
+                'qte'                 => $request->quantite, // On stocke la valeur absolue
+                'id_type_mouvement'   => $idTypeMouvement,
+                'description'         => ($request->type_action === 'addition' ? '[AJOUT] ' : '[RETRAIT] ') . $request->motif,
+                'date_mouvement'      => $request->date_correction,
+                'code_mouvement'      => 'CORR-' . strtoupper(Str::random(10)),
+                'id_employe'          => $idEmploye,
+                'id_exercice'         => $idExerciceActuel,
+                'statut'              => 'Validé',
+                'isdeleted'           => false
+            ]);
+
+            // 2. Mise à jour du stock physique
+            $stock = Stock::where('id_Article', $request->article_id)->first(); 
+            
+            if ($stock) {
+                // On applique l'ajout ou le retrait
+                $nouveauStock = $stock->Qte_actuel + $quantiteSignee;
+                
+                // Sécurité : ne pas descendre en dessous de 0
+                $stock->Qte_actuel = max(0, $nouveauStock);
+                $stock->save();
+            } else {
+                // Si le stock n'existait pas, on le crée (seulement si c'est un ajout)
+                Stock::create([
+                    'id_Article'         => $request->article_id,
+                    'Qte_actuel'         => max(0, $quantiteSignee),
+                    'cout_moyen_pondere' => 0,
+                    'isdeleted'          => false,
+                    'id_exercice'        => $idExerciceActuel
+                ]);
+            }
+
+            // 3. Journalisation
+            LogJournalisation::create([
+                'action'      => "Correction de stock ({$request->type_action}) : " . $article->libelle . " (" . $quantiteSignee . ")",
+                'ip_address'  => $request->ip(),
+                'user_id'     => $user ? $user->id : null,
+                'user_name'   => $user ? $user->name : 'Système',
+                'date_action' => now(),
+            ]);
+
+            // Récupérer l'historique mis à jour pour renvoyer au Front-end
+            $historique = MouvementStock::with(['article', 'employe'])
+                ->whereIn('id_type_mouvement', [1, 2])
+                ->where('description', 'like', 'CORR%') // ou un autre filtre spécifique
+                ->orderBy('created_at', 'desc')
+                ->take(10)
+                ->get();
+
+            return response()->json([
+                'success'    => true,
+                'message'    => 'Correction effectuée avec succès.',
+                'new_stock'  => $stock ? $stock->Qte_actuel : $request->quantite,
+                'historique' => $historique // Renvoyé pour mise à jour immédiate sans refresh
+            ], 201);
+        });
+    }
+
+    /**
+     * Récupérer l'historique filtré
+     */
+    public function getHistoriqueCorrections()
+    {
+        $corrections = MouvementStock::with(['article', 'employe'])
+            ->where('code_mouvement', 'like', 'CORR-%')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => $corrections
+        ]);
+    }
 }
