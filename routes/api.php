@@ -167,6 +167,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('mouvement-stock/entree', [MouvementStockController::class, 'indexEntreeStock']);
     Route::post('mouvement-stock/entree', [MouvementStockController::class, 'storeEntreeStock']);
     Route::post('/mouvement-stock/entree-multiple', [MouvementStockController::class, 'storeMultipleEntreeStock']);
+    Route::post('/mouvement-stock/entree-correction', [MouvementStockController::class, 'storeCorrectionEntreeStock']);
     Route::put('/mouvement-stock/entree/{id}', [MouvementStockController::class, 'updateEntreeStock']);
     Route::delete('mouvement-stock/entree/{id}', [MouvementStockController::class, 'deleteEntreeStock']);
     Route::get('/imprimerEntrees', [MouvementStockController::class, 'imprimerEntrees']);

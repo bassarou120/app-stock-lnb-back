@@ -2211,3 +2211,109 @@ class MouvementStockController extends Controller
     //     ]);
     // }
 }
+
+
+
+// ----------------------------------------------------correction de sortie de stock-------------------------------------------------------------------
+
+
+
+public function storeCorrectionEntreeStock(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        "id_fournisseur" => "required|exists:fournisseurs,id",
+        "numero_borderau" => "required|string|max:255",
+        "date_mouvement" => "required|date",
+        "code_mouvement_sortie" => "required|exists:mouvement_stocks,code_mouvement",
+        "id_article" => "required|exists:articles,id",
+        "qte" => "required|integer|min:1",
+        "id_unite_de_mesure" => "required|exists:unite_de_mesures,id",
+        "prixUnitaire" => "required|integer|min:0",
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
+    }
+
+    DB::beginTransaction();
+
+    try {
+
+        // 1. ligne exacte sortie
+        $mouvementSortie = MouvementStock::where('code_mouvement', $request->code_mouvement_sortie)
+            ->where('id_Article', $request->id_article)
+            ->first();
+
+        if (!$mouvementSortie) {
+            return response()->json([
+                'success' => false,
+                'message' => "Ligne de sortie introuvable"
+            ], 422);
+        }
+
+        // 2. exercice
+        $exercice = Exercice::where('statut', 'ouvert')->latest()->first();
+
+        // 3. stock
+        $stock = Stock::firstOrCreate(
+            [
+                'id_Article' => $request->id_article,
+                'id_exercice' => $exercice->id
+            ],
+            [
+                'Qte_actuel' => 0,
+                'cout_moyen_pondere' => 0
+            ]
+        );
+
+        $ancienne_qte = $stock->Qte_actuel;
+        $ancien_cmp = $stock->cout_moyen_pondere;
+
+        // 4. CMP
+        if ($ancienne_qte == 0) {
+            $nouveau_cmp = $request->prixUnitaire;
+        } else {
+            $valeur = ($ancienne_qte * $ancien_cmp) + ($request->qte * $request->prixUnitaire);
+            $nouveau_cmp = $valeur / ($ancienne_qte + $request->qte);
+        }
+
+        // 5. entrée correction
+        $mouvement = MouvementStock::create([
+            "id_Article" => $request->id_article,
+            "id_unite_de_mesure" => $request->id_unite_de_mesure,
+            "id_fournisseur" => $request->id_fournisseur,
+            "numero_borderau" => $request->numero_borderau,
+            "description" => "Correction sortie - " . $request->code_mouvement_sortie,
+            "id_type_mouvement" => TypeMouvement::where('libelle_type_mouvement', 'Entrée de Stock')->first()->id,
+            "qte" => $request->qte,
+            "prixUnitaire" => $request->prixUnitaire,
+            "cout_moyen_pondere" => round($nouveau_cmp, 2),
+            "date_mouvement" => $request->date_mouvement,
+            "id_exercice" => $exercice->id,
+            "statut" => "validé",
+        ]);
+
+        // 6. update stock
+        $stock->Qte_actuel += $request->qte;
+        $stock->cout_moyen_pondere = round($nouveau_cmp, 2);
+        $stock->save();
+
+        DB::commit();
+
+        return response()->json([
+            "success" => true,
+            "message" => "Correction effectuée",
+            "data" => $mouvement
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+
+        return response()->json([
+            "success" => false,
+            "message" => $e->getMessage()
+        ], 500);
+    }
+}
+
+}
