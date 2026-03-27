@@ -1179,7 +1179,8 @@ class MouvementStockController extends Controller
             "articles.*.code_article" => "required|string|exists:articles,code_article",
             "articles.*.description" => "nullable|string|max:255",
             "articles.*.qteDemande" => "required|integer|min:1",
-            "dateDemande" => "required|date",
+            //"dateDemande" => "required|date",
+            'demandes.*.dateDemande' => 'required|date',
             "id_bureau" => "nullable|exists:bureaus,id",
             // "id_personnel" => "nullable|exists:employes,id",
             "email_personnel" => "nullable|email|exists:employes,email",
@@ -1333,7 +1334,8 @@ class MouvementStockController extends Controller
             "description" => 'required|string|max:255',
             "qteDemande" => 'required|integer|min:1',
             // "date_mouvement" => 'required|date',
-            "dateDemande" => 'required|date',
+            //"dateDemande" => 'required|date',
+            'demandes.*.dateDemande' => 'required|date',
             "id_bureau" => 'nullable|exists:bureaus,id',
             "id_personnel" => 'nullable|exists:employes,id',
         ]);
@@ -1812,7 +1814,8 @@ class MouvementStockController extends Controller
         return 'FD-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
     }
 
-    public function checkStatusAccorde($codeMouvement)
+    // av modif
+/*     public function checkStatusAccorde($codeMouvement)
     {
         // Check if any line in the group is not 'Accordé'
         $allAccordees = MouvementStock::where('code_mouvement', $codeMouvement)
@@ -1835,7 +1838,31 @@ class MouvementStockController extends Controller
         return response()->json([
             'message' => "La fiche de demande ne peut être générée. Certaines lignes ne sont pas encore 'Accordé'."
         ], 400);
+    } */
+
+    public function checkStatusAccorde($codeMouvement)
+    {
+        // Vérifie s'il existe au moins une ligne Accordé
+        $hasAccordee = MouvementStock::where('code_mouvement', $codeMouvement)
+                                    ->where('statut', 'Accordé')
+                                    ->exists();
+    
+        if ($hasAccordee) {
+            try {
+                return $this->genererFicheDemande($codeMouvement, request());
+            } catch (\Exception $e) {
+                return response()->json([
+                    'message' => 'Une erreur est survenue lors de la génération du fichier.',
+                    'error' => $e->getMessage()
+                ], 500);
+            }
+        }
+    
+        return response()->json([
+            'message' => "Aucun article Accordé trouvé. Impossible de générer la fiche."
+        ], 400);
     }
+
 
     /**
      * Your existing function to generate the PDF file.
@@ -1958,12 +1985,14 @@ class MouvementStockController extends Controller
         }
 
         // 3. Vérification du statut (autoriser "Accordé" ou "Cloturé")
-        foreach ($itemsToUpdate as $item) {
-            if ($item->statut !== 'Accordé' && $item->statut !== 'Cloturé') {
-                return response()->json([
-                    'message' => 'Toutes les lignes de la demande groupée doivent être "Accordé" ou "Cloturé" pour pouvoir télécharger un document groupé.'
-                ], 403);
-            }
+        $hasValidStatus = $itemsToUpdate->contains(function ($item) {
+            return $item->statut === 'Accordé' || $item->statut === 'Cloturé';
+        });
+        
+        if (!$hasValidStatus) {
+            return response()->json([
+                'message' => 'Aucune ligne Accordée ou Clôturée trouvée. Impossible de téléverser le document signé.'
+            ], 403);
         }
 
         // 4. Stockage du fichier et mise à jour
