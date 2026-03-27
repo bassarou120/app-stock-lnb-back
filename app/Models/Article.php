@@ -79,7 +79,7 @@ class Article extends Model
         return $this->belongsToMany(
             Exercice::class,            // modèle lié
             'article_exercice',       // nom exact de la table pivot
-            'id_article',               // clé étrangère vers Article
+            'id_Article',               // clé étrangère vers Article
             'id_exercice'               // clé étrangère vers Exercice
         )
         ->withPivot('stock_debut_exercice', 'stock_fin_exercice', 'cmp_debut_exercice', 'cmp_fin_exercice')
