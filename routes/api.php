@@ -352,8 +352,8 @@ Route::middleware('auth:api')->group(function () {
     Route::patch('/users/{user}/toggle-active', [UserController::class, 'toggleActiveStatus']);
 
     // Routes pour les Entrées Compensatoires (Corrections de Stock)
-    Route::prefix('mouvements-stock')->group(function () {
-        Route::post('/entree-compensatoire', [MouvementStockController::class, 'createEntreeCompensatoire']);
-        Route::get('/historique-corrections', [MouvementStockController::class, 'getHistoriqueCorrections']);
-    });
+    // Route::prefix('mouvements-stock')->group(function () {
+    //     Route::post('/entree-compensatoire', [MouvementStockController::class, 'createEntreeCompensatoire']);
+    //     Route::get('/historique-corrections', [MouvementStockController::class, 'getHistoriqueCorrections']);
+    // });
 });
