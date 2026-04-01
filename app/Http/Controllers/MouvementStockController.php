@@ -634,6 +634,7 @@ class MouvementStockController extends Controller
  *     summary="Créer une demande de fourniture",
  *     description="Permet de créer une nouvelle demande de sortie avec la liste des articles demandés.",
  *     tags={"Demande de fourniture"},
+ *     security={{"bearerAuth":{}}},
  *
  *     @OA\RequestBody(
  *         required=true,

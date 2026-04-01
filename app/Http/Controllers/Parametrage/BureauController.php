@@ -24,6 +24,7 @@ class BureauController extends Controller
  * @OA\Get(
  *     path="/api/bureaux",
  *     tags={"Bureaux"},
+     *     security={{"bearerAuth":{}}},
  *     summary="Liste des bureaux",
  *     @OA\Response(
  *         response=200,

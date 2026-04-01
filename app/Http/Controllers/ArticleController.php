@@ -34,6 +34,7 @@ class ArticleController extends Controller
      * @OA\Get(
      *     path="/api/articles",
      *     tags={"Articles"},
+     *     security={{"bearerAuth":{}}},
      *     summary="Liste des articles avec leurs catégories et stocks",
      *     @OA\Response(
      *         response=200,
@@ -120,6 +121,7 @@ class ArticleController extends Controller
      * @OA\Post(
      *     path="/api/articles/batch",
      *     tags={"Articles"},
+     *     security={{"bearerAuth":{}}},
      *     summary="Créer plusieurs articles en lot",
      *     @OA\RequestBody(
      *         required=true,
@@ -453,6 +455,7 @@ class ArticleController extends Controller
      * @OA\Delete(
      *     path="/api/articles/{id}",
      *     tags={"Articles"},
+     *     security={{"bearerAuth":{}}},
      *     summary="Supprimer un article",
      *     @OA\Parameter(
      *         name="id",

@@ -33,6 +33,7 @@ class EmployeController extends Controller
      * @OA\Get(
      *     path="/api/employes",
      *     tags={"Personnel"},
+     *     security={{"bearerAuth":{}}},
      *     summary="Liste du Personnel",
      *     @OA\Response(
      *         response=200,

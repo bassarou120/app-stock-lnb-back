@@ -22,6 +22,7 @@ class InterventionVehiculeController extends Controller
  * @OA\Get(
  *     path="/api/intervention-vehicules",
  *     tags={"Intervention Véhicule"},
+     *     security={{"bearerAuth":{}}},
  *     summary="Lister les interventions des véhicules",
  *     @OA\Response(
  *         response=200,
@@ -221,6 +222,7 @@ class InterventionVehiculeController extends Controller
  * @OA\Post(
  *     path="/api/intervention-vehicules",
  *     tags={"Intervention Véhicule"},
+     *     security={{"bearerAuth":{}}},
  *     summary="Créer une nouvelle intervention de véhicule",
  *     @OA\RequestBody(
  *         required=true,
@@ -293,6 +295,7 @@ class InterventionVehiculeController extends Controller
  * @OA\Put(
  *     path="/api/intervention-vehicules/{id}",
  *     tags={"Intervention Véhicule"},
+      *     security={{"bearerAuth":{}}},
  *     summary="Mettre à jour une intervention",
  *     @OA\Parameter(
  *         name="id",
@@ -384,6 +387,7 @@ class InterventionVehiculeController extends Controller
  * @OA\Delete(
  *     path="/api/intervention-vehicules/{id}",
  *     tags={"Intervention Véhicule"},
+     *     security={{"bearerAuth":{}}},
  *     summary="Supprimer une intervention",
  *     @OA\Parameter(
  *         name="id",
