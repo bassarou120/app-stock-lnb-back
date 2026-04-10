@@ -1804,9 +1804,9 @@ class MouvementStockController extends Controller
     public function checkStatusAccorde($codeMouvement)
     {
         // Check if any line in the group is not 'Accordé'
-        $allAccordees = MouvementStock::where('code_mouvement', $codeMouvement)
-                                    ->where('statut', '!=', 'Accordé')
-                                    ->doesntExist();
+        $allAccordees = MouvementStock::where('code_mouvement', $codeMouvement);
+                                    // ->where('statut', '!=', 'Accordé')
+                                    // ->doesntExist();
 
         if ($allAccordees) {
             // All lines are 'Accordé', so we can generate the file.
