@@ -1049,49 +1049,36 @@ class MouvementStockController extends Controller
     // index sortieStock
     public function indexSortieStock(Request $request)
     {
-        // 1. Récupérer l'ID du type de mouvement
+        // Récupérer l'ID du type de mouvement "Sortie de Stock"
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Stock')->first();
 
-        if (!$type_mouvement) {
-            return new PostResource(false, 'Le type de mouvement "Sortie de Stock" n\'existe pas.', []);
-        }
-
-        /**
-         * 2. Récupération des mouvements groupés par code_mouvement
-         * On utilise selectRaw pour pouvoir grouper tout en gardant des infos globales.
-         * Note: On récupère le premier ID de chaque groupe pour les relations 'with'.
-         */
-        $mouvements = MouvementStock::with([
-                'bureau', 
-                'employe', 
-                'article', 
-                'affectation.bureau', 
-                'affectation.employe' => function ($query) {
-                    $query->select('id', 'nom', 'prenom')
-                        ->selectRaw("CONCAT(nom, ' ', prenom) as full_name");
-                }
-            ])
+        // Si le type de mouvement existe, récupérer les mouvements correspondants
+        if ($type_mouvement) {
+            $mouvements = MouvementStock::with(['bureau', 'employe', 'article', 'affectation.bureau', 'affectation.employe' => function ($query) {
+                $query->select('id', 'nom', 'prenom')
+                    ->selectRaw("CONCAT(nom, ' ', prenom) as full_name");
+            }])
             ->where('id_type_mouvement', $type_mouvement->id)
             ->where('isdeleted', false)
-            ->where('statut', 'Cloturé')
-            // Optionnel : filtrer par exercice si nécessaire
-            // ->where('id_exercice', $exerciceOuvert->id) 
-            ->select('*')
-            ->groupBy('code_mouvement') // Empêche les doublons de bons de sortie dans la liste
+            ->where('statut', 'Cloturé') // ← Ajout du filtre
             ->latest()
             ->paginate(1000);
 
-        // 3. JOURNALISATION
-        LogJournalisation::create([
-            'action'     => 'Consultation de la liste des sorties de stock (groupée par code)',
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->header('User-Agent'),
-            'user_id'    => $request->user()->id,
-            'user_name'  => $request->user()->name,
-            'date_action'=> now(),
-        ]);
+            // 📝 JOURNALISATION : Consultation de la liste des sorties de stock
+            LogJournalisation::create([
+                'action'     => 'Consultation de la liste des sorties de stock (liste simple)',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action'=> now(),
+            ]);
 
-        return new PostResource(true, 'Liste des mouvements (Bons de sortie)', $mouvements);
+            return new PostResource(true, 'Liste des mouvements', $mouvements);
+        }
+
+        // Si le type de mouvement n'existe pas, retourner une réponse vide ou un message d'erreur
+        return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Stock".', []);
     }
 
 
@@ -1180,8 +1167,7 @@ class MouvementStockController extends Controller
             "articles.*.code_article" => "required|string|exists:articles,code_article",
             "articles.*.description" => "nullable|string|max:255",
             "articles.*.qteDemande" => "required|integer|min:1",
-            //"dateDemande" => "required|date",
-            'demandes.*.dateDemande' => 'required|date',
+            "dateDemande" => "required|date",
             "id_bureau" => "nullable|exists:bureaus,id",
             // "id_personnel" => "nullable|exists:employes,id",
             "email_personnel" => "nullable|email|exists:employes,email",
@@ -1335,8 +1321,7 @@ class MouvementStockController extends Controller
             "description" => 'required|string|max:255',
             "qteDemande" => 'required|integer|min:1',
             // "date_mouvement" => 'required|date',
-            //"dateDemande" => 'required|date',
-            'demandes.*.dateDemande' => 'required|date',
+            "dateDemande" => 'required|date',
             "id_bureau" => 'nullable|exists:bureaus,id',
             "id_personnel" => 'nullable|exists:employes,id',
         ]);
@@ -1815,8 +1800,7 @@ class MouvementStockController extends Controller
         return 'FD-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
     }
 
-    // av modif
-/*     public function checkStatusAccorde($codeMouvement)
+    public function checkStatusAccorde($codeMouvement)
     {
         // Check if any line in the group is not 'Accordé'
         $allAccordees = MouvementStock::where('code_mouvement', $codeMouvement)
@@ -1839,31 +1823,7 @@ class MouvementStockController extends Controller
         return response()->json([
             'message' => "La fiche de demande ne peut être générée. Certaines lignes ne sont pas encore 'Accordé'."
         ], 400);
-    } */
-
-    public function checkStatusAccorde($codeMouvement)
-    {
-        // Vérifie s'il existe au moins une ligne Accordé
-        $hasAccordee = MouvementStock::where('code_mouvement', $codeMouvement)
-                                    ->where('statut', 'Accordé')
-                                    ->exists();
-    
-        if ($hasAccordee) {
-            try {
-                return $this->genererFicheDemande($codeMouvement, request());
-            } catch (\Exception $e) {
-                return response()->json([
-                    'message' => 'Une erreur est survenue lors de la génération du fichier.',
-                    'error' => $e->getMessage()
-                ], 500);
-            }
-        }
-    
-        return response()->json([
-            'message' => "Aucun article Accordé trouvé. Impossible de générer la fiche."
-        ], 400);
     }
-
 
     /**
      * Your existing function to generate the PDF file.
@@ -1986,14 +1946,12 @@ class MouvementStockController extends Controller
         }
 
         // 3. Vérification du statut (autoriser "Accordé" ou "Cloturé")
-        $hasValidStatus = $itemsToUpdate->contains(function ($item) {
-            return $item->statut === 'Accordé' || $item->statut === 'Cloturé';
-        });
-        
-        if (!$hasValidStatus) {
-            return response()->json([
-                'message' => 'Aucune ligne Accordée ou Clôturée trouvée. Impossible de téléverser le document signé.'
-            ], 403);
+        foreach ($itemsToUpdate as $item) {
+            if ($item->statut !== 'Accordé' && $item->statut !== 'Cloturé') {
+                return response()->json([
+                    'message' => 'Toutes les lignes de la demande groupée doivent être "Accordé" ou "Cloturé" pour pouvoir télécharger un document groupé.'
+                ], 403);
+            }
         }
 
         // 4. Stockage du fichier et mise à jour
@@ -2120,11 +2078,11 @@ public function storeCorrectionEntreeStock(Request $request)
         "prixUnitaire" => "required|integer|min:0",
     ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
+    }
 
-        DB::beginTransaction();
+    DB::beginTransaction();
 
     try {
 
@@ -2136,43 +2094,43 @@ public function storeCorrectionEntreeStock(Request $request)
             ],
         );
 
-            // 1. ligne exacte sortie
-            $mouvementSortie = MouvementStock::where('code_mouvement', $request->code_mouvement_sortie)
-                ->where('id_Article', $request->id_article)
-                ->first();
+        // 1. ligne exacte sortie
+        $mouvementSortie = MouvementStock::where('code_mouvement', $request->code_mouvement_sortie)
+            ->where('id_Article', $request->id_article)
+            ->first();
 
-            if (!$mouvementSortie) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Ligne de sortie introuvable"
-                ], 422);
-            }
+        if (!$mouvementSortie) {
+            return response()->json([
+                'success' => false,
+                'message' => "Ligne de sortie introuvable"
+            ], 422);
+        }
 
-            // 2. exercice
-            $exercice = Exercice::where('statut', 'ouvert')->latest()->first();
+        // 2. exercice
+        $exercice = Exercice::where('statut', 'ouvert')->latest()->first();
 
-            // 3. stock
-            $stock = Stock::firstOrCreate(
-                [
-                    'id_Article' => $request->id_article,
-                    'id_exercice' => $exercice->id
-                ],
-                [
-                    'Qte_actuel' => 0,
-                    'cout_moyen_pondere' => 0
-                ]
-            );
+        // 3. stock
+        $stock = Stock::firstOrCreate(
+            [
+                'id_Article' => $request->id_article,
+                'id_exercice' => $exercice->id
+            ],
+            [
+                'Qte_actuel' => 0,
+                'cout_moyen_pondere' => 0
+            ]
+        );
 
-            $ancienne_qte = $stock->Qte_actuel;
-            $ancien_cmp = $stock->cout_moyen_pondere;
+        $ancienne_qte = $stock->Qte_actuel;
+        $ancien_cmp = $stock->cout_moyen_pondere;
 
-            // 4. CMP
-            if ($ancienne_qte == 0) {
-                $nouveau_cmp = $request->prixUnitaire;
-            } else {
-                $valeur = ($ancienne_qte * $ancien_cmp) + ($request->qte * $request->prixUnitaire);
-                $nouveau_cmp = $valeur / ($ancienne_qte + $request->qte);
-            }
+        // 4. CMP
+        if ($ancienne_qte == 0) {
+            $nouveau_cmp = $request->prixUnitaire;
+        } else {
+            $valeur = ($ancienne_qte * $ancien_cmp) + ($request->qte * $request->prixUnitaire);
+            $nouveau_cmp = $valeur / ($ancienne_qte + $request->qte);
+        }
 
         // 5. entrée correction
         $mouvement = MouvementStock::create([
@@ -2190,27 +2148,27 @@ public function storeCorrectionEntreeStock(Request $request)
             "statut" => "validé",
         ]);
 
-            // 6. update stock
-            $stock->Qte_actuel += $request->qte;
-            $stock->cout_moyen_pondere = round($nouveau_cmp, 2);
-            $stock->save();
+        // 6. update stock
+        $stock->Qte_actuel += $request->qte;
+        $stock->cout_moyen_pondere = round($nouveau_cmp, 2);
+        $stock->save();
 
-            DB::commit();
+        DB::commit();
 
-            return response()->json([
-                "success" => true,
-                "message" => "Correction effectuée",
-                "data" => $mouvement
-            ]);
+        return response()->json([
+            "success" => true,
+            "message" => "Correction effectuée",
+            "data" => $mouvement
+        ]);
 
-        } catch (\Exception $e) {
-            DB::rollBack();
+    } catch (\Exception $e) {
+        DB::rollBack();
 
-            return response()->json([
-                "success" => false,
-                "message" => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            "success" => false,
+            "message" => $e->getMessage()
+        ], 500);
     }
+}
 
 }
