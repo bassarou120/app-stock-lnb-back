@@ -39,6 +39,11 @@ class FournisseurSeeder extends Seeder
                 'nom' => 'BTG GROUPE',
                 'telephone' => '+229 97 00 00 05',
                 'adresse' => 'Cotonou, Bénin',
+            ],           
+            [
+                'nom' => 'FOUNISSEUR COMPENSATION',
+                'telephone' => '+229 0000000000',
+                'adresse' => 'Cotonou, Bénin',
             ]
         ];
 
