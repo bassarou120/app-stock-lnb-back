@@ -20,7 +20,7 @@ class MouvementStock extends Model
 
     public function article(): BelongsTo
     {
-        return $this->belongsTo(Article::class, 'id_Article');
+        return $this->belongsTo(Article::class, 'id_article');
     }
     public function unite_de_mesure(): BelongsTo
     {

@@ -156,7 +156,6 @@ class DemandeImmoController extends Controller
      */
     public function store(Request $request)
     {
-
         $validator = Validator::make($request->all(), [
             "email_personnel" => "nullable|email|exists:employes,email",
             "date_demande" => "required|date",
@@ -164,9 +163,8 @@ class DemandeImmoController extends Controller
         ]);
 
         if ($validator->fails()) {
-
             LogJournalisation::create([
-                'action'      => 'Échec: Tentative de création de demande de Sortie de Stock Multiple (Validation échouée)',
+                'action'      => 'Échec: Tentative de création de demande (Validation échouée)',
                 'ip_address'  => $request->ip(),
                 'user_agent'  => $request->header('User-Agent'),
                 'user_id'     => $request->user()->id,
@@ -177,44 +175,53 @@ class DemandeImmoController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        // récupération de l'employé via email
+        // 1. Récupération de l'employé via email
         $id_employe = null;
-
         if ($request->filled('email_personnel')) {
-
             $personnel = Employe::where('email', $request->email_personnel)->first();
-
             if ($personnel) {
                 $id_employe = $personnel->id;
             }
         }
 
-        // récupération du groupe type immo
+        // 2. Récupération du groupe type immo
         $id_groupe_type_immo = null;
-
         if ($request->filled('libelle_groupe_type_immo')) {
-
-            $libelle = strtolower($request->libelle_groupe_type_immo);
-
+            $libelle = strtolower($request->libelle_groupe_type_immo);  
             $groupeTypeImmo = GroupeTypeImmo::whereRaw('LOWER(libelle) = ?', [$libelle])->first();
-
             if ($groupeTypeImmo) {
                 $id_groupe_type_immo = $groupeTypeImmo->id;
             }
         }
 
-        // exercice ouvert
+        // 3. Vérification de l'exercice ouvert
         $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-
         if (!$exerciceOuvert) {
-            return response()->json([
-                "message" => "Aucun exercice ouvert trouvé"
-            ], 400);
+            return response()->json(["message" => "Aucun exercice ouvert trouvé"], 400);
         }
 
+        /**
+         * 4. LOGIQUE ANTI-DOUBLON
+         * On vérifie si une demande identique existe déjà avec le statut 'EN_ATTENTE'
+         * pour le même employé et le même type d'immobilisation à la même date.
+         */
+        $existeDeja = DemandeImmo::where('id_employe', $id_employe)
+            ->where('id_groupe_type_immo', $id_groupe_type_immo)
+            ->where('date_demande', $request->date_demande)
+            ->where('status', 'EN_ATTENTE')
+            ->where('isdeleted', false)
+            ->exists();
+
+        if ($existeDeja) {
+            return response()->json([
+                "success" => false,
+                "message" => "Une demande identique est déjà en cours de traitement (en attente)."
+            ], 409); // 409 Conflict
+        }
+
+        // 5. Génération du code et création
         $code_demande = 'DI-' . now()->format('Ymd-His') . '-' . strtoupper(Str::random(4));
 
-        // création demande
         $demande = DemandeImmo::create([
             'ref_demande' => $code_demande,
             'id_employe' => $id_employe,
