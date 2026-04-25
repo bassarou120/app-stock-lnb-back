@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Http;
+use App\Models\Parametrage\Fournisseur;
 
 
 /**
@@ -2067,7 +2068,7 @@ class MouvementStockController extends Controller
 public function storeCorrectionEntreeStock(Request $request)
 {
     $validator = Validator::make($request->all(), [
-        "id_fournisseur" => "required|exists:fournisseurs,id",
+        "id_fournisseur" => "nullable|exists:fournisseurs,id",
         "numero_borderau" => "required|string|max:255",
         "date_mouvement" => "required|date",
         "code_mouvement_sortie" => "required|exists:mouvement_stocks,code_mouvement",
@@ -2084,6 +2085,14 @@ public function storeCorrectionEntreeStock(Request $request)
     DB::beginTransaction();
 
     try {
+
+        $fournisseurCompensation = Fournisseur::firstOrCreate(
+            [
+                'nom' => 'FOURNISSEUR COMPENSATION',
+                'telephone' => '+229 00 00 00 00',
+                'adresse' => 'Système',
+            ],
+        );
 
         // 1. ligne exacte sortie
         $mouvementSortie = MouvementStock::where('code_mouvement', $request->code_mouvement_sortie)
@@ -2127,9 +2136,9 @@ public function storeCorrectionEntreeStock(Request $request)
         $mouvement = MouvementStock::create([
             "id_Article" => $request->id_article,
             "id_unite_de_mesure" => $request->id_unite_de_mesure,
-            "id_fournisseur" => $request->id_fournisseur,
+            "id_fournisseur" => $fournisseurCompensation->id,
             "numero_borderau" => $request->numero_borderau,
-            "description" => "Correction sortie - " . $request->code_mouvement_sortie,
+            "description" => "Correction sortie - " . $request->code_mouvement_sortie . " - " . $request->description,
             "id_type_mouvement" => TypeMouvement::where('libelle_type_mouvement', 'Entrée de Stock')->first()->id,
             "qte" => $request->qte,
             "prixUnitaire" => $request->prixUnitaire,
