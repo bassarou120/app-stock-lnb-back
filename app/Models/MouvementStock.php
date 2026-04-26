@@ -59,4 +59,5 @@ class MouvementStock extends Model
         return $this->belongsTo(Exercice::class, 'id_exercice');
     }
 
+    //
 }
