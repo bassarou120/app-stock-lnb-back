@@ -132,7 +132,16 @@ class EmployeController extends Controller
 
         // 1. Définition des règles de validation
         $rules = [
-            'nom' => 'required|string|max:255',
+            'nom' => [
+                'required',
+                'string',
+                'max:255',
+                // Règle d'unicité combinée : Nom + Prénom
+                Rule::unique('employes', 'nom')->where(function ($query) use ($request) {
+                    return $query->where('prenom', $request->prenom)
+                                 ->where('isdeleted', false);
+                }),
+            ],
             'prenom' => 'required|string|max:255',
 
             'telephone' => [
@@ -156,6 +165,8 @@ class EmployeController extends Controller
 
         // 2. Définition des messages personnalisés en français
         $messages = [
+            // Règle d'unicité pour le nom + prénom
+            'nom.unique'       => 'Un employé avec ce même nom et prénom existe déjà dans le système.',
             // Règle d'unicité pour le téléphone
             'telephone.unique' => 'Le numéro de téléphone que vous avez saisi est déjà utilisé par un autre employé.',
             'telephone.max'    => 'Le numéro de téléphone ne peut dépasser 20 caractères.',
@@ -241,35 +252,69 @@ class EmployeController extends Controller
  */
 
 
-    public function update(Request $request, Employe $employe)
-    {
-        $validator = Validator::make($request->all(), [
-            'nom' => 'required|string|max:255',
-            'prenom' => 'required|string|max:255',
-            'telephone' => 'nullable|string|max:20',
-            'email' => 'nullable|string|max:255',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $employe->update([
-            'nom' => $request->nom,
-            'prenom' => $request->prenom,
-            'telephone' => $request->telephone,
-            'email' => $request->email,
-        ]);
-        LogJournalisation::create([
-            "action"      => "Mise à jour d'un employé",
-            "ip_address"  => request()->ip(),
-            "user_agent"  => request()->userAgent(),
-            'user_id'    => $request->user()->id,
-            'user_name'   => $request->user()->name,
-            "date_action" => now()
-        ]);
-
-        return new PostResource(true, 'Employé mis à jour avec succès', $employe);
+ public function update(Request $request, Employe $employe)
+ {
+     // Nettoyage identique au store
+    $request->merge([
+        'telephone' => $request->telephone === '' ? null : $request->telephone,
+        'email' => $request->email === '' ? null : $request->email,
+    ]);
+ 
+    $validator = Validator::make($request->all(), [
+        'nom' => [
+            'required',
+            'string',
+            'max:255',
+            Rule::unique('employes', 'nom')->where(function ($query) use ($request) {
+                return $query->where('prenom', $request->prenom)
+                    ->where('isdeleted', false);
+            })->ignore($employe->id), // Ignore l'employé actuel
+        ],
+        'prenom' => 'required|string|max:255',
+        'telephone' => [
+            'nullable',
+            'string',
+            'max:20',
+            Rule::unique('employes', 'telephone')
+                ->where(fn($q) => $q->where('isdeleted', false))
+                ->ignore($employe->id),
+        ],
+        'email' => [
+            'nullable',
+            'string',
+            'email',
+            'max:255',
+            Rule::unique('employes', 'email')
+                ->where(fn($q) => $q->where('isdeleted', false))
+                ->ignore($employe->id),
+        ],
+     ], 
+     [
+        'nom.unique' => 'Un autre employé porte déjà ce nom et ce prénom.',
+        'telephone.unique' => 'Ce numéro de téléphone est déjà utilisé.',
+     ]);
+ 
+     if ($validator->fails()) {
+         return response()->json($validator->errors(), 422);
+     }
+ 
+     $employe->update([
+         'nom' => $request->nom,
+         'prenom' => $request->prenom,
+         'telephone' => $request->telephone,
+         'email' => $request->email,
+     ]);
+ 
+     LogJournalisation::create([
+         "action"      => "Mise à jour d'un employé",
+         "ip_address"  => request()->ip(),
+         "user_agent"  => request()->userAgent(),
+         'user_id'    => $request->user()->id,
+         'user_name'   => $request->user()->name,
+         "date_action" => now()
+     ]);
+ 
+     return new PostResource(true, 'Employé mis à jour avec succès', $employe);
     }
 
     // Supprimer un Employe
