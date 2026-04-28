@@ -3,23 +3,22 @@
 namespace App\Http\Controllers\Rapport\Ticket; // Assurez-vous que le chemin du dossier est bien app/Http/Controllers/Rapport/Ticket/
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\MouvementTicket;
-use App\Models\RetourTicket;
-use App\Models\AnnulationTicket;
-use App\Models\Parametrage\TypeMouvement; // Pour trouver l'ID des types de mouvement de ticket// Pour le filtre et le libellé du coupon
-use App\Models\Compagnie; // Pour le filtre et le libellé de la compagnie
-use App\Models\Employe; // Pour le filtre de l'employé dans les sorties
-use App\Models\Vehicule; // Pour le filtre du véhicule dans les sorties
-use App\Models\Depart; // Pour le filtre du lieu de départ
-use App\Models\Arriver; // Pour le filtre du lieu d'arrivée
 use App\Http\Resources\PostResource;
-use Illuminate\Support\Facades\Validator;
+use App\Models\AnnulationTicket;
+use App\Models\Arriver;
+use App\Models\Compagnie;
+use App\Models\Depart; // Pour trouver l'ID des types de mouvement de ticket// Pour le filtre et le libellé du coupon
+use App\Models\Employe; // Pour le filtre et le libellé de la compagnie
+use App\Models\LogJournalisation; // Pour le filtre de l'employé dans les sorties
+use App\Models\MouvementTicket; // Pour le filtre du véhicule dans les sorties
+use App\Models\Parametrage\CouponTicket; // Pour le filtre du lieu de départ
+use App\Models\Parametrage\TypeMouvement; // Pour le filtre du lieu d'arrivée
+use App\Models\RetourTicket;
+use App\Models\Vehicule;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon; // Pour formater les dates
-use App\Models\Parametrage\CouponTicket;
-use App\Models\LogJournalisation;
-
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class RapportTicketController extends Controller
 {
@@ -83,7 +82,7 @@ class RapportTicketController extends Controller
                     'compagnie_petrolier_id' => 'nullable|exists:compagnie_petroliers,id',
                     'employe_id' => 'nullable|exists:employes,id',
                     'vehicule_id' => 'nullable|exists:vehicules,id',
-                    
+
                 ]);
                 if ($validator->fails()) {
                     return new PostResource(false, 'Validation échouée pour le rapport de sortie ticket.', ['errors' => $validator->errors()]);
@@ -115,7 +114,7 @@ class RapportTicketController extends Controller
                     // }
 
                     $data = $query->latest()->paginate(1000);
-                    $message = "Liste des mouvements de sortie de ticket.";
+                    $message = 'Liste des mouvements de sortie de ticket.';
                 } else {
                     $success = false;
                     $message = "Aucun mouvement trouvé pour 'Sortie de Ticket'.";
@@ -138,8 +137,11 @@ class RapportTicketController extends Controller
                     'mouvement.employe',
                     'mouvement.vehicule',
                     'coupon', // 'coupon' car c'est le nom de la relation sur RetourTicket
-                    'compagnie' // 'compagnie' car c'est le nom de la relation sur RetourTicket
-                ])->whereBetween('created_at', [$request->date_debut, $request->date_fin]); // Assurez-vous que la colonne est bien 'date_retour'
+                    'compagnie', // 'compagnie' car c'est le nom de la relation sur RetourTicket
+                ])->whereBetween('created_at', [
+                    Carbon::parse($request->date_debut)->startOfDay(),
+                    Carbon::parse($request->date_fin)->endOfDay(),
+                ]); // Assurez-vous que la colonne est bien 'date_retour'
 
                 if ($request->filled('coupon_ticket_id')) {
                     $query->where('coupon_ticket_id', $request->coupon_ticket_id);
@@ -149,7 +151,7 @@ class RapportTicketController extends Controller
                 }
 
                 $data = $query->latest()->paginate(1000);
-                $message = "Liste des retours de ticket.";
+                $message = 'Liste des retours de ticket.';
                 break;
 
             case 'annulation ticket':
@@ -157,7 +159,7 @@ class RapportTicketController extends Controller
                     'date_debut' => 'required|date',
                     'date_fin' => 'required|date|after_or_equal:date_debut',
                     'coupon_ticket_id' => 'nullable|exists:coupon_tickets,id', // Utilisez 'coupon_id' si c'est le nom de la colonne
-                    'compagnie_petrolier_id' => 'nullable|exists:compagnies,id',
+                    'compagnie_petrolier_id' => 'nullable|exists:compagnie_petroliers,id',
                 ]);
                 if ($validator->fails()) {
                     return new PostResource(false, 'Validation échouée pour le rapport d\'annulation ticket.', ['errors' => $validator->errors()]);
@@ -167,8 +169,11 @@ class RapportTicketController extends Controller
                     'mouvement.employe',
                     'mouvement.vehicule',
                     'coupon', // 'coupon' car c'est le nom de la relation sur AnnulationTicket
-                    'compagnie' // 'compagnie' car c'est le nom de la relation sur AnnulationTicket
-                ])->whereBetween('created_at', [$request->date_debut, $request->date_fin]); // Assurez-vous que la colonne est bien 'date_annulation'
+                    'compagnie', // 'compagnie' car c'est le nom de la relation sur AnnulationTicket
+                ])->whereBetween('created_at', [
+                    Carbon::parse($request->date_debut)->startOfDay(),
+                    Carbon::parse($request->date_fin)->endOfDay(),
+                ]); // Assurez-vous que la colonne est bien 'date_annulation'
 
                 if ($request->filled('coupon_ticket_id')) {
                     $query->where('coupon_ticket_id', $request->coupon_ticket_id);
@@ -178,7 +183,7 @@ class RapportTicketController extends Controller
                 }
 
                 $data = $query->latest()->paginate(1000);
-                $message = "Liste des annulations de ticket.";
+                $message = 'Liste des annulations de ticket.';
                 break;
 
             default:
@@ -189,14 +194,13 @@ class RapportTicketController extends Controller
         }
 
         LogJournalisation::create([
-            "action"      => "Consultation des rapports de ticket ",
-            "ip_address"  => request()->ip(),
-            "user_agent"  => request()->userAgent(),
-            'user_id'    => $request->user()->id,
-            'user_name'   => $request->user()->name,
-            "date_action" => now()
+            'action' => 'Consultation des rapports de ticket ',
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'user_id' => $request->user()->id,
+            'user_name' => $request->user()->name,
+            'date_action' => now(),
         ]);
-
 
         return new PostResource($success, $message, $data);
     }
@@ -256,7 +260,7 @@ class RapportTicketController extends Controller
                         $filterLabels['compagnie'] = $compagnie ? $compagnie->libelle : 'Non trouvée';
                     }
                 } else {
-                     return response()->json(['success' => false, 'message' => "Type de mouvement 'Entrée de Ticket' non trouvé."], 404);
+                    return response()->json(['success' => false, 'message' => "Type de mouvement 'Entrée de Ticket' non trouvé."], 404);
                 }
                 break;
 
@@ -324,11 +328,11 @@ class RapportTicketController extends Controller
                     }
                     if ($request->filled('employe_id')) {
                         $employe = Employe::find($request->employe_id);
-                        $filterLabels['employe'] = $employe ? ($employe->nom . ' ' . $employe->prenom) : 'Non trouvé';
+                        $filterLabels['employe'] = $employe ? ($employe->nom.' '.$employe->prenom) : 'Non trouvé';
                     }
                     if ($request->filled('vehicule_id')) {
                         $vehicule = Vehicule::with(['marque', 'modele'])->find($request->vehicule_id);
-                        $filterLabels['vehicule'] = $vehicule ? ($vehicule->marque->libelle_marque . ' ' . $vehicule->modele->libelle_modele . ' (' . $vehicule->immatriculation . ')') : 'Non trouvé';
+                        $filterLabels['vehicule'] = $vehicule ? ($vehicule->marque->libelle_marque.' '.$vehicule->modele->libelle_modele.' ('.$vehicule->immatriculation.')') : 'Non trouvé';
                     }
                     if ($request->filled('depart_id')) {
                         $depart = Depart::find($request->depart_id);
@@ -359,7 +363,7 @@ class RapportTicketController extends Controller
                     'mouvement.employe',
                     'mouvement.vehicule',
                     'coupon',
-                    'compagnie'
+                    'compagnie',
                 ])->whereBetween('created_at', [$request->date_debut, $request->date_fin]);
 
                 if ($request->filled('coupon_ticket_id')) {
@@ -404,8 +408,11 @@ class RapportTicketController extends Controller
                     'mouvement.employe',
                     'mouvement.vehicule',
                     'coupon',
-                    'compagnie'
-                ])->whereBetween('created_at', [$request->date_debut, $request->date_fin]);
+                    'compagnie',
+                ])->whereBetween('created_at', [
+                    Carbon::parse($request->date_debut)->startOfDay(),
+                    Carbon::parse($request->date_fin)->endOfDay(),
+                ]);
 
                 if ($request->filled('coupon_ticket_id')) {
                     $query->where('coupon_ticket_id', $request->coupon_ticket_id);
@@ -439,15 +446,15 @@ class RapportTicketController extends Controller
         }
 
         $pdf = Pdf::loadView('pdf.rapport.rapport_ticket', compact('data', 'reportTypeLabel', 'filterLabels', 'typeRapport'));
-        $filename = 'rapport_ticket_' . $typeRapport . '.pdf';
+        $filename = 'rapport_ticket_'.$typeRapport.'.pdf';
 
         LogJournalisation::create([
-            "action"      => "Impression des rapports de ticket ",
-            "ip_address"  => request()->ip(),
-            "user_agent"  => request()->userAgent(),
-            'user_id'    => $request->user()->id,
-            'user_name'   => $request->user()->name,
-            "date_action" => now()
+            'action' => 'Impression des rapports de ticket ',
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'user_id' => $request->user()->id,
+            'user_name' => $request->user()->name,
+            'date_action' => now(),
         ]);
 
         return $pdf->download($filename);
