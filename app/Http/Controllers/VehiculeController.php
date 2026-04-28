@@ -159,6 +159,7 @@ class VehiculeController extends Controller
     // Mettre à jour un véhicule existant
     public function update(Request $request, Vehicule $vehicule)
     {
+        $logMessage = "Mofification du véhicule ID {$vehicule->id} [Immatriculation: {$vehicule->immatriculation}].";
         $validator = Validator::make($request->all(), [
             'marque_id' => 'required|exists:marques,id',
             'modele_id' => 'required|exists:modeles,id',
