@@ -1,31 +1,27 @@
 <?php
 
 namespace App\Http\Controllers;
-use Illuminate\Http\Request;
-use App\Models\Vehicule;
-use App\Models\Parametrage\TypeImmo;
+
 use App\Http\Resources\PostResource;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
-
-
+use App\Models\LogJournalisation;
+use App\Models\Parametrage\Bureau;
+use App\Models\Parametrage\Fournisseur;
+use App\Models\Parametrage\GroupeTypeImmo;
 use App\Models\Parametrage\Marque;
 use App\Models\Parametrage\Modele;
-use App\Models\Parametrage\GroupeTypeImmo;
 use App\Models\Parametrage\SousTypeImmo;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Models\Parametrage\StatusImmo;
-use App\Models\Parametrage\Bureau;
-use App\Models\Parametrage\Employe;
-use App\Models\Parametrage\Fournisseur;
-use App\Models\LogJournalisation;
-use App\Models\User;
-use App\Services\Auth\AuthService;
+use App\Models\Parametrage\TypeImmo;
+use App\Models\Vehicule;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class VehiculeController extends Controller
 {
-     // Afficher la liste des véhicules
+    // Afficher la liste des véhicules
     public function index(Request $request)
     {
         $vehicules = Vehicule::with(['modele', 'marque', 'sousTypeImmo', 'groupeTypeImmo', 'statusImmo'])
@@ -38,17 +34,18 @@ class VehiculeController extends Controller
 
         // 📝 JOURNALISATION : Consultation de la liste des véhicules
         LogJournalisation::create([
-            'action'     => 'Consultation de la liste des véhicules (Hors patrimoine sorti)',
+            'action' => 'Consultation de la liste des véhicules (Hors patrimoine sorti)',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => $request->user()->id,
-            'user_name'   => $request->user()->name,
-            'date_action'=> now(),
+            'user_id' => $request->user()->id,
+            'user_name' => $request->user()->name,
+            'date_action' => now(),
         ]);
+
         return new PostResource(true, 'Liste des véhicules', $vehicules);
     }
 
-     public function storeBatch(Request $request)
+    public function storeBatch(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'vehicules' => 'required|array',
@@ -79,12 +76,13 @@ class VehiculeController extends Controller
 
         if ($validator->fails()) {
             LogJournalisation::create([
-                'action'     => "Échec: Tentative de création de véhicules en masse (Validation échouée)",
+                'action' => 'Échec: Tentative de création de véhicules en masse (Validation échouée)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
-                'date_action'=> now(),
+                'user_id' => Auth::id(),
+                'date_action' => now(),
             ]);
+
             return response()->json($validator->errors(), 422);
         }
 
@@ -94,7 +92,7 @@ class VehiculeController extends Controller
         DB::beginTransaction();
         try {
             foreach ($request->vehicules as $vehiculeData) {
-                //dd($vehiculeData);
+                // dd($vehiculeData);
                 $vehicule = Vehicule::create([
                     'marque_id' => $vehiculeData['marque_id'],
                     'modele_id' => $vehiculeData['modele_id'],
@@ -121,30 +119,28 @@ class VehiculeController extends Controller
                     'code' => $vehiculeData['code'] ?? null,
                 ]);
 
-
-
                 $vehicules[] = $vehicule;
             }
             DB::commit();
             LogJournalisation::create([
-                'action'     => "Création de véhicule(s) en masse. Immatriculations",
+                'action' => 'Création de véhicule(s) en masse. Immatriculations',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
+                'user_id' => $request->user()->id,
+                'user_name' => $request->user()->name,
+                'date_action' => now(),
             ]);
 
         } catch (\Illuminate\Database\QueryException $qe) {
             DB::rollBack();
 
             LogJournalisation::create([
-                'action'     => "Échec critique: La création de véhicules en masse a échoué. Transaction annulée.",
+                'action' => 'Échec critique: La création de véhicules en masse a échoué. Transaction annulée.',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
+                'user_id' => $request->user()->id,
+                'user_name' => $request->user()->name,
+                'date_action' => now(),
             ]);
 
             // Affiche l'erreur SQL exacte
@@ -152,14 +148,13 @@ class VehiculeController extends Controller
                 'status' => 'query_error',
                 'message' => $qe->getMessage(),
                 'sql' => $qe->getSql(),
-                'bindings' => $qe->getBindings()
+                'bindings' => $qe->getBindings(),
             ], 500);
 
         }
 
-        return new PostResource(true, count($vehicules) . ' vehicules créés avec succès', $vehicules);
+        return new PostResource(true, count($vehicules).' vehicules créés avec succès', $vehicules);
     }
-
 
     // Mettre à jour un véhicule existant
     public function update(Request $request, Vehicule $vehicule)
@@ -209,12 +204,12 @@ class VehiculeController extends Controller
 
         $vehicule->update($data);
         LogJournalisation::create([
-            'action'     => $logMessage,
+            'action' => $logMessage,
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => $request->user()->id,
-            'user_name'   => $request->user()->name,
-            'date_action'=> now(),
+            'user_id' => $request->user()->id,
+            'user_name' => $request->user()->name,
+            'date_action' => now(),
         ]);
 
         return new PostResource(true, 'vehicule mis à jour avec succès', $vehicule);
@@ -235,19 +230,20 @@ class VehiculeController extends Controller
         $vehicule->save();
         // ✅ LOG → Succès de la suppression logique
         if ($carteGriseSupprimee) {
-            $logMessage .= " Le fichier de la carte grise a été supprimé physiquement.";
+            $logMessage .= ' Le fichier de la carte grise a été supprimé physiquement.';
         } else {
             $logMessage .= " Aucun fichier de carte grise n'était associé ou n'a été trouvé.";
         }
 
         LogJournalisation::create([
-            'action'     => $logMessage,
+            'action' => $logMessage,
             'ip_address' => request()->ip(),
             'user_agent' => request()->header('User-Agent'),
-            'user_id'    => $request->user()->id,
-            'user_name'   => $request->user()->name,
-            'date_action'=> now(),
+            'user_id' => $request->user()->id,
+            'user_name' => $request->user()->name,
+            'date_action' => now(),
         ]);
+
         return new PostResource(true, 'vehicule supprimé avec succès', null);
     }
 
@@ -255,20 +251,20 @@ class VehiculeController extends Controller
     public function imprimerVehicules(Request $request)
     {
         $vehicules = Vehicule::with(['modele', 'marque'])
-                                    ->where('isdeleted', false)
-                                    ->latest()
-                                    ->get();
+            ->where('isdeleted', false)
+            ->latest()
+            ->get();
 
         $nombreVehicules = $vehicules->count();
 
         $pdf = \Pdf::loadView('pdf.vehicule', compact('vehicules'));
         LogJournalisation::create([
-            'action'     => "Impression de la liste des véhicules (PDF généré, {$nombreVehicules} enregistrements inclus).",
+            'action' => "Impression de la liste des véhicules (PDF généré, {$nombreVehicules} enregistrements inclus).",
             'ip_address' => request()->ip(),
             'user_agent' => request()->header('User-Agent'),
-            'user_id'    => $request->user()->id,
-            'user_name'   => $request->user()->name,
-            'date_action'=> now(),
+            'user_id' => $request->user()->id,
+            'user_name' => $request->user()->name,
+            'date_action' => now(),
         ]);
 
         return $pdf->download('liste_vehicules.pdf');
@@ -304,7 +300,7 @@ class VehiculeController extends Controller
                 if ($index === 0) continue; // Ignore header
 
                 $totalRows++; // Compter le nombre total de lignes traitées (hors entête)
-        
+
                 $immatriculation = $row[0];
                 $numero_chassis = $row[1];
                 $kilometrage = $row[2];
@@ -341,23 +337,23 @@ class VehiculeController extends Controller
                     // $nbIgnored++; // Variable inutile, on compte via $ignoredRows
                     continue; // Ignore cette ligne si déjà existante
                 }
-        
+
                 // 🔎 Trouver les IDs correspondants
                 $marque = Marque::firstOrCreate(['libelle' => $marqueNom]);
                 $modele = Modele::firstOrCreate([
                     'libelle_modele' => $modeleNom,
                 ]);
-        
+
                 // ✅ Vérifier si la voiture existe déjà
                 $vehiculeExiste = Vehicule::where('immatriculation', $immatriculation)
                     ->orWhere('numero_chassis', $numero_chassis)
                     ->exists();
-        
+
                 if ($vehiculeExiste) {
                     $nbIgnored++;
                     continue; // Ignore cette ligne si déjà existante
                 }
-        
+
                 // 🚗 Créer le véhicule
                 Vehicule::create([
                     'immatriculation' => $immatriculation,
@@ -369,12 +365,12 @@ class VehiculeController extends Controller
                     'energie' => $energie,
                     'marque_id' => $marque->id,
                     'modele_id' => $modele->id,
-                ]); 
+                ]);
                 $successCount++;
             }
 
             $summary = "Importation terminée. " . $successCount . " ligne(s) ajoutée(s) sur " . $totalRows . " ligne(s) de données traitée(s).";
-            
+
             if (!empty($ignoredRows)) {
                 $summary .= " Attention : " . count($ignoredRows) . " ligne(s) ont été ignorée(s).";
             }
@@ -407,13 +403,14 @@ class VehiculeController extends Controller
 
         if ($validator->fails()) {
             LogJournalisation::create([
-                'action'     => "Échec: Tentative d'importation de véhicules (Validation échouée - Fichier requis/format incorrect)",
+                'action' => "Échec: Tentative d'importation de véhicules (Validation échouée - Fichier requis/format incorrect)",
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
+                'user_id' => $request->user()->id,
+                'user_name' => $request->user()->name,
+                'date_action' => now(),
             ]);
+
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
@@ -430,21 +427,22 @@ class VehiculeController extends Controller
 
             // 3️⃣ Boucler sur les lignes (en ignorant la première ligne d'entêtes)
             foreach ($rows as $index => $row) {
-                if ($index === 0) continue; // Ignore header
+                if ($index === 0) {
+                    continue;
+                } // Ignore header
 
                 // 🛑 AJOUT CLÉ : Ignorer les lignes complètement vides 🛑
                 // array_filter supprime les valeurs nulles, vides ou égales à 0 (sauf si '0' est le contenu).
                 // Si le tableau filtré est vide, c'est que la ligne entière est vide ou contient des espaces.
-                if (empty(array_filter($row, function($value) {
+                if (empty(array_filter($row, function ($value) {
                     // Considérez la ligne vide si toutes les valeurs sont nulles ou des chaînes vides après avoir enlevé les espaces
-                    return !is_null($value) && trim($value) !== ''; 
+                    return ! is_null($value) && trim($value) !== '';
                 }))) {
                     continue; // Passe à la ligne suivante (ignore cette ligne vide)
                 }
                 // ----------------------------------------------------
 
                 $totalRows++; // Compter le nombre total de LIGNES DE DONNÉES réelles traitées.
-        
 
                 $code = $row[0];
                 $immatriculation = $row[1];
@@ -456,8 +454,8 @@ class VehiculeController extends Controller
                 $puissance = $row[7];
                 $places_assises = $row[8];
                 $energie = $row[9];
-                $sousTypeNom = $row[10]; 
-                $groupeTypeNom = $row[11]; 
+                $sousTypeNom = $row[10];
+                $groupeTypeNom = $row[11];
                 $typeImmoId = TypeImmo::where('libelle_typeImmo', 'Véhicules')->value('id'); // récupère l'id numérique
                 $compte = $row[13];
                 //
@@ -469,55 +467,57 @@ class VehiculeController extends Controller
                 $fournisseur_id = $row[19];
                 $bureau_id = $row[20];
                 $etat = $row[21];
-
+                $nbreannee_amortissement = $row[22];
 
                 $sousType = null;
-                if (!empty($sousTypeNom)) {
+                if (! empty($sousTypeNom)) {
                     $sousType = SousTypeImmo::firstOrCreate(
                         ['libelle' => $sousTypeNom],
                         [
                             'id_type_immo' => $typeImmoId,   // Obligatoire
-                            'compte' => $compte           // Obligatoire
+                            'compte' => $compte,           // Obligatoire
                         ]
                     );
                 }
 
                 $groupeType = null;
-                if(!empty($groupeTypeNom)) {
+                if (! empty($groupeTypeNom)) {
                     $groupeType = GroupeTypeImmo::firstOrCreate(
                         ['libelle' => $groupeTypeNom],
                         [
-                            'compte' => $compte           // Obligatoire
+                            'compte' => $compte,           // Obligatoire
                         ]
                     );
                 }
 
                 // 🛡️ La vérification des données essentielles reste très importante
                 if (empty($immatriculation) || empty($marqueNom)) {
-                    $msg = "Ligne " . ($index + 1) . " ignorée : Immatriculation ou Marque manquante. (Ligne de données non complètement vide)";
+                    $msg = 'Ligne '.($index + 1).' ignorée : Immatriculation ou Marque manquante. (Ligne de données non complètement vide)';
                     $ignoredRows[] = $msg;
                     \Log::warning($msg);
+
                     continue;
                 }
-                
+
                 // 🔎 Vérification de doublons (Inchangée)
                 $vehiculeExiste = Vehicule::where('immatriculation', $immatriculation)
                     ->orWhere('numero_chassis', $numero_chassis)
                     ->exists();
 
                 if ($vehiculeExiste) {
-                    $msg = "Ligne " . ($index + 1) . " ignorée : Véhicule avec immatriculation '$immatriculation' ou chassis '$numero_chassis' existe déjà.";
+                    $msg = 'Ligne '.($index + 1)." ignorée : Véhicule avec immatriculation '$immatriculation' ou chassis '$numero_chassis' existe déjà.";
                     $ignoredRows[] = $msg;
                     \Log::info($msg);
+
                     continue;
                 }
-                
+
                 // 🔎 Trouver les IDs correspondants (Inchangée)
                 $marque = Marque::firstOrCreate(['libelle' => $marqueNom]);
                 $modele = Modele::firstOrCreate([
                     'libelle_modele' => $modeleNom,
                 ]);
-                
+
                 $statusImmo = StatusImmo::firstOrCreate(
                     ['libelle_status_immo' => $id_status_immo], // condition de recherche
                     ['libelle_status_immo' => $id_status_immo]  // valeurs à insérer si inexistant
@@ -532,7 +532,12 @@ class VehiculeController extends Controller
                     ['libelle_bureau' => $bureau_id],
                     ['libelle_bureau' => $bureau_id]
                 );
-                
+
+                $date_amortissement = $this->calculerDateAmortissement(
+                    $date_mise_en_service,
+                    $nbreannee_amortissement // ou nbreannee si c’est ça ta vraie durée
+                );
+
                 // 🚗 Créer le véhicule (Inchangée)
                 Vehicule::create([
                     'immatriculation' => $immatriculation,
@@ -547,6 +552,7 @@ class VehiculeController extends Controller
                     'id_sous_type_immo' => $sousType?->id,
                     'id_groupe_type_immo' => $groupeType?->id,
                     //
+                    'date_amortissement' => $date_amortissement,
                     'taux_ammortissement' => $taux_ammortissement,
                     'montant_ttc' => $montant_ttc,
                     'id_status_immo' => $statusImmo?->id,
@@ -556,32 +562,32 @@ class VehiculeController extends Controller
                     'bureau_id' => $bureau?->id,
                     'etat' => $etat,
                     'code' => $code,
-                ]); 
+                ]);
                 $successCount++;
             }
 
             // 4️⃣ Retourner la réponse (Inchangée)
-            $summary = "Importation terminée. " . $successCount . " ligne(s) ajoutée(s) sur " . $totalRows . " ligne(s) de données traitée(s).";
-            
-            if (!empty($ignoredRows)) {
-                $summary .= " Attention : " . count($ignoredRows) . " ligne(s) ont été ignorée(s).";
+            $summary = 'Importation terminée. '.$successCount.' ligne(s) ajoutée(s) sur '.$totalRows.' ligne(s) de données traitée(s).';
+
+            if (! empty($ignoredRows)) {
+                $summary .= ' Attention : '.count($ignoredRows).' ligne(s) ont été ignorée(s).';
             }
 
-            $logAction = "Importation réussie du fichier. {$successCount} créé(s) / {$totalRows} traité(s) / " . count($ignoredRows) . " ignoré(s).";
+            $logAction = "Importation réussie du fichier. {$successCount} créé(s) / {$totalRows} traité(s) / ".count($ignoredRows).' ignoré(s).';
             LogJournalisation::create([
-                'action'     => $logAction,
+                'action' => $logAction,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
+                'user_id' => $request->user()->id,
+                'user_name' => $request->user()->name,
+                'date_action' => now(),
             ]);
 
             $response = [
                 'message' => $summary,
                 'success_count' => $successCount,
                 'total_rows_processed' => $totalRows,
-                'ignored' => $ignoredRows
+                'ignored' => $ignoredRows,
             ];
 
             return response()->json($response);
@@ -591,20 +597,20 @@ class VehiculeController extends Controller
             // ❌ LOG → Échec général du traitement
             $logAction = "Échec critique: L'importation du fichier a échoué. Erreur: {$e->getMessage()}";
             LogJournalisation::create([
-                'action'     => $logAction,
+                'action' => $logAction,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
+                'user_id' => $request->user()->id,
+                'user_name' => $request->user()->name,
+                'date_action' => now(),
             ]);
+
             return response()->json([
                 'error' => 'Erreur lors de l\'importation du fichier.',
-                'details' => $e->getMessage()
+                'details' => $e->getMessage(),
             ], 500);
         }
     }
-
 
     public function addCarteGrise(Request $request, Vehicule $vehicule)
     {
@@ -631,5 +637,14 @@ class VehiculeController extends Controller
         return new PostResource(true, 'Carte grise ajoutée avec succès', $vehicule);
     }
 
-
+    private function calculerDateAmortissement($dateMiseEnService, $duree)
+    {
+        try {
+            return \Carbon\Carbon::parse($dateMiseEnService)
+                ->addYears((int) $duree)
+                ->format('Y-m-d');
+        } catch (\Exception $e) {
+            return null; // ou gérer l'erreur comme tu veux
+        }
+    }
 }
