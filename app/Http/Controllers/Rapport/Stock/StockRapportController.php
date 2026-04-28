@@ -79,7 +79,8 @@ class StockRapportController extends Controller
                     'fournisseur',
                     'employe',
                     'bureau',
-                    'unite_de_mesure'
+                    'unite_de_mesure',
+                    'article.categorie'
                 ])
                 ->get();
 
@@ -265,7 +266,7 @@ class StockRapportController extends Controller
                 ->whereBetween('date_mouvement', [$dateDebut, $dateFin])
                 ->orderBy('date_mouvement', 'asc')
                 ->orderBy('created_at', 'asc')
-                ->with(['typeMouvement','fournisseur','employe','bureau','unite_de_mesure','article'])
+                ->with(['typeMouvement','fournisseur','employe','bureau','unite_de_mesure','article.categorie'])
                 ->get();
 
             $rapportData = collect();
@@ -790,7 +791,9 @@ class StockRapportController extends Controller
                 'libelle' => $article->libelle,
                 'code_article' => $article->code_article,
                 'description' => $article->description,
-                'categorie' => $article->categorie->libelle_categorie_article ?? 'N/A',
+                'categorie' => [
+                    'libelle_categorie_article' => $article->categorie->libelle_categorie_article ?? 'N/A'
+                ],
                 'stock_alerte' => $article->stock_alerte ?? 0,
                 // 'unite_de_mesure' => $article->unite_de_mesure->libelle_unite ?? 'N/A' // Remplacé par l'accès direct si la relation est `uniteDeMesure`
                 'unite_de_mesure' => $article->uniteDeMesure->libelle_unite ?? 'N/A' // Utilisation de uniteDeMesure
