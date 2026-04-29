@@ -229,8 +229,8 @@
         <td style="width: 50%;">
           <strong>CRITERES D'EXPORTATION</strong><br/><br/>
           <strong style="font-size:11px;">Article :</strong> {{ $filterLabels['article'] ?? 'Tous' }}<br/>
-
-            <strong style="font-size:11px;">Fournisseur :</strong> {{ $filterLabels['fournisseur'] ?? 'Tous' }}<br/>
+          <strong style="font-size:11px;">Catégorie :</strong> {{ optional($article->categorie)->libelle_categorie_article ?? optional($article->categorie)->libelle ?? ($article->categorie ?? 'N/A') }}<br/>
+          <strong style="font-size:11px;">Fournisseur :</strong> {{ $filterLabels['fournisseur'] ?? 'Tous' }}<br/>
         </td>
         <td style="width: 50%;">
           -
