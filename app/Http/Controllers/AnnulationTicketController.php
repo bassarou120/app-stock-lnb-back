@@ -4,15 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\PostResource;
 use App\Models\AnnulationTicket;
+use App\Models\LogJournalisation;
 use App\Models\MouvementTicket;
 use App\Models\Parametrage\StockTicket;
 use App\Models\Parametrage\TypeMouvement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use App\Models\LogJournalisation;
-use App\Models\User;
-use App\Services\Auth\AuthService;
-use Illuminate\Support\Facades\Auth;
 
 class AnnulationTicketController extends Controller
 {
@@ -24,17 +21,17 @@ class AnnulationTicketController extends Controller
             'coupon',
             'compagnie',
         ])
-        ->where('isdeleted', false)
-        ->latest()->paginate(1000);
+            ->where('isdeleted', false)
+            ->latest()->paginate(1000);
 
         // 📝 LOG → Consultation des annulations
         LogJournalisation::create([
-            'action'     => 'Consultation de la liste des annulations de ticket',
+            'action' => 'Consultation de la liste des annulations de ticket',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => $request->user()->id,
-            'user_name'   => $request->user()->name,
-            'date_action'=> now(),
+            'user_id' => $request->user()->id,
+            'user_name' => $request->user()->name,
+            'date_action' => now(),
         ]);
 
         return new PostResource(true, 'Liste des annulations', $annulations);
@@ -44,10 +41,10 @@ class AnnulationTicketController extends Controller
     {
         // Validation
         $validator = Validator::make($request->all(), [
-            "mouvementTicket_id" => 'required|exists:mouvement_tickets,id',
-            "compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
-            "coupon_ticket_id" => 'required|exists:coupon_tickets,id',
-            "qte" => 'required|integer',
+            'mouvementTicket_id' => 'required|exists:mouvement_tickets,id',
+            'compagnie_petrolier_id' => 'required|exists:compagnie_petroliers,id',
+            'coupon_ticket_id' => 'required|exists:coupon_tickets,id',
+            'qte' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
@@ -55,20 +52,43 @@ class AnnulationTicketController extends Controller
         }
 
         $annulation = AnnulationTicket::create([
-            "mouvementTicket_id" => $request->mouvementTicket_id,
-            "compagnie_petrolier_id" => $request->compagnie_petrolier_id,
-            "coupon_ticket_id" => $request->coupon_ticket_id,
-            "qte" => $request->qte,
+            'mouvementTicket_id' => $request->mouvementTicket_id,
+            'compagnie_petrolier_id' => $request->compagnie_petrolier_id,
+            'coupon_ticket_id' => $request->coupon_ticket_id,
+            'qte' => $request->qte,
         ]);
 
-            // 📝 LOG → Création d'une annulation
+        $mouvement = MouvementTicket::find($request->mouvementTicket_id);
+
+        if (! $mouvement) {
+            return response()->json(['error' => 'Mouvement introuvable'], 404);
+        }
+
+        // Vérification AVANT modification
+        if ($request->qte > $mouvement->qte) {
+            return response()->json([
+                'error' => 'La quantité à annuler dépasse la quantité du mouvement',
+            ], 400);
+        }
+
+        // Décrément
+        $mouvement->qte -= $request->qte;
+
+        // 🔥 Si quantité = 0 → mise à jour description
+        if ($mouvement->qte == 0) {
+            $mouvement->description = $mouvement->description.' (qte 0 - voir annulation ticket)';
+        }
+
+        $mouvement->save();
+
+        // 📝 LOG → Création d'une annulation
         LogJournalisation::create([
-            'action'     => 'Création d\'une annulation de ticket ID '.$annulation->id.' (qte: '.$request->qte.')',
+            'action' => 'Création d\'une annulation de ticket ID '.$annulation->id.' (qte: '.$request->qte.')',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => $request->user()->id,
-            'user_name'   => $request->user()->name,
-            'date_action'=> now(),
+            'user_id' => $request->user()->id,
+            'user_name' => $request->user()->name,
+            'date_action' => now(),
         ]);
 
         $stockTicket = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)->where('compagnie_petrolier_id', $request->compagnie_petrolier_id)->where('isdeleted', false)->latest()->first();
@@ -77,7 +97,7 @@ class AnnulationTicketController extends Controller
             $stockTicket = StockTicket::create([
                 'coupon_ticket_id' => $request->coupon_ticket_id,
                 'compagnie_petrolier_id' => $request->compagnie_petrolier_id,
-                'qte_actuel' => 0
+                'qte_actuel' => 0,
             ]);
         }
 
@@ -91,7 +111,7 @@ class AnnulationTicketController extends Controller
     {
         $annulationTicket = AnnulationTicket::find($id);
 
-        if (!$annulationTicket) {
+        if (! $annulationTicket) {
             return response()->json([
                 'success' => false,
                 'message' => 'Annulation introuvable.',
@@ -106,12 +126,12 @@ class AnnulationTicketController extends Controller
 
         // 📝 LOG → Suppression d'une annulation
         LogJournalisation::create([
-            'action'     => 'Suppression d\'annulation de ticket ID '.$annulationTicket->id.' (qte: '.$quantite.')',
+            'action' => 'Suppression d\'annulation de ticket ID '.$annulationTicket->id.' (qte: '.$quantite.')',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => $request->user()->id,
-            'user_name'   => $request->user()->name,
-            'date_action'=> now(),
+            'user_id' => $request->user()->id,
+            'user_name' => $request->user()->name,
+            'date_action' => now(),
         ]);
 
         $stock = StockTicket::where('coupon_ticket_id', $couponTicketId)->latest()->first();
@@ -141,14 +161,14 @@ class AnnulationTicketController extends Controller
                 ->exists();
 
             // Si ce n'est pas encore annulé, on l'ajoute à la liste des choix possibles
-            if (!$dejaAnnule) {
+            if (! $dejaAnnule) {
                 $detailsAafficher[] = [
-                    'mouvement_ticket_id'    => $id,
-                    'coupon_ticket_id'       => $detail->coupon_ticket_id,
+                    'mouvement_ticket_id' => $id,
+                    'coupon_ticket_id' => $detail->coupon_ticket_id,
                     'compagnie_petrolier_id' => $detail->compagnie_petrolier_id,
-                    'libelle_coupon'         => $detail->coupon->libelle,
-                    'libelle_compagnie'      => $detail->compagniePetrolier->libelle,
-                    'qte_origine'            => $detail->qte,
+                    'libelle_coupon' => $detail->coupon->libelle,
+                    'libelle_compagnie' => $detail->compagniePetrolier->libelle,
+                    'qte_origine' => $detail->qte,
                 ];
             }
         }
@@ -177,53 +197,53 @@ class AnnulationTicketController extends Controller
 
     public function getDetailsMouvementParReference($reference)
     {
-    $lignes = MouvementTicket::with(['coupon_ticket', 'compagniePetrolier'])
-        ->where('reference', $reference)
-        ->where('isdeleted', false)
-        ->get();
-
-    if ($lignes->isEmpty()) {
-        return response()->json(['message' => 'Aucun mouvement trouvé'], 404);
-    }
-
-    $resultat = [];
-    foreach ($lignes as $ligne) {
-        $existeDeja = AnnulationTicket::where('mouvementTicket_id', $ligne->id)
+        $lignes = MouvementTicket::with(['coupon_ticket', 'compagniePetrolier'])
+            ->where('reference', $reference)
             ->where('isdeleted', false)
-            ->exists();
+            ->get();
 
-        if (!$existeDeja) {
-            $resultat[] = [
-                'id' => $ligne->id,
-                'coupon_ticket' => $ligne->coupon_ticket,
-                'compagnie_petrolier' => $ligne->compagniePetrolier,
-                'qte' => $ligne->qte,
-                'reference' => $ligne->reference
-            ];
+        if ($lignes->isEmpty()) {
+            return response()->json(['message' => 'Aucun mouvement trouvé'], 404);
         }
-    }
 
-    return response()->json($resultat);
-}
+        $resultat = [];
+        foreach ($lignes as $ligne) {
+            $existeDeja = AnnulationTicket::where('mouvementTicket_id', $ligne->id)
+                ->where('isdeleted', false)
+                ->exists();
+
+            if (! $existeDeja) {
+                $resultat[] = [
+                    'id' => $ligne->id,
+                    'coupon_ticket' => $ligne->coupon_ticket,
+                    'compagnie_petrolier' => $ligne->compagniePetrolier,
+                    'qte' => $ligne->qte,
+                    'reference' => $ligne->reference,
+                ];
+            }
+        }
+
+        return response()->json($resultat);
+    }
 
     public function getMouvementInfo($idMouvement, Request $request)
     {
         $mouvement = MouvementTicket::with(['compagniePetrolier', 'coupon_ticket'])
-        ->where('isdeleted', false)
-        ->find($idMouvement);
+            ->where('isdeleted', false)
+            ->find($idMouvement);
 
-        if (!$mouvement) {
+        if (! $mouvement) {
             return response()->json(['message' => 'Mouvement non trouvé'], 404);
         }
 
         // 📝 LOG → Consultation d'un mouvement spécifique
         LogJournalisation::create([
-            'action'     => 'Consultation du mouvement de ticket ID '.$idMouvement,
+            'action' => 'Consultation du mouvement de ticket ID '.$idMouvement,
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'user_id'    => $request->user()->id,
-            'user_name'   => $request->user()->name,
-            'date_action'=> now(),
+            'user_id' => $request->user()->id,
+            'user_name' => $request->user()->name,
+            'date_action' => now(),
         ]);
 
         return response()->json([
@@ -232,5 +252,4 @@ class AnnulationTicketController extends Controller
             'quantite' => $mouvement->qte,
         ]);
     }
-
 }

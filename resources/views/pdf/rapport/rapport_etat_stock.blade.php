@@ -210,6 +210,7 @@
                     <th>N°</th>
                     <th>Article</th>
                     <th>Code Article</th>
+                    <th>Catégorie</th>
                     <th>Stock Actuel (Qté)</th>
                     <th>Prix Unitaire</th>
                     <th>CMP</th>
@@ -227,6 +228,7 @@
                         <td class="center-col">{{ $index + 1 }}</td>
                         <td>{{ $data['article']['libelle'] ?? '-' }}</td>
                         <td>{{ $data['article']['code_article'] ?? '-' }}</td>
+                        <td >{{ is_array($data['article']['categorie']) ? ($data['article']['categorie']['libelle_categorie_article'] ?? '-') : ($data['article']['categorie'] ?? '-') }}</td>
                         <td class="numeric-col">{{ rtrim(rtrim(number_format($data['stock_actuel']['quantite'] ?? 0, 2, ',', ' '), '0'), ',') }}</td>
                         <td class="numeric-col">{{ rtrim(rtrim(number_format($data['stock_actuel']['prix_unitaire'] ?? 0, 2, ',', ' '), '0'), ',') }} F CFA</td>
                         <td class="numeric-col">{{ rtrim(rtrim(number_format($data['stock_actuel']['cmp'] ?? 0, 2, ',', ' '), '0'), ',') }} F CFA</td>

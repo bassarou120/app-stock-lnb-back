@@ -316,6 +316,7 @@
                         <th>Objet</th>
                         <th>Description</th>
                     @elseif($typeRapport === 'sortie ticket')
+                        <th>Date Mouvement</th>
                         <th>Reference</th>
                         <th>Coupon Ticket</th>
                         <th>Compagnie</th>
@@ -352,6 +353,7 @@
                         <td>{{ $item->objet ?? '-' }}</td>
                         <td>{{ $item->description ?? '-' }}</td>
                     @elseif($typeRapport === 'sortie ticket')
+                        <td>{{ $item->date }}</td>
                         <td>{{ $item->reference }}</td>
                         <td>{{ $item->coupon_ticket->libelle ?? '-' }}</td>
                         <td>{{ $item->compagniePetrolier->libelle ?? '-' }}</td>
