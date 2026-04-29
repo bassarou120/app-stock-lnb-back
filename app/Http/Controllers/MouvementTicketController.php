@@ -1413,7 +1413,7 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         }
     }
 
-    private function aggregateFinalDetails(array $globalDetails): array
+/*     private function aggregateFinalDetails(array $globalDetails): array
     {
         $combined = [];
 
@@ -1430,7 +1430,67 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         });
 
         return $finalList;
-    }
+    } */
+
+    private function aggregateFinalDetails(array $globalDetails): array
+    {
+        $combined = [];
+
+        // 1. Construire la liste de tous les coupons impliqués (depuis les entrées)
+        foreach (array_values($globalDetails['entrees']) as $item) {
+            $item = (array) $item;
+            $key = $item['nom_compagnie'] . '|' . $item['valeur'];
+            if (!isset($combined[$key])) {
+                $combined[$key] = [
+                    'nom_compagnie'  => $item['nom_compagnie'],
+                    'valeur'         => $item['valeur'],
+                    'nombre_coupons' => 0,
+                    'montant_total'  => 0.0,
+                ];
+            }
+            $combined[$key]['nombre_coupons'] += $item['nombre_coupons'];   // ✅ + entrées
+            $combined[$key]['montant_total']  += $item['montant_total'];
+        }
+
+        // 2. SOUSTRAIRE les sorties
+        foreach (array_values($globalDetails['sorties']) as $item) {
+            $item = (array) $item;
+            $key = $item['nom_compagnie'] . '|' . $item['valeur'];
+            if (!isset($combined[$key])) {
+                $combined[$key] = [
+                    'nom_compagnie'  => $item['nom_compagnie'],
+                    'valeur'         => $item['valeur'],
+                    'nombre_coupons' => 0,
+                    'montant_total'  => 0.0,
+                ];
+            }
+            $combined[$key]['nombre_coupons'] -= $item['nombre_coupons'];   // ✅ - sorties
+            $combined[$key]['montant_total']  -= $item['montant_total'];
+        }
+
+        // 3. ADDITIONNER les retours
+        foreach (array_values($globalDetails['retours']) as $item) {
+            $item = (array) $item;
+            $key = $item['nom_compagnie'] . '|' . $item['valeur'];
+            if (!isset($combined[$key])) {
+                $combined[$key] = [
+                    'nom_compagnie'  => $item['nom_compagnie'],
+                    'valeur'         => $item['valeur'],
+                    'nombre_coupons' => 0,
+                    'montant_total'  => 0.0,
+                ];
+            }
+            $combined[$key]['nombre_coupons'] += $item['nombre_coupons'];   // ✅ + retours
+            $combined[$key]['montant_total']  += $item['montant_total'];
+        }
+
+        $finalList = array_values($combined);
+        usort($finalList, function($a, $b) {
+            return strcmp($a['nom_compagnie'], $b['nom_compagnie']);
+        });
+
+        return $finalList;
+    }    
 
 
     //fin 25 11 2025
