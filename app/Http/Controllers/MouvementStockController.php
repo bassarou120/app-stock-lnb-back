@@ -1946,13 +1946,13 @@ class MouvementStockController extends Controller
         }
 
         // 3. Vérification du statut (autoriser "Accordé" ou "Cloturé")
-        foreach ($itemsToUpdate as $item) {
-            if ($item->statut !== 'Accordé' && $item->statut !== 'Cloturé') {
-                return response()->json([
-                    'message' => 'Toutes les lignes de la demande groupée doivent être "Accordé" ou "Cloturé" pour pouvoir télécharger un document groupé.'
-                ], 403);
-            }
-        }
+        // foreach ($itemsToUpdate as $item) {
+        //     if ($item->statut !== 'Accordé' && $item->statut !== 'Cloturé') {
+        //         return response()->json([
+        //             'message' => 'Toutes les lignes de la demande groupée doivent être "Accordé" ou "Cloturé" pour pouvoir télécharger un document groupé.'
+        //         ], 403);
+        //     }
+        // }
 
         // 4. Stockage du fichier et mise à jour
         try {
