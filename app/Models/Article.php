@@ -9,6 +9,7 @@ use App\Models\MouvementStock; // Import nécessaire
 use App\Models\Stock;          // Import nécessaire
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Parametrage\UniteDeMesure; // Si vous avez cette relation sur l'article
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
  * @OA\Schema(
@@ -79,12 +80,24 @@ class Article extends Model
         return $this->belongsToMany(
             Exercice::class,            // modèle lié
             'article_exercice',       // nom exact de la table pivot
-            'id_Article',               // clé étrangère vers Article
+            'id_article',               // clé étrangère vers Article
             'id_exercice'               // clé étrangère vers Exercice
         )
         ->withPivot('stock_debut_exercice', 'stock_fin_exercice', 'cmp_debut_exercice', 'cmp_fin_exercice')
         ->withTimestamps();
 
     }
+
+    // Relation hasMany (tous les stocks de l'article, tous exercices confondus)
+public function stocks()
+{
+    return $this->hasMany(Stock::class, 'id_Article', 'id');
+}
+
+// Retourne le stock pour un exercice précis
+public function stockPourExercice($idExercice)
+{
+    return $this->stocks()->where('id_exercice', $idExercice)->first();
+}
 
 }
