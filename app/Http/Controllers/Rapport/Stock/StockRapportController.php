@@ -15,6 +15,7 @@ use App\Models\Parametrage\Fournisseur;
 use App\Models\Employe;
 use Carbon\Carbon;
 use App\Models\Stock;
+use App\Models\Exercice;
 use App\Models\LogJournalisation;
 use App\Models\User;
 use App\Services\Auth\AuthService;
@@ -23,11 +24,52 @@ use Illuminate\Support\Facades\Auth;
 
 class StockRapportController extends Controller
 {
+
+    // =========================================================================
+    // MÉTHODES PRIVÉES UTILITAIRES
+    // =========================================================================
+
+    /**
+     * Retourne l'exercice correspondant à la période sélectionnée.
+     * Si la période est entièrement couverte par un exercice, on le retourne.
+     * Sinon, on retourne l'exercice ouvert par défaut.
+     */
+    private function getExercicePourPeriode($dateDebut, $dateFin)
+    {
+        // Chercher l'exercice qui contient toute la période sélectionnée
+        $exercice = Exercice::where('date_debut', '<=', $dateDebut)
+                            ->where('date_fin', '>=', $dateFin)
+                            ->first();
+
+        // Si aucun exercice ne correspond, prendre l'exercice ouvert
+        if (!$exercice) {
+            $exercice = Exercice::where('statut', 'ouvert')->first();
+        }
+
+        return $exercice;
+    }
+
+    /**
+     * Retourne l'enregistrement Stock d'un article pour la période donnée.
+     */
+    private function getStockPourExercice($article, $dateDebut, $dateFin)
+    {
+        $exercice = $this->getExercicePourPeriode($dateDebut, $dateFin);
+
+        if (!$exercice) return null;
+
+        return $article->stockPourExercice($exercice->id);
+    }
+
+
+    // =========================================================================
+    // MÉTHODES PUBLIQUES
+    // =========================================================================
+
     /**
      * Récupère les mouvements de stock filtrés pour le rapport en fonction du type de rapport.
      * Gère à la fois les rapports d'entrée et de sortie.
      */
-    
     public function getRapportData(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -54,21 +96,38 @@ class StockRapportController extends Controller
             $dateFin = $request->date_fin;
 
             // Calculer le stock initial avant la période
-            $stockInitialEntrees = MouvementStock::where('id_Article', $idArticle)
-                ->where('date_mouvement', '<', $dateDebut)
-                ->whereHas('typeMouvement', function ($query) {
-                    $query->where('libelle_type_mouvement', 'Entrée de Stock');
-                })
-                ->sum('qte');
+            // $stockInitialEntrees = MouvementStock::where('id_Article', $idArticle)
+            //     ->where('date_mouvement', '<', $dateDebut)
+            //     ->whereHas('typeMouvement', function ($query) {
+            //         $query->where('libelle_type_mouvement', 'Entrée de Stock');
+            //     })
+            //     ->sum('qte');
 
-            $stockInitialSorties = MouvementStock::where('id_Article', $idArticle)
-                ->where('date_mouvement', '<', $dateDebut)
-                ->whereHas('typeMouvement', function ($query) {
-                    $query->where('libelle_type_mouvement', 'Sortie de Stock');
-                })
-                ->sum('qte');
+            // $stockInitialSorties = MouvementStock::where('id_Article', $idArticle)
+            //     ->where('date_mouvement', '<', $dateDebut)
+            //     ->whereHas('typeMouvement', function ($query) {
+            //         $query->where('libelle_type_mouvement', 'Sortie de Stock');
+            //     })
+            //     ->sum('qte');
 
-            $stockInitial = $stockInitialEntrees - $stockInitialSorties;
+            // $stockInitial = $stockInitialEntrees - $stockInitialSorties;
+
+            // Déterminer l'exercice correspondant à la période
+$exercice = $this->getExercicePourPeriode($dateDebut, $dateFin);
+
+// Récupérer le stock_debut_exercice depuis la table pivot article_exercice
+$stockInitial = 0;
+
+if ($exercice) {
+    $article = Article::find($idArticle);
+    $pivotExercice = $article->exercices()
+        ->wherePivot('id_exercice', $exercice->id)
+        ->first();
+
+    if ($pivotExercice) {
+        $stockInitial = $pivotExercice->pivot->stock_debut_exercice ?? 0;
+    }
+}
 
             // Récupérer les mouvements de la période
             $mouvements = MouvementStock::where('id_Article', $idArticle)
@@ -78,8 +137,11 @@ class StockRapportController extends Controller
                         $q->where('id_cat', $request->id_categorie_article);
                     });
                 })
+                // ->orderBy('date_mouvement', 'asc')
+                // ->orderBy('created_at', 'asc')
                 ->orderBy('date_mouvement', 'asc')
-                ->orderBy('created_at', 'asc')
+->orderByRaw("CASE WHEN id_type_mouvement = (SELECT id FROM type_mouvements WHERE libelle_type_mouvement = 'Entrée de Stock' LIMIT 1) THEN 0 ELSE 1 END ASC")
+->orderBy('created_at', 'asc')
                 ->with([
                     'typeMouvement',
                     'fournisseur',
@@ -128,9 +190,7 @@ class StockRapportController extends Controller
                 "date_action" => now()
             ]);
 
-            // Utiliser la même ressource pour le rapport individuel
             return new PostResource(true, 'Rapport individuel généré avec succès.', $rapportData);
-
         }
 
         $query = MouvementStock::query();
@@ -208,7 +268,6 @@ class StockRapportController extends Controller
     /**
      * Génère un PDF du rapport des mouvements de stock.
      */
-
     public function imprimerRapportStock(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -225,10 +284,9 @@ class StockRapportController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        // 🧾 LOG : capture du type demandé + période
         LogJournalisation::create([
-            "action"      => "Demande d’impression du rapport stock (" . $request->id_type_rapport . ") du " . 
-                            Carbon::parse($request->date_debut)->format('d/m/Y') . " au " . 
+            "action"      => "Demande d'impression du rapport stock (" . $request->id_type_rapport . ") du " .
+                            Carbon::parse($request->date_debut)->format('d/m/Y') . " au " .
                             Carbon::parse($request->date_fin)->format('d/m/Y'),
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
@@ -237,14 +295,12 @@ class StockRapportController extends Controller
             "date_action" => now()
         ]);
 
-        // Cas spécial : rapport individuel
         if ($request->id_type_rapport === 'individuel') {
             $idArticle = $request->id_Article;
             if (!$request->filled('id_Article')) {
                 return response()->json(['message' => 'L\'ID de l\'article est requis pour un rapport individuel.'], 422);
             }
 
-            // ⚠ Ton log individuel reste, juste placé avant le retour
             LogJournalisation::create([
                 "action"      => "Téléchargement du rapport individuel stock article : " . $idArticle,
                 "ip_address"  => request()->ip(),
@@ -257,26 +313,46 @@ class StockRapportController extends Controller
             $dateDebut = $request->date_debut;
             $dateFin = $request->date_fin;
 
-            $stockInitialEntrees = MouvementStock::where('id_Article', $idArticle)
-                ->where('date_mouvement', '<', $dateDebut)
-                ->whereHas('typeMouvement', function ($query) {
-                    $query->where('libelle_type_mouvement', 'Entrée de Stock');
-                })
-                ->sum('qte');
+            // $stockInitialEntrees = MouvementStock::where('id_Article', $idArticle)
+            //     ->where('date_mouvement', '<', $dateDebut)
+            //     ->whereHas('typeMouvement', function ($query) {
+            //         $query->where('libelle_type_mouvement', 'Entrée de Stock');
+            //     })
+            //     ->sum('qte');
 
-            $stockInitialSorties = MouvementStock::where('id_Article', $idArticle)
-                ->where('date_mouvement', '<', $dateDebut)
-                ->whereHas('typeMouvement', function ($query) {
-                    $query->where('libelle_type_mouvement', 'Sortie de Stock');
-                })
-                ->sum('qte');
+            // $stockInitialSorties = MouvementStock::where('id_Article', $idArticle)
+            //     ->where('date_mouvement', '<', $dateDebut)
+            //     ->whereHas('typeMouvement', function ($query) {
+            //         $query->where('libelle_type_mouvement', 'Sortie de Stock');
+            //     })
+            //     ->sum('qte');
 
-            $stockInitial = $stockInitialEntrees - $stockInitialSorties;
+            // $stockInitial = $stockInitialEntrees - $stockInitialSorties;
+
+            // Déterminer l'exercice correspondant à la période
+$exercice = $this->getExercicePourPeriode($dateDebut, $dateFin);
+
+// Récupérer le stock_debut_exercice depuis la table pivot article_exercice
+$stockInitial = 0;
+
+if ($exercice) {
+    $article = Article::find($idArticle);
+    $pivotExercice = $article->exercices()
+        ->wherePivot('id_exercice', $exercice->id)
+        ->first();
+
+    if ($pivotExercice) {
+        $stockInitial = $pivotExercice->pivot->stock_debut_exercice ?? 0;
+    }
+}
 
             $mouvements = MouvementStock::where('id_Article', $idArticle)
                 ->whereBetween('date_mouvement', [$dateDebut, $dateFin])
+                // ->orderBy('date_mouvement', 'asc')
+                // ->orderBy('created_at', 'asc')
                 ->orderBy('date_mouvement', 'asc')
-                ->orderBy('created_at', 'asc')
+->orderByRaw("CASE WHEN id_type_mouvement = (SELECT id FROM type_mouvements WHERE libelle_type_mouvement = 'Entrée de Stock' LIMIT 1) THEN 0 ELSE 1 END ASC")
+->orderBy('created_at', 'asc')
                 ->with(['typeMouvement','fournisseur','employe','bureau','unite_de_mesure','article.categorie'])
                 ->get();
 
@@ -327,7 +403,6 @@ class StockRapportController extends Controller
                 'article' => $article ? ($article->code_article . ' - ' . $article->libelle) : 'Non trouvé',
             ];
 
-            // ⬇ On laisse tout pareil jusqu’au PDF
             $pdf = Pdf::loadView('pdf.rapport.rapport_individuel', compact('rapportData', 'stockInitial', 'stockFinalPeriod', 'reportTypeLabel', 'filterLabels', 'article'));
 
             $filename = 'rapport_stock_individuel.pdf';
@@ -434,7 +509,6 @@ class StockRapportController extends Controller
             $filterLabels['employe'] = $employe ? ($employe->nom . ' ' . $employe->prenom) : 'Non trouvé';
         }
 
-        // 🧾 LOG général avant téléchargement
         LogJournalisation::create([
             "action"      => "Téléchargement du rapport stock général : " . ucfirst($request->id_type_rapport),
             "ip_address"  => request()->ip(),
@@ -452,11 +526,10 @@ class StockRapportController extends Controller
 
 
     /**
-     * NOUVEAU : Génère un PDF du rapport de l'état de stock par article.
+     * Génère un PDF du rapport de l'état de stock par article.
      */
     public function imprimerRapportEtatStock(Request $request)
     {
-        // ✅ VALIDATION
         $validator = Validator::make($request->all(), [
             'date_debut' => 'required|date',
             'date_fin' => 'required|date|after_or_equal:date_debut',
@@ -473,16 +546,16 @@ class StockRapportController extends Controller
             ], 422);
         }
 
-        // ✅ PARAMÈTRES DE FILTRAGE
         $dateDebut = Carbon::parse($request->date_debut)->startOfDay();
         $dateFin = Carbon::parse($request->date_fin)->endOfDay();
         $idArticle = $request->id_article;
         $qteMin = $request->qte_min;
         $qteMax = $request->qte_max;
 
-        // ✅ CONSTRUCTION DE LA REQUÊTE
-        $query = Article::with(['categorie', 'stock', 'uniteDeMesure']); // 'unite_de_mesure' -> 'uniteDeMesure' pour respecter la convention si la relation est ainsi.
-                                                                        // Assurez-vous que cette relation existe dans votre modèle Article.
+        // Déterminer l'exercice correspondant à la période
+        $exercice = $this->getExercicePourPeriode($dateDebut, $dateFin);
+
+        $query = Article::with(['categorie', 'stocks', 'uniteDeMesure']);
 
         if ($request->filled('id_article')) {
             $query->where('id', $idArticle);
@@ -496,8 +569,10 @@ class StockRapportController extends Controller
             $query->where('id_cat', $request->id_categorie_article);
         }
 
-        if ($qteMin !== null || $qteMax !== null) {
-            $query->whereHas('stock', function($q) use ($qteMin, $qteMax) {
+        // Filtrer par quantité sur le bon exercice
+        if (($qteMin !== null || $qteMax !== null) && $exercice) {
+            $query->whereHas('stocks', function($q) use ($qteMin, $qteMax, $exercice) {
+                $q->where('id_exercice', $exercice->id);
                 if ($qteMin !== null) {
                     $q->where('Qte_actuel', '>=', $qteMin);
                 }
@@ -511,21 +586,24 @@ class StockRapportController extends Controller
         $rapportArticles = [];
 
         foreach ($articles as $article) {
-            if ($article->stock) {
-                $rapportArticle = $this->genererRapportCompletArticle($article, $dateDebut, $dateFin, $request);
+            // Récupérer le stock pour le bon exercice
+            $stock = $exercice ? $article->stockPourExercice($exercice->id) : null;
+
+            if ($stock) {
+                $rapportArticle = $this->genererRapportCompletArticle($article, $dateDebut, $dateFin, $request, $stock);
                 $rapportArticles[] = $rapportArticle;
             } else {
-                \Log::warning("Article ID {$article->id} - {$article->libelle} n'a pas d'enregistrement de stock associé pour l'impression du rapport d'état.");
+                \Log::warning("Article ID {$article->id} - {$article->libelle} n'a pas d'enregistrement de stock pour l'exercice ID " . ($exercice->id ?? 'N/A'));
             }
         }
 
-        // ✅ PRÉPARER LES LIBELLÉS DES FILTRES POUR LA VUE PDF
         $filterLabels = [
             'date_debut' => $dateDebut->format('d/m/Y'),
             'date_fin' => $dateFin->format('d/m/Y'),
             'article' => 'Tous',
             'qte_min' => $qteMin ?? 'Non spécifié',
             'qte_max' => $qteMax ?? 'Non spécifié',
+            'exercice' => $exercice ? $exercice->annee : 'Non déterminé',
         ];
 
         if ($request->filled('id_article')) {
@@ -533,15 +611,14 @@ class StockRapportController extends Controller
             $filterLabels['article'] = $article ? ($article->code_article . ' - ' . $article->libelle) : 'Non trouvé';
         }
 
-        // Préparer les statistiques pour le PDF
         $statistiques = [
             'nombre_articles' => count($rapportArticles),
             'periode_analysee' => $dateDebut->format('d/m/Y') . ' au ' . $dateFin->format('d/m/Y')
         ];
-        
+
         LogJournalisation::create([
             "action"      => "Téléchargement du rapport d'état stock" .
-            ($idArticle ? " pour l'article ID {$idArticle}" : "") .
+                            ($idArticle ? " pour l'article ID {$idArticle}" : "") .
                             " du " . $dateDebut->format('d/m/Y') . " au " . $dateFin->format('d/m/Y'),
             "ip_address"  => request()->ip(),
             "user_agent"  => request()->userAgent(),
@@ -549,21 +626,19 @@ class StockRapportController extends Controller
             'user_name'   => $request->user()->name,
             "date_action" => now()
         ]);
-        // ✅ GÉNÉRER LE PDF
-        $pdf = Pdf::loadView('pdf.rapport.rapport_etat_stock', compact('rapportArticles', 'filterLabels', 'statistiques'));
 
-        // Ajoutez cette ligne pour définir l'orientation en paysage
-        $pdf->setPaper('A4', 'landscape'); // Ou 'letter', 'legal', etc.
+        $pdf = Pdf::loadView('pdf.rapport.rapport_etat_stock', compact('rapportArticles', 'filterLabels', 'statistiques'));
+        $pdf->setPaper('A4', 'landscape');
 
         return $pdf->download('rapport_etat_stock.pdf');
-        // Ou return $pdf->stream('rapport_etat_stock.pdf'); pour l'afficher dans le navigateur
     }
 
 
-    // Fonction pour le filtrage d'etat du stock (JSON)
+    /**
+     * Filtrage d'état du stock (JSON).
+     */
     public function getRapportFicheStock(Request $request)
     {
-        // ✅ VALIDATION
         $validator = Validator::make($request->all(), [
             'date_debut' => 'required|date',
             'date_fin' => 'required|date|after_or_equal:date_debut',
@@ -580,29 +655,29 @@ class StockRapportController extends Controller
             ], 422);
         }
 
-        // ✅ PARAMÈTRES DE FILTRAGE
         $dateDebut = Carbon::parse($request->date_debut)->startOfDay();
         $dateFin = Carbon::parse($request->date_fin)->endOfDay();
         $idArticle = $request->id_article;
         $qteMin = $request->qte_min;
         $qteMax = $request->qte_max;
 
-        // ✅ CONSTRUCTION DE LA REQUÊTE
-        $query = Article::with(['categorie', 'stock']);
+        // Déterminer l'exercice correspondant à la période
+        $exercice = $this->getExercicePourPeriode($dateDebut, $dateFin);
 
-        // CRITÈRE 1: Articles qui ont des mouvements dans la période OU article spécifique
+        $query = Article::with(['categorie', 'stocks']);
+
         if ($request->filled('id_article')) {
             $query->where('id', $idArticle);
         } else {
-            // Uniquement les articles qui ont eu des mouvements dans la période
             $query->whereHas('mouvementStocks', function($q) use ($dateDebut, $dateFin) {
                 $q->whereBetween('date_mouvement', [$dateDebut, $dateFin]);
             });
         }
 
-        // CRITÈRE 2: Filtrer par quantité en stock si spécifié
-        if ($qteMin !== null || $qteMax !== null) {
-            $query->whereHas('stock', function($q) use ($qteMin, $qteMax) {
+        // Filtrer par quantité sur le bon exercice
+        if (($qteMin !== null || $qteMax !== null) && $exercice) {
+            $query->whereHas('stocks', function($q) use ($qteMin, $qteMax, $exercice) {
+                $q->where('id_exercice', $exercice->id);
                 if ($qteMin !== null) {
                     $q->where('Qte_actuel', '>=', $qteMin);
                 }
@@ -612,27 +687,28 @@ class StockRapportController extends Controller
             });
         }
 
-        // ✅ EXÉCUTER LA REQUÊTE
         $articles = $query->get();
         $rapportArticles = [];
 
         foreach ($articles as $article) {
-            if ($article->stock) {
-                $rapportArticle = $this->genererRapportCompletArticle($article, $dateDebut, $dateFin, $request);
+            // Récupérer le stock pour le bon exercice
+            $stock = $exercice ? $article->stockPourExercice($exercice->id) : null;
+
+            if ($stock) {
+                $rapportArticle = $this->genererRapportCompletArticle($article, $dateDebut, $dateFin, $request, $stock);
                 $rapportArticles[] = $rapportArticle;
             } else {
-                \Log::warning("Article ID {$article->id} - {$article->libelle} n'a pas d'enregistrement de stock associé.");
+                \Log::warning("Article ID {$article->id} - {$article->libelle} n'a pas d'enregistrement de stock pour l'exercice ID " . ($exercice->id ?? 'N/A'));
             }
         }
 
-
-        // ✅ PRÉPARER LES LIBELLÉS DES FILTRES
         $filterLabels = [
             'date_debut' => $dateDebut->format('d/m/Y'),
             'date_fin' => $dateFin->format('d/m/Y'),
             'article' => 'Tous',
             'qte_min' => $qteMin ?? 'Non spécifié',
             'qte_max' => $qteMax ?? 'Non spécifié',
+            'exercice' => $exercice ? $exercice->annee : 'Non déterminé',
         ];
 
         if ($request->filled('id_article')) {
@@ -647,15 +723,20 @@ class StockRapportController extends Controller
                 'filtres_appliques' => $filterLabels,
                 'statistiques' => [
                     'nombre_articles' => count($rapportArticles),
-                    'periode_analysee' => $dateDebut->format('d/m/Y') . ' au ' . $dateFin->format('d/m/Y')
+                    'periode_analysee' => $dateDebut->format('d/m/Y') . ' au ' . $dateFin->format('d/m/Y'),
+                    'exercice' => $exercice ? $exercice->annee : 'Non déterminé',
                 ]
             ]
         );
     }
 
-    private function genererRapportCompletArticle($article, $dateDebut, $dateFin, Request $request)
+
+    /**
+     * Génère le rapport complet d'un article.
+     * Le paramètre $stock est maintenant passé directement (déjà filtré par exercice).
+     */
+    private function genererRapportCompletArticle($article, $dateDebut, $dateFin, Request $request, $stock)
     {
-        // ✅ 1. DEBUG - VÉRIFIER LES TYPES DE MOUVEMENTS
         $typeEntree = TypeMouvement::where(function($query) {
             $query->where('libelle_type_mouvement', 'like', '%entrée%')
                 ->orWhere('libelle_type_mouvement', 'like', '%entree%')
@@ -682,41 +763,38 @@ class StockRapportController extends Controller
             "date_action" => now()
         ]);
 
-        // ✅ 2. RÉCUPÉRER TOUS LES MOUVEMENTS DE L'ARTICLE (pour debug)
         $tousLesMouvements = MouvementStock::with(['typeMouvement', 'fournisseur', 'employe', 'bureau'])
             ->where('id_Article', $article->id)
             ->orderBy('date_mouvement', 'desc')
             ->get();
 
-        // ✅ 3. STOCK ACTUEL (chercher le prix avec le bon nom de champ)
+        // Récupérer le prix unitaire
         $prixUnitaireArticle = 0;
 
-        // Chercher le prix dans l'article (avec le bon nom de champ)
-        // CORRECTION: Utilisation de 'prixUnitaire' au lieu de 'prix_unitaire'
         if (isset($article->prixUnitaire) && $article->prixUnitaire > 0) {
             $prixUnitaireArticle = $article->prixUnitaire;
         } else {
-            // Chercher le prix dans le dernier mouvement (avec le bon nom de champ)
             $dernierMouvementAvecPrix = MouvementStock::where('id_Article', $article->id)
-                ->whereNotNull('prixUnitaire') // CORRECTION: Utilisation de 'prixUnitaire'
-                ->where('prixUnitaire', '>', 0) // CORRECTION: Utilisation de 'prixUnitaire'
+                ->whereNotNull('prixUnitaire')
+                ->where('prixUnitaire', '>', 0)
                 ->orderBy('date_mouvement', 'desc')
                 ->first();
 
             if ($dernierMouvementAvecPrix) {
-                $prixUnitaireArticle = $dernierMouvementAvecPrix->prixUnitaire; // CORRECTION: Utilisation de 'prixUnitaire'
+                $prixUnitaireArticle = $dernierMouvementAvecPrix->prixUnitaire;
             }
         }
 
+        // Utiliser le $stock passé en paramètre (déjà filtré par exercice)
         $stockActuel = [
-            'cmp'=> $article->stock->cout_moyen_pondere ,
-            'quantite' => $article->stock->Qte_actuel ?? 0,
-            'prix_unitaire' => $prixUnitaireArticle, // Garder 'prix_unitaire' ici car c'est le nom dans le tableau de sortie
-            'montant_total' => ($article->stock->Qte_actuel ?? 0) * $prixUnitaireArticle,
-            'date_maj' => $article->stock->updated_at ?? null
+            'cmp' => $stock->cout_moyen_pondere ?? 0,
+            'quantite' => $stock->Qte_actuel ?? 0,
+            'prix_unitaire' => $prixUnitaireArticle,
+            'montant_total' => ($stock->Qte_actuel ?? 0) * $prixUnitaireArticle,
+            'date_maj' => $stock->updated_at ?? null
         ];
 
-        // ✅ 4. DERNIÈRE ENTRÉE
+        // Dernière entrée
         $derniereEntree = null;
 
         if ($typeEntree) {
@@ -737,13 +815,13 @@ class StockRapportController extends Controller
         }
 
         if ($mouvementEntree) {
-            $prixUnitaire = $mouvementEntree->prixUnitaire ?? $prixUnitaireArticle; // CORRECTION: Utilisation de 'prixUnitaire'
+            $prixUnitaire = $mouvementEntree->prixUnitaire ?? $prixUnitaireArticle;
             $quantite = $mouvementEntree->qte ?? 0;
 
             $derniereEntree = [
                 'date' => Carbon::parse($mouvementEntree->date_mouvement)->format('d/m/Y H:i'),
                 'quantite' => $quantite,
-                'prix_unitaire' => $prixUnitaire, // Garder 'prix_unitaire' ici car c'est le nom dans le tableau de sortie
+                'prix_unitaire' => $prixUnitaire,
                 'montant' => $quantite * $prixUnitaire,
                 'fournisseur' => $mouvementEntree->fournisseur->nom ?? 'N/A',
                 'description' => $mouvementEntree->description ?? '',
@@ -753,7 +831,7 @@ class StockRapportController extends Controller
             ];
         }
 
-        // ✅ 5. DERNIÈRE SORTIE
+        // Dernière sortie
         $derniereSortie = null;
 
         if ($typeSortie) {
@@ -773,13 +851,13 @@ class StockRapportController extends Controller
         }
 
         if ($mouvementSortie) {
-            $prixUnitaire = $mouvementSortie->prixUnitaire ?? $prixUnitaireArticle; // CORRECTION: Utilisation de 'prixUnitaire'
+            $prixUnitaire = $mouvementSortie->prixUnitaire ?? $prixUnitaireArticle;
             $quantite = $mouvementSortie->qte ?? $mouvementSortie->qteDemande ?? 0;
 
             $derniereSortie = [
                 'date' => Carbon::parse($mouvementSortie->date_mouvement)->format('d/m/Y H:i'),
                 'quantite' => $quantite,
-                'prix_unitaire' => $prixUnitaire, // Garder 'prix_unitaire' ici car c'est le nom dans le tableau de sortie
+                'prix_unitaire' => $prixUnitaire,
                 'montant' => $quantite * $prixUnitaire,
                 'employe' => $mouvementSortie->employe ?
                                     ($mouvementSortie->employe->nom . ' ' . $mouvementSortie->employe->prenom) : 'N/A',
@@ -792,7 +870,7 @@ class StockRapportController extends Controller
             ];
         }
 
-        // ✅ 6. CALCULS DE SYNTHÈSE
+        // Calculs de synthèse
         $totalEntreesPeriode = 0;
         $totalSortiesPeriode = 0;
 
@@ -820,8 +898,7 @@ class StockRapportController extends Controller
                     'libelle_categorie_article' => $article->categorie->libelle_categorie_article ?? 'N/A'
                 ],
                 'stock_alerte' => $article->stock_alerte ?? 0,
-                // 'unite_de_mesure' => $article->unite_de_mesure->libelle_unite ?? 'N/A' // Remplacé par l'accès direct si la relation est `uniteDeMesure`
-                'unite_de_mesure' => $article->uniteDeMesure->libelle_unite ?? 'N/A' // Utilisation de uniteDeMesure
+                'unite_de_mesure' => $article->uniteDeMesure->libelle_unite ?? 'N/A'
             ],
             'stock_actuel' => $stockActuel,
             'derniere_entree' => $derniereEntree,
@@ -832,20 +909,20 @@ class StockRapportController extends Controller
                 'mouvement_net' => $totalEntreesPeriode - $totalSortiesPeriode,
                 'periode' => $dateDebut->format('d/m/Y') . ' au ' . $dateFin->format('d/m/Y')
             ],
-            // ✅ DEBUG INFO (gardé pour le développement)
             'debug' => [
                 'type_entree_trouve' => $typeEntree ? $typeEntree->libelle_type_mouvement : 'NON TROUVÉ',
                 'type_sortie_trouve' => $typeSortie ? $typeSortie->libelle_type_mouvement : 'NON TROUVÉ',
                 'nombre_mouvements_total' => $tousLesMouvements->count(),
                 'mouvements_dans_periode' => $tousLesMouvements->whereBetween('date_mouvement', [$dateDebut, $dateFin])->count(),
                 'prix_unitaire_source' => $prixUnitaireArticle > 0 ? 'trouvé' : 'non trouvé',
+                'stock_exercice_id' => $stock->id_exercice ?? 'N/A',
                 'tous_les_mouvements_bruts' => $tousLesMouvements->map(function($mouvement) {
                     return [
                         'id' => $mouvement->id,
                         'date' => $mouvement->date_mouvement,
                         'type' => $mouvement->typeMouvement->libelle_type_mouvement ?? 'N/A',
                         'quantite' => $mouvement->qte,
-                        'prix' => $mouvement->prixUnitaire // CORRECTION: Utilisation de 'prixUnitaire'
+                        'prix' => $mouvement->prixUnitaire
                     ];
                 })
             ]

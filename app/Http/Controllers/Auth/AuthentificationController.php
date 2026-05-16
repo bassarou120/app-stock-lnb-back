@@ -272,8 +272,12 @@ public function login(LoginRequest $request)
         $result = $this->authService->login($input);
 
         $success     = $result[0];
-        $messageBack = $result[1]['message'] ?? null;
-        $user        = $result[1]['user'] ?? $result[2] ?? null;
+        // $messageBack = $result[1]['message'] ?? null;
+        // ✅ Après
+$messageBack = is_array($result[1]) ? ($result[1]['message'] ?? null) : $result[1];
+        // $user        = $result[1]['user'] ?? $result[2] ?? null;
+        // ✅ Après
+$user = is_array($result[1]) ? ($result[1]['user'] ?? null) : null;
 
         $userId   = $user?->id;
         $userName = null;
