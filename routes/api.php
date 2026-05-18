@@ -238,6 +238,10 @@ Route::middleware('auth:api')->group(function () {
 
     Route::get('/rapports/ticket', [RapportTicketController::class, 'getRapportData']);
     Route::get('/rapports/ticket/imprimer', [RapportTicketController::class, 'imprimerRapportTicket']);
+
+    Route::get('rapports/periodique/imprimer', [MouvementTicketController::class, 'imprimerRapportPeriodique']);
+    Route::get('rapports/periodiqueMontant/imprimer', [MouvementTicketController::class, 'imprimerRapportPeriodiqueMontant']);
+    
     // NOUVELLE ROUTE : Pour récupérer les données du rapport d'état de stock (JSON)
     Route::get('/rapports/etat-stock', [StockRapportController::class, 'getRapportFicheStock']);
 
@@ -314,8 +318,7 @@ Route::middleware('auth:api')->group(function () {
     //Route::get('/getrapport-periodique', [MouvementTicketController::class, 'getrapportperiodique']);
     Route::get('/mouvements/demande-sortie/check-status-and-generate/{id}', [MouvementStockController::class, 'checkStatusAccorde']);
 
-    Route::get('rapports/periodique/imprimer', [MouvementTicketController::class, 'imprimerRapportPeriodique']);
-    Route::get('rapports/periodiqueMontant/imprimer', [MouvementTicketController::class, 'imprimerRapportPeriodiqueMontant']);
+    
 
     Route::get('/mouvements/demande-sortie/check-status-and-generate/{id}', [MouvementStockController::class, 'checkStatusAccorde']);
 

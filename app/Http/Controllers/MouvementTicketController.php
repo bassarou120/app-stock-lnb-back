@@ -2,26 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Parametrage\TypeMouvement;
-use App\Models\Parametrage\StockTicket;
-use App\Models\MouvementTicket;
-use App\Models\Trajet;
 use App\Http\Resources\PostResource;
-use App\Models\Parametrage\CouponTicket;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
-use App\Models\CategorieSortieTicket;
-use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
-use PDF;
 use App\Models\Exercice;
-use Illuminate\Support\Facades\Auth; // Ajout pour récupérer l'ID utilisateur
-use App\Models\LogJournalisation; // Ajout du modèle de journalisation
-use Illuminate\Validation\ValidationException; // Ajout pour gérer spécifiquement les erreurs de validation
-
+use App\Models\LogJournalisation;
+use App\Models\MouvementTicket;
+use App\Models\Parametrage\CouponTicket;
+use App\Models\Parametrage\StockTicket;
+use App\Models\Parametrage\TypeMouvement;
+use App\Models\Trajet;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator; // Ajout pour récupérer l'ID utilisateur
+use Illuminate\Validation\ValidationException; // Ajout du modèle de journalisation
+use PDF; // Ajout pour gérer spécifiquement les erreurs de validation
 
 class MouvementTicketController extends Controller
 {
@@ -40,52 +37,52 @@ class MouvementTicketController extends Controller
                 ->paginate(1000);
 
             LogJournalisation::create([
-                'action'     => 'Consultation des mouvements "Entrée de Ticket"',
+                'action' => 'Consultation des mouvements "Entrée de Ticket"',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
+                'user_id' => $request->user()->id,
+                'user_name' => $request->user()->name,
+                'date_action' => now(),
             ]);
 
             return new PostResource(true, 'Liste des mouvements d\'Entrée de Ticket', $mouvements);
         }
+
         // Si le type de mouvement n'existe pas, retourner une réponse vide ou un message d'erreur
         return new PostResource(false, 'Aucun mouvement trouvé pour "Entrée de Ticket".', []);
     }
-
 
     // store
     public function storeEntreeTicket(Request $request)
     {
 
-        //define validation rules
+        // define validation rules
         $validator = Validator::make($request->all(), [
-            "compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
-            "coupon_ticket_id" => 'required|exists:coupon_tickets,id',
-            "description" => 'nullable|string|max:255',
-            "objet" => 'nullable|string|max:255',
-            "qte" => 'required|integer|min:1', // Ajout de min:1
-            "date" => 'required|date', // Ajout de date
+            'compagnie_petrolier_id' => 'required|exists:compagnie_petroliers,id',
+            'coupon_ticket_id' => 'required|exists:coupon_tickets,id',
+            'description' => 'nullable|string|max:255',
+            'objet' => 'nullable|string|max:255',
+            'qte' => 'required|integer|min:1', // Ajout de min:1
+            'date' => 'required|date', // Ajout de date
         ]);
 
-        //check if validation fails
+        // check if validation fails
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Entrée de Ticket")->latest()->first();
+        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Entrée de Ticket')->latest()->first();
 
-        if (!$type_mouvement) {
+        if (! $type_mouvement) {
             return response()->json(['error' => "Le type de mouvement 'Entrée de Ticket' n'existe pas."], 404);
         }
 
         // Récupérer l'exercice ouvert
         $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-        if (!$exerciceOuvert) {
+        if (! $exerciceOuvert) {
             return response()->json([
                 'success' => false,
-                'message' => 'Aucun exercice ouvert trouvé.'
+                'message' => 'Aucun exercice ouvert trouvé.',
             ], 400);
         }
 
@@ -93,14 +90,14 @@ class MouvementTicketController extends Controller
         DB::beginTransaction();
         try {
             $b = MouvementTicket::create([
-                "compagnie_petrolier_id" => $request->compagnie_petrolier_id,
-                "coupon_ticket_id" => $request->coupon_ticket_id,
-                "description" => $request->description,
-                "id_type_mouvement" => $type_mouvement->id,
-                "qte" => $request->qte,
-                "objet" => $request->objet,
-                "date" => $request->date,
-                'exercice_id' => $exerciceOuvert->id
+                'compagnie_petrolier_id' => $request->compagnie_petrolier_id,
+                'coupon_ticket_id' => $request->coupon_ticket_id,
+                'description' => $request->description,
+                'id_type_mouvement' => $type_mouvement->id,
+                'qte' => $request->qte,
+                'objet' => $request->objet,
+                'date' => $request->date,
+                'exercice_id' => $exerciceOuvert->id,
             ]);
 
             $stockTicket = StockTicket::where('coupon_ticket_id', $request->coupon_ticket_id)
@@ -108,13 +105,13 @@ class MouvementTicketController extends Controller
                 ->where('isdeleted', false) // Ajout de la condition isdeleted
                 ->first();
 
-            if (!$stockTicket) {
+            if (! $stockTicket) {
                 $stockTicket = StockTicket::create([
                     'coupon_ticket_id' => $request->coupon_ticket_id,
                     'compagnie_petrolier_id' => $request->compagnie_petrolier_id,
                     'qte_actuel' => 0,
                     'isdeleted' => false, // Assurez-vous que le flag isdeleted est défini
-                    'exercice_id' => $exerciceOuvert->id
+                    'exercice_id' => $exerciceOuvert->id,
                 ]);
             }
 
@@ -124,27 +121,28 @@ class MouvementTicketController extends Controller
             DB::commit();
             // 📝 LOG → Création réussie
             LogJournalisation::create([
-                'action'     => 'Création Entrée Ticket réussie',
+                'action' => 'Création Entrée Ticket réussie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
+                'user_id' => $request->user()->id,
+                'user_name' => $request->user()->name,
+                'date_action' => now(),
             ]);
 
             return new PostResource(true, 'Le mouvement d\'entrée de ticket a été bien enregistré !', $b);
         } catch (\Exception $e) {
-                        // 📝 LOG → Échec de validation
+            // 📝 LOG → Échec de validation
             // 📝 LOG → Création échouée (exception)
             LogJournalisation::create([
-                'action'     => 'Création Entrée Ticket échouée (exception)' . $e->getMessage(),
+                'action' => 'Création Entrée Ticket échouée (exception)'.$e->getMessage(),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
-                'date_action'=> now(),
+                'user_id' => Auth::id(),
+                'date_action' => now(),
             ]);
             DB::rollBack();
-            return response()->json(['error' => 'Erreur lors de l\'enregistrement du mouvement d\'entrée: ' . $e->getMessage()], 500);
+
+            return response()->json(['error' => 'Erreur lors de l\'enregistrement du mouvement d\'entrée: '.$e->getMessage()], 500);
         }
     }
 
@@ -153,27 +151,27 @@ class MouvementTicketController extends Controller
     {
         // Vérification de l'existence du mouvement
         $mouvement = MouvementTicket::find($id);
-        if (!$mouvement) {
+        if (! $mouvement) {
             return response()->json(['message' => 'Mouvement introuvable'], 404);
         }
 
         // Récupérer l'exercice ouvert
         $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
-        if (!$exerciceOuvert) {
+        if (! $exerciceOuvert) {
             return response()->json([
                 'success' => false,
-                'message' => 'Aucun exercice ouvert trouvé.'
+                'message' => 'Aucun exercice ouvert trouvé.',
             ], 400);
         }
 
         // Validation des données
         $validator = Validator::make($request->all(), [
-            "compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
-            "coupon_ticket_id" => 'required|exists:coupon_tickets,id',
-            "description" => 'nullable|string|max:255',
-            "objet" => 'nullable|string|max:255',
-            "qte" => 'required|integer|min:1', // Ajout de min:1
-            "date" => 'required|date', // Ajout de date
+            'compagnie_petrolier_id' => 'required|exists:compagnie_petroliers,id',
+            'coupon_ticket_id' => 'required|exists:coupon_tickets,id',
+            'description' => 'nullable|string|max:255',
+            'objet' => 'nullable|string|max:255',
+            'qte' => 'required|integer|min:1', // Ajout de min:1
+            'date' => 'required|date', // Ajout de date
         ]);
 
         // Vérifier si la validation échoue
@@ -188,21 +186,21 @@ class MouvementTicketController extends Controller
             $ancien_coupon_id = $mouvement->coupon_ticket_id;
             $ancien_compagnie_id = $mouvement->compagnie_petrolier_id;
 
-            $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Entrée de Ticket")->latest()->first();
-            if (!$type_mouvement) {
+            $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Entrée de Ticket')->latest()->first();
+            if (! $type_mouvement) {
                 throw new \Exception("Le type de mouvement 'Entrée de Ticket' n'existe pas.");
             }
 
             // Mise à jour du mouvement
             $mouvement->update([
-                "compagnie_petrolier_id" => $request->compagnie_petrolier_id,
-                "coupon_ticket_id" => $request->coupon_ticket_id,
-                "description" => $request->description,
-                "qte" => $request->qte,
-                "objet" => $request->objet,
-                "date" => $request->date,
-                "id_type_mouvement" => $type_mouvement->id,
-                "exercice_id" => $exerciceOuvert->id
+                'compagnie_petrolier_id' => $request->compagnie_petrolier_id,
+                'coupon_ticket_id' => $request->coupon_ticket_id,
+                'description' => $request->description,
+                'qte' => $request->qte,
+                'objet' => $request->objet,
+                'date' => $request->date,
+                'id_type_mouvement' => $type_mouvement->id,
+                'exercice_id' => $exerciceOuvert->id,
             ]);
 
             // Réajuster l'ancien stock
@@ -212,7 +210,9 @@ class MouvementTicketController extends Controller
                 ->first();
             if ($oldStock) {
                 $oldStock->qte_actuel -= $ancien_qte;
-                if ($oldStock->qte_actuel < 0) $oldStock->qte_actuel = 0; // Empêcher les quantités négatives
+                if ($oldStock->qte_actuel < 0) {
+                    $oldStock->qte_actuel = 0;
+                } // Empêcher les quantités négatives
                 $oldStock->save();
             }
 
@@ -222,55 +222,56 @@ class MouvementTicketController extends Controller
                 ->where('isdeleted', false)
                 ->first();
 
-            if (!$newStock) {
+            if (! $newStock) {
                 $newStock = StockTicket::create([
                     'coupon_ticket_id' => $request->coupon_ticket_id,
                     'compagnie_petrolier_id' => $request->compagnie_petrolier_id,
                     'qte_actuel' => 0,
                     'isdeleted' => false,
-                    'exercice_id' => $exerciceOuvert->id
+                    'exercice_id' => $exerciceOuvert->id,
                 ]);
             }
             $newStock->qte_actuel += $request->qte;
             $newStock->save();
             // 📝 LOG → Création réussie
             LogJournalisation::create([
-                'action'     => 'Mise à jour d\'Entrée de Ticket réussie',
+                'action' => 'Mise à jour d\'Entrée de Ticket réussie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
+                'user_id' => $request->user()->id,
+                'user_name' => $request->user()->name,
+                'date_action' => now(),
             ]);
 
             DB::commit();
+
             // Retourner la réponse
             return new PostResource(true, 'Le mouvement d\'entrée de ticket a été mis à jour avec succès !', $mouvement);
         } catch (\Exception $e) {
             // 📝 LOG → Création réussie
             LogJournalisation::create([
-                'action'     => 'Echec de Mise à jour d\'Entrée de Ticket',
+                'action' => 'Echec de Mise à jour d\'Entrée de Ticket',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
+                'user_id' => $request->user()->id,
+                'user_name' => $request->user()->name,
+                'date_action' => now(),
             ]);
             DB::rollBack();
-            return response()->json(['error' => 'Erreur lors de la mise à jour du mouvement d\'entrée: ' . $e->getMessage()], 500);
+
+            return response()->json(['error' => 'Erreur lors de la mise à jour du mouvement d\'entrée: '.$e->getMessage()], 500);
         }
     }
 
-
-    //delete entrée
+    // delete entrée
     public function deleteEntreeTicket($id, Request $request)
     {
         $mouvement = MouvementTicket::find($id);
 
-        if (!$mouvement) {
+        if (! $mouvement) {
             return response()->json([
                 'success' => false,
-                'message' => 'Mouvement introuvable.'
+                'message' => 'Mouvement introuvable.',
             ], 404);
         }
 
@@ -297,33 +298,33 @@ class MouvementTicketController extends Controller
             $mouvement->isdeleted = true;
             $mouvement->save(); // Utilisez save() pour la suppression logique
             LogJournalisation::create([
-                'action'     => 'Suppression logique du mouvement "Entrée de Ticket"',
+                'action' => 'Suppression logique du mouvement "Entrée de Ticket"',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
+                'user_id' => $request->user()->id,
+                'user_name' => $request->user()->name,
+                'date_action' => now(),
             ]);
 
             DB::commit();
+
             return new PostResource(true, 'Mouvement supprimé avec succès !', null);
         } catch (\Exception $e) {
             LogJournalisation::create([
-                'action'     => 'Erreur lors de la suppression du mouvement "Entrée de Ticket" (exception)',
+                'action' => 'Erreur lors de la suppression du mouvement "Entrée de Ticket" (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
+                'user_id' => $request->user()->id,
+                'user_name' => $request->user()->name,
+                'date_action' => now(),
             ]);
             DB::rollBack();
-            return response()->json(['error' => 'Erreur lors de la suppression du mouvement d\'entrée: ' . $e->getMessage()], 500);
+
+            return response()->json(['error' => 'Erreur lors de la suppression du mouvement d\'entrée: '.$e->getMessage()], 500);
         }
     }
 
-
-
-    //Sortie de ticket
+    // Sortie de ticket
     // Afficher la liste des mouvements de sortie des tickets
     public function indexSortieTicket(Request $request)
     {
@@ -331,7 +332,7 @@ class MouvementTicketController extends Controller
         $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Ticket')->first();
 
         // Si le type de mouvement n'existe pas, retourner une réponse vide ou un message d'erreur
-        if (!$type_mouvement) {
+        if (! $type_mouvement) {
             return new PostResource(false, 'Aucun mouvement trouvé pour "Sortie de Ticket".', []);
         }
 
@@ -342,51 +343,50 @@ class MouvementTicketController extends Controller
             ->latest() // Il est important de trier pour que le premier élément du groupe soit cohérent
             ->get();
 
-
         // 2. Grouper les mouvements par leur référence commune
         $groupedMouvements = $mouvements->groupBy('reference');
 
-
         // 3. Transformer chaque groupe en un seul objet consolidé pour le frontend
-$transactions = $groupedMouvements->map(function ($group) use ($request) {
-    $firstMouvement = $group->first();
+        $transactions = $groupedMouvements->map(function ($group) use ($request) {
+            $firstMouvement = $group->first();
 
-    $ticketsDetails = $group->map(function ($mouvement) {
-        return [
-            'coupon' => $mouvement->coupon_ticket,
-            'compagnie' => $mouvement->compagniePetrolier,
-            'qte' => $mouvement->qte,
-        ];
-    });
+            $ticketsDetails = $group->map(function ($mouvement) {
+                return [
+                    'coupon' => $mouvement->coupon_ticket,
+                    'compagnie' => $mouvement->compagniePetrolier,
+                    'qte' => $mouvement->qte,
+                ];
+            });
 
-    LogJournalisation::create([
-        'action'     => 'Consultation des mouvements Sortie de Ticket',
-        'ip_address' => $request->ip(),
-        'user_agent' => $request->header('User-Agent'),
-        'user_id'    => $request->user()->id,
-        'user_name'   => $request->user()->name,
-        'date_action'=> now(),
-    ]);
+            LogJournalisation::create([
+                'action' => 'Consultation des mouvements Sortie de Ticket',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id' => $request->user()->id,
+                'user_name' => $request->user()->name,
+                'date_action' => now(),
+            ]);
 
-    return [
-        "id" => $firstMouvement->id,
-        'reference' => $firstMouvement->reference,
-        'date' => $firstMouvement->date,
-        'vehicule' => $firstMouvement->vehicule,
-        'employe' => $firstMouvement->employe,
-        'objet' => $firstMouvement->objet,
-        'description' => $firstMouvement->description,
-        'commune_depart' => $firstMouvement->depart,
-        'commune_arriver' => $firstMouvement->arriver,
-        'trajet_aller_retour' => $firstMouvement->trajet_aller_retour,
-        'kilometrage' => $firstMouvement->kilometrage,
-        'kilometrage_de_fin' => $firstMouvement->kilometrage_de_fin,
-        'bon_de_sortie_path' => $firstMouvement->bon_de_sortie_path,
-        'tickets' => $ticketsDetails,
-        'categorie_sortie_ticket' => $firstMouvement->categorieSortieTicket,
-    ];
-})
-->values(); // Utiliser values() pour réindexer le tableau numériquement
+            return [
+                'id' => $firstMouvement->id,
+                'reference' => $firstMouvement->reference,
+                'date' => $firstMouvement->date,
+                'vehicule' => $firstMouvement->vehicule,
+                'employe' => $firstMouvement->employe,
+                'objet' => $firstMouvement->objet,
+                'description' => $firstMouvement->description,
+                'commune_depart' => $firstMouvement->depart,
+                'commune_arriver' => $firstMouvement->arriver,
+                'trajet_aller_retour' => $firstMouvement->trajet_aller_retour,
+                'kilometrage' => $firstMouvement->kilometrage,
+                'kilometrage_de_fin' => $firstMouvement->kilometrage_de_fin,
+                'bon_de_sortie_path' => $firstMouvement->bon_de_sortie_path,
+                'tickets' => $ticketsDetails,
+                'categorie_sortie_ticket' => $firstMouvement->categorieSortieTicket,
+            ];
+        })
+            ->values(); // Utiliser values() pour réindexer le tableau numériquement
+
         // Retourner un objet unique par transaction
         return new PostResource(true, 'Liste des mouvements de sortie de Ticket', $transactions);
     }
@@ -396,21 +396,21 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
     {
         // Validation globale
         $validator = Validator::make($request->all(), [
-            "vehicule_id" => 'required|exists:vehicules,id',
-            "employe_id" => 'required|exists:employes,id',
-            "date" => 'required|date',
-            "trajet_aller_retour" => 'required|boolean',
-            "description" => 'nullable|string|max:255',
-            "objet" => 'nullable|string|max:255',
-            "commune_depart" => 'nullable|exists:communes,id',
-            "commune_arriver" => 'nullable|exists:communes,id',
-            "kilometrage" => 'nullable|integer|min:0', // 👈 AJOUTEZ CETTE LIGNE
-            "kilometrage_de_fin" => 'nullable|integer|min:0', // 👈 AJOUTEZ CETTE LIGNE
-            "tickets" => 'required|array|min:1',
-            "tickets.*.compagnie_petrolier_id" => 'required|exists:compagnie_petroliers,id',
-            "tickets.*.coupon_ticket_id" => 'required|exists:coupon_tickets,id',
-            "tickets.*.qte" => 'required|integer|min:1',
-            "id_categorie_sortie_ticket" => 'required|exists:categorie_sortie_tickets,id',
+            'vehicule_id' => 'required|exists:vehicules,id',
+            'employe_id' => 'required|exists:employes,id',
+            'date' => 'required|date',
+            'trajet_aller_retour' => 'required|boolean',
+            'description' => 'nullable|string|max:255',
+            'objet' => 'nullable|string|max:255',
+            'commune_depart' => 'nullable|exists:communes,id',
+            'commune_arriver' => 'nullable|exists:communes,id',
+            'kilometrage' => 'nullable|integer|min:0', // 👈 AJOUTEZ CETTE LIGNE
+            'kilometrage_de_fin' => 'nullable|integer|min:0', // 👈 AJOUTEZ CETTE LIGNE
+            'tickets' => 'required|array|min:1',
+            'tickets.*.compagnie_petrolier_id' => 'required|exists:compagnie_petroliers,id',
+            'tickets.*.coupon_ticket_id' => 'required|exists:coupon_tickets,id',
+            'tickets.*.qte' => 'required|integer|min:1',
+            'id_categorie_sortie_ticket' => 'required|exists:categorie_sortie_tickets,id',
         ]);
 
         if ($validator->fails()) {
@@ -418,8 +418,8 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         }
 
         // Type mouvement
-        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Sortie de Ticket")->first();
-        if (!$type_mouvement) {
+        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', 'Sortie de Ticket')->first();
+        if (! $type_mouvement) {
             return response()->json(['error' => "Type de mouvement 'Sortie de Ticket' introuvable"], 404);
         }
 
@@ -436,32 +436,33 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
                     ->where('isdeleted', false)
                     ->first();
 
-                if (!$stock || $stock->qte_actuel < $ticket['qte']) {
+                if (! $stock || $stock->qte_actuel < $ticket['qte']) {
                     DB::rollBack();
+
                     return response()->json([
-                        'error' => "Quantité insuffisante pour coupon {$ticket['coupon_ticket_id']} de la compagnie {$ticket['compagnie_petrolier_id']}."
+                        'error' => "Quantité insuffisante pour coupon {$ticket['coupon_ticket_id']} de la compagnie {$ticket['compagnie_petrolier_id']}.",
                     ], 400);
                 }
 
                 // Créer mouvement (les champs communs sont pris du root)
                 $mouvement = MouvementTicket::create([
-                    "id_type_mouvement" => $type_mouvement->id,
-                    "vehicule_id" => $request->vehicule_id,
-                    "compagnie_petrolier_id" => $ticket['compagnie_petrolier_id'],
-                    "coupon_ticket_id" => $ticket['coupon_ticket_id'],
-                    "employe_id" => $request->employe_id,
-                    "description" => $request->description ?? null,
-                    "qte" => $ticket['qte'],
-                    "objet" => $request->objet ?? null,
-                    "date" => $request->date,
-                    "commune_depart" => $request->commune_depart ?? null,
-                    "commune_arriver" => $request->commune_arriver ?? null,
-                    "kilometrage" => $request->kilometrage ?? null,
-                    "kilometrage_de_fin" => $request->kilometrage_de_fin ?? null,
-                    "trajet_aller_retour" => $request->trajet_aller_retour,
-                    "reference" => $reference,
-                    "id_categorie_sortie_ticket" => $request->id_categorie_sortie_ticket,
-                    'exercice_id' => Exercice::where('statut', 'ouvert')->latest()->first()->id
+                    'id_type_mouvement' => $type_mouvement->id,
+                    'vehicule_id' => $request->vehicule_id,
+                    'compagnie_petrolier_id' => $ticket['compagnie_petrolier_id'],
+                    'coupon_ticket_id' => $ticket['coupon_ticket_id'],
+                    'employe_id' => $request->employe_id,
+                    'description' => $request->description ?? null,
+                    'qte' => $ticket['qte'],
+                    'objet' => $request->objet ?? null,
+                    'date' => $request->date,
+                    'commune_depart' => $request->commune_depart ?? null,
+                    'commune_arriver' => $request->commune_arriver ?? null,
+                    'kilometrage' => $request->kilometrage ?? null,
+                    'kilometrage_de_fin' => $request->kilometrage_de_fin ?? null,
+                    'trajet_aller_retour' => $request->trajet_aller_retour,
+                    'reference' => $reference,
+                    'id_categorie_sortie_ticket' => $request->id_categorie_sortie_ticket,
+                    'exercice_id' => Exercice::where('statut', 'ouvert')->latest()->first()->id,
                 ]);
 
                 // Déduire stock
@@ -472,48 +473,48 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
             }
 
             LogJournalisation::create([
-                'action'     => 'Sortie de tickets créé avec succès',
+                'action' => 'Sortie de tickets créé avec succès',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
+                'user_id' => $request->user()->id,
+                'user_name' => $request->user()->name,
+                'date_action' => now(),
             ]);
             DB::commit();
 
-            return new PostResource(true, "Sortie de tickets enregistrée avec succès !", $mouvements);
+            return new PostResource(true, 'Sortie de tickets enregistrée avec succès !', $mouvements);
 
         } catch (\Exception $e) {
             LogJournalisation::create([
-                'action'     => 'Erreur lors de la création de la sortie de tickets',
+                'action' => 'Erreur lors de la création de la sortie de tickets',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
+                'user_id' => $request->user()->id,
+                'user_name' => $request->user()->name,
+                'date_action' => now(),
             ]);
             DB::rollBack();
+
             return response()->json(['error' => 'Erreur : '.$e->getMessage()], 500);
         }
     }
-
 
     // update sortie
     public function updateSortieTicket(Request $request, $id)
     {
         // Valider les champs qui sont communs à toute la transaction
         $validator = Validator::make($request->all(), [
-            "vehicule_id" => 'required|exists:vehicules,id',
-            "employe_id" => 'required|exists:employes,id',
-            "description" => 'nullable|string|max:255',
-            "objet" => 'nullable|string|max:255',
-            "date" => 'required',
+            'vehicule_id' => 'required|exists:vehicules,id',
+            'employe_id' => 'required|exists:employes,id',
+            'description' => 'nullable|string|max:255',
+            'objet' => 'nullable|string|max:255',
+            'date' => 'required',
             'trajet_aller_retour' => 'required|boolean',
             'kilometrage' => 'required|integer', // Valider le kilométrage de début
             'kilometrage_de_fin' => 'nullable|integer', // Valider le kilométrage de fin
             'commune_depart' => 'required|exists:communes,id',
             'commune_arriver' => 'required|exists:communes,id',
-            "id_categorie_sortie_ticket" => 'required|exists:categorie_sortie_tickets,id',
+            'id_categorie_sortie_ticket' => 'required|exists:categorie_sortie_tickets,id',
         ]);
 
         if ($validator->fails()) {
@@ -522,7 +523,7 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
 
         // Étape 1 : Trouver le mouvement initial pour obtenir sa référence
         $mouvementInitial = MouvementTicket::find($id);
-        if (!$mouvementInitial) {
+        if (! $mouvementInitial) {
             return response()->json(['error' => 'Mouvement introuvable.'], 404);
         }
 
@@ -530,57 +531,57 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         try {
             // Étape 2 : Mettre à jour tous les mouvements qui ont la même référence
             $affectedRows = MouvementTicket::where('reference', $mouvementInitial->reference)->update([
-                "vehicule_id" => $request->vehicule_id,
-                "employe_id" => $request->employe_id,
-                "description" => $request->description,
-                "objet" => $request->objet,
-                "date" => $request->date,
-                "commune_depart" => $request->commune_depart,
-                "commune_arriver" => $request->commune_arriver,
-                "trajet_aller_retour" => $request->trajet_aller_retour,
-                "kilometrage" => $request->kilometrage,
-                "kilometrage_de_fin" => $request->kilometrage_de_fin,
-                "id_categorie_sortie_ticket" => $request->id_categorie_sortie_ticket,
-                'exercice_id' => Exercice::where('statut', 'ouvert')->latest()->first()->id
+                'vehicule_id' => $request->vehicule_id,
+                'employe_id' => $request->employe_id,
+                'description' => $request->description,
+                'objet' => $request->objet,
+                'date' => $request->date,
+                'commune_depart' => $request->commune_depart,
+                'commune_arriver' => $request->commune_arriver,
+                'trajet_aller_retour' => $request->trajet_aller_retour,
+                'kilometrage' => $request->kilometrage,
+                'kilometrage_de_fin' => $request->kilometrage_de_fin,
+                'id_categorie_sortie_ticket' => $request->id_categorie_sortie_ticket,
+                'exercice_id' => Exercice::where('statut', 'ouvert')->latest()->first()->id,
             ]);
 
             DB::commit();
             LogJournalisation::create([
-                'action'     => 'Mise à jour des mouvements de sortie',
+                'action' => 'Mise à jour des mouvements de sortie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
+                'user_id' => $request->user()->id,
+                'user_name' => $request->user()->name,
+                'date_action' => now(),
             ]);
 
             // Retourner le mouvement initial ou un message de succès
-            return new PostResource(true, "Les mouvements de sortie ont été mis à jour avec succès !", $mouvementInitial);
+            return new PostResource(true, 'Les mouvements de sortie ont été mis à jour avec succès !', $mouvementInitial);
 
         } catch (\Exception $e) {
             LogJournalisation::create([
-                'action'     => 'Erreur lors de la mise à jour des mouvements de sortie',
+                'action' => 'Erreur lors de la mise à jour des mouvements de sortie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
+                'user_id' => $request->user()->id,
+                'user_name' => $request->user()->name,
+                'date_action' => now(),
             ]);
             DB::rollBack();
-            return response()->json(['error' => 'Erreur lors de la mise à jour des mouvements de sortie: ' . $e->getMessage()], 500);
+
+            return response()->json(['error' => 'Erreur lors de la mise à jour des mouvements de sortie: '.$e->getMessage()], 500);
         }
     }
 
-
-    //delete sortie
+    // delete sortie
     public function deleteSortieTicket($id, Request $request)
     {
         $mouvement = MouvementTicket::find($id);
 
-        if (!$mouvement) {
+        if (! $mouvement) {
             return response()->json([
                 'success' => false,
-                'message' => 'Mouvement introuvable.'
+                'message' => 'Mouvement introuvable.',
             ], 404);
         }
 
@@ -609,28 +610,29 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
 
             DB::commit();
             LogJournalisation::create([
-                'action'     => 'Suppression logique du mouvement de sortie',
+                'action' => 'Suppression logique du mouvement de sortie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
+                'user_id' => $request->user()->id,
+                'user_name' => $request->user()->name,
+                'date_action' => now(),
             ]);
+
             return new PostResource(true, 'Mouvement supprimé avec succès !', null);
         } catch (\Exception $e) {
             DB::rollBack();
             LogJournalisation::create([
-                'action'     => 'Erreur lors de la suppression du mouvement de sortie (exception)',
+                'action' => 'Erreur lors de la suppression du mouvement de sortie (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
+                'user_id' => $request->user()->id,
+                'user_name' => $request->user()->name,
+                'date_action' => now(),
             ]);
-            return response()->json(['error' => 'Erreur lors de la suppression du mouvement de sortie: ' . $e->getMessage()], 500);
+
+            return response()->json(['error' => 'Erreur lors de la suppression du mouvement de sortie: '.$e->getMessage()], 500);
         }
     }
-
 
     // get qte disponible
     public function getQuantiteDisponible($idCoupon, $idCompagnie)
@@ -661,10 +663,10 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         $coupon = CouponTicket::find($validated['coupon_ticket_id']);
 
         // Si le trajet n'existe pas, ou le coupon est invalide/valeur 0, on retourne 0
-        if (!$trajet || !$coupon || $coupon->valeur == 0) {
+        if (! $trajet || ! $coupon || $coupon->valeur == 0) {
             return response()->json([
                 'qteTicket' => 0,
-                'message' => 'Trajet ou coupon invalide'
+                'message' => 'Trajet ou coupon invalide',
             ], 200);
         }
 
@@ -676,23 +678,22 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         return response()->json(['qteTicket' => $qteTicket], 200);
     }
 
-
-
-    //pour ajouter le kilometrage de fin
+    // pour ajouter le kilometrage de fin
     public function updateKilometrageDeFin(Request $request, $id)
     {
         $mouvement = MouvementTicket::where('isdeleted', false)->find($id);
 
-        if (!$mouvement) {
+        if (! $mouvement) {
             // 📝 LOG → Échec mise à jour (non trouvé)
             LogJournalisation::create([
-                'action'     => 'Échec mise à jour KM final (non trouvé)',
+                'action' => 'Échec mise à jour KM final (non trouvé)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
-                'date_action'=> now(),
-                'details'    => "Mouvement ID: {$id} non trouvé."
+                'user_id' => Auth::id(),
+                'date_action' => now(),
+                'details' => "Mouvement ID: {$id} non trouvé.",
             ]);
+
             return response()->json(['message' => 'Mouvement de sortie non trouvé.'], 404);
         }
 
@@ -701,7 +702,7 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
 
         try {
             $validatedData = $request->validate([
-                'kilometrage_final' => 'required|integer|min:' . $mouvement->kilometrage_initial,
+                'kilometrage_final' => 'required|integer|min:'.$mouvement->kilometrage_initial,
             ]);
 
             DB::beginTransaction();
@@ -722,12 +723,12 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
 
             // 📝 LOG → Mise à jour réussie
             LogJournalisation::create([
-                'action'     => 'Mise à jour KM final réussie',
+                'action' => 'Mise à jour KM final réussie',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
-                'date_action'=> now(),
-                'details'    => "Référence: {$reference}. Ancien KM: {$oldData}. Nouveau KM: {$validatedData['kilometrage_final']}."
+                'user_id' => Auth::id(),
+                'date_action' => now(),
+                'details' => "Référence: {$reference}. Ancien KM: {$oldData}. Nouveau KM: {$validatedData['kilometrage_final']}.",
             ]);
 
             return new PostResource(true, 'Kilométrage de fin mis à jour avec succès.', null);
@@ -735,27 +736,27 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         } catch (ValidationException $e) {
             // 📝 LOG → Échec de validation
             LogJournalisation::create([
-                'action'     => 'Échec validation (mise à jour KM final)',
+                'action' => 'Échec validation (mise à jour KM final)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
-                'date_action'=> now(),
-                'details'    => "ID: {$id}. Erreurs: " . json_encode($e->errors())
+                'user_id' => Auth::id(),
+                'date_action' => now(),
+                'details' => "ID: {$id}. Erreurs: ".json_encode($e->errors()),
             ]);
             throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
             // 📝 LOG → Mise à jour échouée (exception)
             LogJournalisation::create([
-                'action'     => 'Mise à jour KM final échouée (exception)',
+                'action' => 'Mise à jour KM final échouée (exception)',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
-                'user_id'    => Auth::id(),
-                'date_action'=> now(),
-                'details'    => "ID: {$id}. Erreur: " . $e->getMessage()
+                'user_id' => Auth::id(),
+                'date_action' => now(),
+                'details' => "ID: {$id}. Erreur: ".$e->getMessage(),
             ]);
 
-            return response()->json(['message' => 'Erreur lors de la mise à jour du kilométrage: ' . $e->getMessage()], 500);
+            return response()->json(['message' => 'Erreur lors de la mise à jour du kilométrage: '.$e->getMessage()], 500);
         }
     }
 
@@ -769,10 +770,10 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
             'compagniePetrolier',
             'depart',
             'categorieSortieTicket',
-            'arriver'
+            'arriver',
         ])
-        ->where('reference', $reference)
-        ->get();
+            ->where('reference', $reference)
+            ->get();
 
         if ($mouvements->isEmpty()) {
             return response()->json(['error' => 'Aucun mouvement de ticket trouvé pour cette référence.'], 404);
@@ -792,22 +793,22 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
             'kilometrage_de_fin' => $premierMouvement->kilometrage_de_fin,
             'trajet_aller_retour' => $premierMouvement->trajet_aller_retour,
             'categorieSortieTicket' => $premierMouvement->categorieSortieTicket,
-            'mouvements' => $mouvements
+            'mouvements' => $mouvements,
         ];
 
         // Générer le PDF en utilisant la vue 'demande_sortie.blade.php'
         $pdf = PDF::loadView('pdf.sortie_ticket', $data);
-            LogJournalisation::create([
-                'action'     => 'Génération de bon de sortie',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
-            ]);
+        LogJournalisation::create([
+            'action' => 'Génération de bon de sortie',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id' => $request->user()->id,
+            'user_name' => $request->user()->name,
+            'date_action' => now(),
+        ]);
 
         // Télécharger le PDF
-        return $pdf->download('bon_de_sortie_'. $reference . '.pdf');
+        return $pdf->download('bon_de_sortie_'.$reference.'.pdf');
     }
 
     // Fichier : app/Http/Controllers/MouvementTicketController.php
@@ -819,7 +820,7 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         // 1. Trouver le mouvement initial par son ID
         $mouvement = MouvementTicket::find($id);
 
-        if (!$mouvement) {
+        if (! $mouvement) {
             return response()->json(['message' => 'Mouvement introuvable.'], 404);
         }
 
@@ -828,12 +829,12 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
 
         // 3. Mettre à jour TOUS les mouvements qui partagent la même référence
         MouvementTicket::where('reference', $mouvement->reference)->update([
-            'bon_de_sortie_path' => $filePath
+            'bon_de_sortie_path' => $filePath,
         ]);
 
         return response()->json([
             'message' => 'Bon de sortie téléversé avec succès !',
-            'bon_de_sortie_path' => $filePath
+            'bon_de_sortie_path' => $filePath,
         ]);
     }
 
@@ -841,17 +842,18 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
     {
         $mouvement = MouvementTicket::find($id);
 
-        if (!$mouvement || !$mouvement->bon_de_sortie_path) {
+        if (! $mouvement || ! $mouvement->bon_de_sortie_path) {
             return response()->json(['message' => 'Bon de sortie non trouvé.'], 404);
         }
-            LogJournalisation::create([
-                'action'     => 'Voir Bon de Sortie',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
-            ]);
+        LogJournalisation::create([
+            'action' => 'Voir Bon de Sortie',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id' => $request->user()->id,
+            'user_name' => $request->user()->name,
+            'date_action' => now(),
+        ]);
+
         return Storage::response($mouvement->bon_de_sortie_path);
     }
 
@@ -866,8 +868,9 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
 
         Log::info('Paramètres de requête', ['annee' => $annee, 'periode' => $periode]);
 
-        if (empty($annee) || !is_numeric($annee)) {
+        if (empty($annee) || ! is_numeric($annee)) {
             Log::error('Erreur: Année invalide fournie.', ['annee' => $annee]);
+
             return response()->json(['error' => 'Veuillez fournir une année valide.'], 400);
         }
 
@@ -925,7 +928,7 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         $stockInitialDebutAnnee = $entreesAvantAnnee - $sortiesAvantAnnee + $retoursAvantAnnee;
         $stockInitial = $stockInitialDebutAnnee;
 
-        Log::info('Stock initial avant l\'année ' . $annee . ' : ' . $stockInitial);
+        Log::info('Stock initial avant l\'année '.$annee.' : '.$stockInitial);
 
         foreach ($plages as $index => $label) {
             $moisDebut = 0;
@@ -943,9 +946,9 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
             }
 
             $dateDebut = Carbon::create($annee, $moisDebut, 1)->startOfMonth();
-            $dateFin   = Carbon::create($annee, $moisFin, 1)->endOfMonth();
+            $dateFin = Carbon::create($annee, $moisFin, 1)->endOfMonth();
 
-            Log::info('Traitement de la période: ' . $label, ['dates' => [$dateDebut, $dateFin]]);
+            Log::info('Traitement de la période: '.$label, ['dates' => [$dateDebut, $dateFin]]);
 
             if ($index > 1) {
                 $stockInitial = $previousStockFinal;
@@ -953,7 +956,7 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
                 $stockInitial = $stockInitialDebutAnnee;
             }
 
-            Log::info('Stock initial pour cette période : ' . $stockInitial);
+            Log::info('Stock initial pour cette période : '.$stockInitial);
 
             // Calculer les entrées de la période
             $entrees = DB::table('mouvement_tickets as m')
@@ -990,11 +993,11 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
             $stockFinal = $stockInitial + $entrees - $sorties + $retours;
             $totalEntreesAcc += $entrees;
 
-            Log::info('Calculs pour la période ' . $label, [
+            Log::info('Calculs pour la période '.$label, [
                 'entrees' => $entrees,
                 'sorties' => $sorties,
                 'retours' => $retours,
-                'stock_final' => $stockFinal
+                'stock_final' => $stockFinal,
             ]);
 
             $previousStockFinal = $stockFinal;
@@ -1014,15 +1017,26 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         Log::info('Fin du rapport périodique.');
         // Vous pouvez utiliser dd() pour voir le rapport final
         // dd($rapport);
-        //return response()->json($rapport);
-            LogJournalisation::create([
-                'action'     => 'Rapport périodique généré',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
-            ]);
+        // return response()->json($rapport);
+        // LogJournalisation::create([
+        //     'action'     => 'Rapport périodique généré',
+        //     'ip_address' => $request->ip(),
+        //     'user_agent' => $request->header('User-Agent'),
+        //     'user_id'    => $request->user()->id,
+        //     'user_name'   => $request->user()->name,
+        //     'date_action'=> now(),
+        // ]);
+
+        $user = auth()->user();
+
+        LogJournalisation::create([
+            'action' => 'Génération du rapport périodique par montant',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id' => $user?->id,
+            'user_name' => $user?->name,
+            'date_action' => now(),
+        ]);
 
         return new PostResource(true, 'Rapport généré avec succès', $rapport);
     }
@@ -1034,8 +1048,9 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         $anneeId = $request->input('annee');
         $exercice = Exercice::where('id', $anneeId)->first();
 
-        if (!$exercice) {
+        if (! $exercice) {
             Log::error('Erreur: Exercice invalide fourni.', ['id' => $anneeId]);
+
             return response()->json(['error' => 'Veuillez fournir un exercice valide.'], 400);
         }
 
@@ -1108,7 +1123,7 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         $stockInitialDebutAnnee = $entreesAvantAnnee - $sortiesAvantAnnee + $retoursAvantAnnee;
         $stockInitial = $stockInitialDebutAnnee;
 
-        Log::info('Stock initial (montants) avant l\'année ' . $annee . ' : ' . $stockInitial);
+        Log::info('Stock initial (montants) avant l\'année '.$annee.' : '.$stockInitial);
 
         foreach ($plages as $index => $label) {
             if ($periode === 'trimestriel') {
@@ -1123,9 +1138,9 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
             }
 
             $dateDebut = Carbon::create($annee, $moisDebut, 1)->startOfMonth();
-            $dateFin   = Carbon::create($annee, $moisFin, 1)->endOfMonth();
+            $dateFin = Carbon::create($annee, $moisFin, 1)->endOfMonth();
 
-            Log::info('Traitement de la période: ' . $label, ['dates' => [$dateDebut, $dateFin]]);
+            Log::info('Traitement de la période: '.$label, ['dates' => [$dateDebut, $dateFin]]);
 
             $stockInitial = ($index > 1) ? $previousStockFinal : $stockInitialDebutAnnee;
 
@@ -1180,11 +1195,11 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
             $this->mergeCouponDetails($globalDetails['sorties'], $detailsCoupons['sorties']);
             $this->mergeCouponDetails($globalDetails['retours'], $detailsCoupons['retours']);
 
-            Log::info('Calculs (montants) pour la période ' . $label, [
+            Log::info('Calculs (montants) pour la période '.$label, [
                 'entrees' => $entrees,
                 'sorties' => $sorties,
                 'retours' => $retours,
-                'stock_final' => $stockFinal
+                'stock_final' => $stockFinal,
             ]);
 
             $previousStockFinal = $stockFinal;
@@ -1206,14 +1221,15 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         $finalDetailsForTable2 = $this->aggregateFinalDetails($globalDetails);
 
         Log::info('Fin du rapport périodique (montants).');
-            LogJournalisation::create([
-                'action'     => 'Génération du rapport périodique',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
-            ]);
+        $user = auth()->user();
+        LogJournalisation::create([
+            'action' => 'Génération du rapport périodique par montant',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id' => $user?->id,
+            'user_name' => $user?->name,
+            'date_action' => now(),
+        ]);
 
         // RETOURNER LES DEUX JEUX DE DONNÉES (Tableau 1 et Tableau 2)
         return new PostResource(true, 'Rapport généré avec succès', [
@@ -1222,17 +1238,17 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         ]);
     }
 
-
     public function imprimerRapportPeriodique(Request $request)
     {
-        Log::info("Début de la génération du PDF du rapport périodique.");
+        Log::info('Début de la génération du PDF du rapport périodique.');
 
         // Récupérer l'année et la période depuis la requête
         $anneeId = $request->input('annee');
         $exercice = Exercice::where('id', $anneeId)->first();
 
-        if (!$exercice) {
+        if (! $exercice) {
             Log::error('Erreur: Année invalide fournie.', ['anneeId' => $anneeId]);
+
             return response()->json(['error' => 'Veuillez fournir une année valide.'], 400);
         }
 
@@ -1242,41 +1258,42 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         // Réutiliser la fonction rapportperiodique pour calculer le rapport
         $rapportResource = $this->rapportperiodique(new Request([
             'annee' => $anneeId,
-            'periode' => $periode
+            'periode' => $periode,
         ]));
 
         // Extraire les données du rapport
         $rapport = $rapportResource->response()->getData(true)['data'];
 
-        $titre = "Rapport Périodique " . ucfirst($periode) . " - Année " . $annee;
+        $titre = 'Rapport Périodique '.ucfirst($periode).' - Année '.$annee;
 
         // Générer le PDF à partir d'une vue Blade
         $pdf = PDF::loadView('pdf.rapport-periodique', compact('rapport', 'titre'));
 
-        Log::info("PDF généré, envoi de la réponse.");
-            LogJournalisation::create([
-                'action'     => 'Génération du rapport périodique',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
-            ]);
+        Log::info('PDF généré, envoi de la réponse.');
+        LogJournalisation::create([
+            'action' => 'Génération du rapport périodique',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id' => $request->user()->id,
+            'user_name' => $request->user()->name,
+            'date_action' => now(),
+        ]);
 
-        return $pdf->download('rapport-periodique-' . $annee . '-' . $periode . '.pdf');
+        return $pdf->download('rapport-periodique-'.$annee.'-'.$periode.'.pdf');
     }
 
     public function imprimerRapportPeriodiqueMontant(Request $request)
     {
-        Log::info("Début de la génération du PDF du rapport périodique (Montant).");
+        Log::info('Début de la génération du PDF du rapport périodique (Montant).');
 
         // --- 1. Validation de l'exercice et récupération des paramètres ---
         $anneeId = $request->input('annee');
         // NOTE: Assurez-vous que la classe Exercice est bien importée
         $exercice = Exercice::where('id', $anneeId)->first();
 
-        if (!$exercice) {
+        if (! $exercice) {
             Log::error('Erreur: Année invalide fournie.', ['anneeId' => $anneeId]);
+
             return response()->json(['error' => 'Veuillez fournir une année valide.'], 400);
         }
 
@@ -1288,7 +1305,7 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         // Simuler une requête pour la méthode de calcul du rapport
         $calculRequest = new Request([
             'annee' => $anneeId,
-            'periode' => $periode
+            'periode' => $periode,
         ]);
 
         // Exécuter la méthode de calcul du rapport.
@@ -1310,7 +1327,7 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
 
         // --- 4. Préparation du titre et génération du PDF ---
 
-        $titre = "Rapport Périodique " . ucfirst($periode) . " (Montant) - Année " . $annee;
+        $titre = 'Rapport Périodique '.ucfirst($periode).' (Montant) - Année '.$annee;
 
         // Générer le PDF à partir d'une vue Blade.
         // Nous passons maintenant les deux ensembles de données et les totaux.
@@ -1327,21 +1344,20 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         // Facultatif : Définir la taille/orientation si nécessaire (ex: Paysage)
         // $pdf->setPaper('a4', 'landscape');
 
-        Log::info("PDF généré, envoi de la réponse.");
-            LogJournalisation::create([
-                'action'     => 'Génération du rapport périodique par montant',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'user_id'    => $request->user()->id,
-                'user_name'   => $request->user()->name,
-                'date_action'=> now(),
-            ]);
+        Log::info('PDF généré, envoi de la réponse.');
+        LogJournalisation::create([
+            'action' => 'Génération du rapport périodique par montant',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'user_id' => $request->user()->id,
+            'user_name' => $request->user()->name,
+            'date_action' => now(),
+        ]);
 
-        return $pdf->download('rapport-periodique-montant-' . $annee . '-' . $periode . '.pdf');
+        return $pdf->download('rapport-periodique-montant-'.$annee.'-'.$periode.'.pdf');
     }
 
-
-    //25 11 2025
+    // 25 11 2025
     private function getCouponDetails($dateDebut, $dateFin, $typeMouvement)
     {
         return DB::table('mouvement_tickets as m')
@@ -1397,9 +1413,9 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
             $item = (array) $item;
 
             // Clé unique basée sur la Compagnie et la Valeur du coupon
-            $key = $item['nom_compagnie'] . '|' . $item['valeur'];
+            $key = $item['nom_compagnie'].'|'.$item['valeur'];
 
-            if (!isset($globalArray[$key])) {
+            if (! isset($globalArray[$key])) {
                 $globalArray[$key] = [
                     'nom_compagnie' => $item['nom_compagnie'],
                     'valeur' => $item['valeur'],
@@ -1413,24 +1429,24 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         }
     }
 
-/*     private function aggregateFinalDetails(array $globalDetails): array
-    {
-        $combined = [];
+    /*     private function aggregateFinalDetails(array $globalDetails): array
+        {
+            $combined = [];
 
-        // Cumul des entrées, sorties et retours dans un seul tableau
-        // pour obtenir la liste de TOUS les coupons impliqués.
-        $this->mergeCouponDetails($combined, array_values($globalDetails['entrees']));
-        $this->mergeCouponDetails($combined, array_values($globalDetails['sorties']));
-        $this->mergeCouponDetails($combined, array_values($globalDetails['retours']));
+            // Cumul des entrées, sorties et retours dans un seul tableau
+            // pour obtenir la liste de TOUS les coupons impliqués.
+            $this->mergeCouponDetails($combined, array_values($globalDetails['entrees']));
+            $this->mergeCouponDetails($combined, array_values($globalDetails['sorties']));
+            $this->mergeCouponDetails($combined, array_values($globalDetails['retours']));
 
-        // Convertir en liste simple (tableau indexé) et trier par compagnie
-        $finalList = array_values($combined);
-        usort($finalList, function($a, $b) {
-            return strcmp($a['nom_compagnie'], $b['nom_compagnie']);
-        });
+            // Convertir en liste simple (tableau indexé) et trier par compagnie
+            $finalList = array_values($combined);
+            usort($finalList, function($a, $b) {
+                return strcmp($a['nom_compagnie'], $b['nom_compagnie']);
+            });
 
-        return $finalList;
-    } */
+            return $finalList;
+        } */
 
     private function aggregateFinalDetails(array $globalDetails): array
     {
@@ -1439,62 +1455,60 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         // 1. Construire la liste de tous les coupons impliqués (depuis les entrées)
         foreach (array_values($globalDetails['entrees']) as $item) {
             $item = (array) $item;
-            $key = $item['nom_compagnie'] . '|' . $item['valeur'];
-            if (!isset($combined[$key])) {
+            $key = $item['nom_compagnie'].'|'.$item['valeur'];
+            if (! isset($combined[$key])) {
                 $combined[$key] = [
-                    'nom_compagnie'  => $item['nom_compagnie'],
-                    'valeur'         => $item['valeur'],
+                    'nom_compagnie' => $item['nom_compagnie'],
+                    'valeur' => $item['valeur'],
                     'nombre_coupons' => 0,
-                    'montant_total'  => 0.0,
+                    'montant_total' => 0.0,
                 ];
             }
             $combined[$key]['nombre_coupons'] += $item['nombre_coupons'];   // ✅ + entrées
-            $combined[$key]['montant_total']  += $item['montant_total'];
+            $combined[$key]['montant_total'] += $item['montant_total'];
         }
 
         // 2. SOUSTRAIRE les sorties
         foreach (array_values($globalDetails['sorties']) as $item) {
             $item = (array) $item;
-            $key = $item['nom_compagnie'] . '|' . $item['valeur'];
-            if (!isset($combined[$key])) {
+            $key = $item['nom_compagnie'].'|'.$item['valeur'];
+            if (! isset($combined[$key])) {
                 $combined[$key] = [
-                    'nom_compagnie'  => $item['nom_compagnie'],
-                    'valeur'         => $item['valeur'],
+                    'nom_compagnie' => $item['nom_compagnie'],
+                    'valeur' => $item['valeur'],
                     'nombre_coupons' => 0,
-                    'montant_total'  => 0.0,
+                    'montant_total' => 0.0,
                 ];
             }
             $combined[$key]['nombre_coupons'] -= $item['nombre_coupons'];   // ✅ - sorties
-            $combined[$key]['montant_total']  -= $item['montant_total'];
+            $combined[$key]['montant_total'] -= $item['montant_total'];
         }
 
         // 3. ADDITIONNER les retours
         foreach (array_values($globalDetails['retours']) as $item) {
             $item = (array) $item;
-            $key = $item['nom_compagnie'] . '|' . $item['valeur'];
-            if (!isset($combined[$key])) {
+            $key = $item['nom_compagnie'].'|'.$item['valeur'];
+            if (! isset($combined[$key])) {
                 $combined[$key] = [
-                    'nom_compagnie'  => $item['nom_compagnie'],
-                    'valeur'         => $item['valeur'],
+                    'nom_compagnie' => $item['nom_compagnie'],
+                    'valeur' => $item['valeur'],
                     'nombre_coupons' => 0,
-                    'montant_total'  => 0.0,
+                    'montant_total' => 0.0,
                 ];
             }
             $combined[$key]['nombre_coupons'] += $item['nombre_coupons'];   // ✅ + retours
-            $combined[$key]['montant_total']  += $item['montant_total'];
+            $combined[$key]['montant_total'] += $item['montant_total'];
         }
 
         $finalList = array_values($combined);
-        usort($finalList, function($a, $b) {
+        usort($finalList, function ($a, $b) {
             return strcmp($a['nom_compagnie'], $b['nom_compagnie']);
         });
 
         return $finalList;
-    }    
+    }
 
-
-    //fin 25 11 2025
-
+    // fin 25 11 2025
 
     private function determinerPlages($periode)
     {
@@ -1522,13 +1536,13 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
                 $plages[$mois] = $moisLibelles[$mois];
             }
         }
+
         return $plages;
     }
 
-
     private function calculerRapport($annee, $plages, $periode)
     {
-        Log::info("Début du calcul du rapport périodique.");
+        Log::info('Début du calcul du rapport périodique.');
         $rapport = [];
         $totalEntreesAcc = 0;
         $previousStockFinal = 0;
@@ -1554,7 +1568,7 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         $stockInitialDebutAnnee = $entreesAvantAnnee - $sortiesAvantAnnee + $retoursAvantAnnee;
         $stockInitial = $stockInitialDebutAnnee;
 
-        Log::info('Stock initial avant l\'année ' . $annee . ' : ' . $stockInitial);
+        Log::info('Stock initial avant l\'année '.$annee.' : '.$stockInitial);
 
         foreach ($plages as $index => $label) {
             $moisDebut = 0;
@@ -1572,9 +1586,9 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
             }
 
             $dateDebut = Carbon::create($annee, $moisDebut, 1)->startOfMonth();
-            $dateFin   = Carbon::create($annee, $moisFin, 1)->endOfMonth();
+            $dateFin = Carbon::create($annee, $moisFin, 1)->endOfMonth();
 
-            Log::info('Traitement de la période: ' . $label, ['dates' => [$dateDebut, $dateFin]]);
+            Log::info('Traitement de la période: '.$label, ['dates' => [$dateDebut, $dateFin]]);
 
             if ($index > 1) {
                 $stockInitial = $previousStockFinal;
@@ -1582,7 +1596,7 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
                 $stockInitial = $stockInitialDebutAnnee;
             }
 
-            Log::info('Stock initial pour cette période : ' . $stockInitial);
+            Log::info('Stock initial pour cette période : '.$stockInitial);
 
             // Calculer les entrées de la période
             $entrees = DB::table('mouvement_tickets as m')
@@ -1619,11 +1633,11 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
             $stockFinal = $stockInitial + $entrees - $sorties + $retours;
             $totalEntreesAcc += $entrees;
 
-            Log::info('Calculs pour la période ' . $label, [
+            Log::info('Calculs pour la période '.$label, [
                 'entrees' => $entrees,
                 'sorties' => $sorties,
                 'retours' => $retours,
-                'stock_final' => $stockFinal
+                'stock_final' => $stockFinal,
             ]);
 
             $previousStockFinal = $stockFinal;
@@ -1640,13 +1654,14 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
             ];
         }
 
-        Log::info("Fin du calcul du rapport périodique.");
+        Log::info('Fin du calcul du rapport périodique.');
+
         return $rapport;
     }
 
     private function calculerRapportMontant($annee, $plages, $periode)
     {
-        Log::info("Début du calcul du rapport périodique (montants).");
+        Log::info('Début du calcul du rapport périodique (montants).');
         $rapport = [];
         $totalEntreesAcc = 0;
         $previousStockFinal = 0;
@@ -1676,7 +1691,7 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         $stockInitialDebutAnnee = $entreesAvantAnnee - $sortiesAvantAnnee + $retoursAvantAnnee;
         $stockInitial = $stockInitialDebutAnnee;
 
-        Log::info('Stock initial (montant) avant l\'année ' . $annee . ' : ' . $stockInitial);
+        Log::info('Stock initial (montant) avant l\'année '.$annee.' : '.$stockInitial);
 
         foreach ($plages as $index => $label) {
             if ($periode === 'trimestriel') {
@@ -1691,12 +1706,12 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
             }
 
             $dateDebut = Carbon::create($annee, $moisDebut, 1)->startOfMonth();
-            $dateFin   = Carbon::create($annee, $moisFin, 1)->endOfMonth();
+            $dateFin = Carbon::create($annee, $moisFin, 1)->endOfMonth();
 
-            Log::info('Traitement de la période: ' . $label, ['dates' => [$dateDebut, $dateFin]]);
+            Log::info('Traitement de la période: '.$label, ['dates' => [$dateDebut, $dateFin]]);
 
             $stockInitial = ($index > 1) ? $previousStockFinal : $stockInitialDebutAnnee;
-            Log::info('Stock initial (montant) pour cette période : ' . $stockInitial);
+            Log::info('Stock initial (montant) pour cette période : '.$stockInitial);
 
             // Entrées (en montant)
             $entrees = DB::table('mouvement_tickets as m')
@@ -1737,11 +1752,11 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
             $stockFinal = $stockInitial + $entrees - $sorties + $retours;
             $totalEntreesAcc += $entrees;
 
-            Log::info('Calculs (montants) pour la période ' . $label, [
+            Log::info('Calculs (montants) pour la période '.$label, [
                 'entrees' => $entrees,
                 'sorties' => $sorties,
                 'retours' => $retours,
-                'stock_final' => $stockFinal
+                'stock_final' => $stockFinal,
             ]);
 
             $previousStockFinal = $stockFinal;
@@ -1758,13 +1773,14 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
             ];
         }
 
-        Log::info("Fin du calcul du rapport périodique (montants).");
+        Log::info('Fin du calcul du rapport périodique (montants).');
+
         return $rapport;
     }
 
-
     // Fonctions utilitaires à ajouter à la classe du contrôleur
-    private function getMoisPourTrimestre($trimestre) {
+    private function getMoisPourTrimestre($trimestre)
+    {
         switch ($trimestre) {
             case 1: return [1, 2, 3];
             case 2: return [4, 5, 6];
@@ -1774,14 +1790,12 @@ $transactions = $groupedMouvements->map(function ($group) use ($request) {
         }
     }
 
-    private function getMoisPourSemestre($semestre) {
+    private function getMoisPourSemestre($semestre)
+    {
         switch ($semestre) {
             case 1: return [1, 2, 3, 4, 5, 6];
             case 2: return [7, 8, 9, 10, 11, 12];
             default: return [];
         }
     }
-
-
-
 }
