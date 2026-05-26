@@ -40,7 +40,7 @@ return new class extends Migration
             $table->foreignId('id_status_immo')->constrained('status_immos')->onDelete('cascade');
             $table->date('date_acquisition');
             $table->string('code')->nullable();
-            
+
             $table->timestamps();
         });
     }

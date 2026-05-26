@@ -21,7 +21,7 @@ services:
     container_name: postgres_lnb_api_v2
     restart: always
     environment:
-      POSTGRES_DB: lnb_api_db
+      POSTGRES_DB: lnb_api_db_exite_data
       POSTGRES_USER: lnb_db_api_user
       POSTGRES_PASSWORD: 1sCisO3FAoZeKZe
     ports:
