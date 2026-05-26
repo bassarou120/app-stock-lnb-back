@@ -1027,6 +1027,8 @@ class MouvementTicketController extends Controller
         //     'date_action'=> now(),
         // ]);
 
+        
+
         $user = auth()->user();
 
         LogJournalisation::create([
