@@ -12,11 +12,12 @@ use App\Models\Parametrage\Bureau;
 use App\Models\Parametrage\Fournisseur;
 use App\Models\Parametrage\Employe;
 use App\Models\Parametrage\StatusImmo;
+use App\Traits\BelongsToTenant;
 
 
 class Vehicule extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $fillable = [
         'marque_id',

@@ -1,0 +1,171 @@
+public function storeMultipleEntreeStock(Request $request)
+    {
+        // Validation des données communes
+        $validator = Validator::make($request->all(), [
+            "id_fournisseur" => 'required|exists:fournisseurs,id',
+            "numero_borderau" => 'required|string|max:255',
+            "date_mouvement" => 'required|date',
+            "piece_jointe_mouvement" => 'nullable|array',
+            "piece_jointe_mouvement.*" => 'file|mimes:pdf,jpg,jpeg,png',
+            "articles" => 'required|array|min:1',
+            "articles.*.id_Article" => 'required|exists:articles,id',
+            "articles.*.id_unite_de_mesure" => 'required|exists:unite_de_mesures,id',
+            "articles.*.description" => 'nullable|string|max:255',
+            "articles.*.qte" => 'required|integer|min:1',
+            "articles.*.prixUnitaire" => 'required|integer',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        // Récupération du type de mouvement "Entrée de Stock"
+        $type_mouvement = TypeMouvement::where('libelle_type_mouvement', "Entrée de Stock")->latest()->first();
+
+        // Démarrer une transaction pour assurer l'intégrité des données
+        DB::beginTransaction();
+
+        try {
+            $mouvements = [];
+            $resultats_cmp = []; // Pour stocker les résultats de calcul CMP
+
+            // Traitement de chaque article
+            foreach ($request->articles as $article) {
+
+                $exerciceOuvert = Exercice::where('statut', 'ouvert')->latest()->first();
+                // ÉTAPE 1: Gestion du stock et calcul du CMP AVANT la création du mouvement
+                $stock = Stock::where('id_Article', $article['id_Article'])
+                            ->where('id_exercice', $exerciceOuvert->id)
+                            ->latest()
+                            ->first();
+
+                // Initialisation des variables pour le calcul du CMP
+                $ancienne_quantite = 0;
+                $ancien_cmp = 0;
+                $nouveau_cmp = 0;
+
+                if ($stock == null) {
+                    // PREMIÈRE ENTRÉE : Création du stock initial
+                    $stock = Stock::create([
+                        'id_Article' => $article['id_Article'],
+                        'Qte_actuel' => 0,
+                        'cout_moyen_pondere' => 0,
+                        'id_exercice' => $exerciceOuvert->id
+                    ]);
+
+                    // Variables restent à 0 pour la première entrée
+                    $ancienne_quantite = 0;
+                    $ancien_cmp = 0;
+                } else {
+                    // RÉAPPROVISIONNEMENT : Récupération des valeurs existantes
+                    $ancienne_quantite = $stock->Qte_actuel;
+                    $ancien_cmp = $stock->cout_moyen_pondere ?? 0;
+                }
+
+                // ÉTAPE 2: Calcul du nouveau CMP
+                if ($ancienne_quantite == 0) {
+                    // Premier stock ou stock épuisé : CMP = prix d'achat actuel
+                    $nouveau_cmp = $article['prixUnitaire'];
+                } else {
+                    // Réapprovisionnement : CMP pondéré
+                    // CMP = (Valeur stock existant + Valeur nouvelle entrée) / (Quantité existante + Nouvelle quantité)
+                    $valeur_stock_existant = $ancienne_quantite * $ancien_cmp;
+                    $valeur_nouvelle_entree = $article['qte'] * $article['prixUnitaire'];
+                    $quantite_totale = $ancienne_quantite + $article['qte'];
+
+                    $nouveau_cmp = ($valeur_stock_existant + $valeur_nouvelle_entree) / $quantite_totale;
+                }
+
+                // ÉTAPE 3: Création du mouvement de stock avec le CMP calculé
+                $mouvement = MouvementStock::create([
+                    "id_Article" => $article['id_Article'],
+                    "id_unite_de_mesure" => $article['id_unite_de_mesure'],
+                    "id_fournisseur" => $request->id_fournisseur,
+                    "numero_borderau" => $request->numero_borderau,
+                    "description" => $article['description'],
+                    "id_type_mouvement" => $type_mouvement->id,
+                    "qte" => $article['qte'],
+                    "prixUnitaire" => $article['prixUnitaire'],
+                    "cout_moyen_pondere" => round($nouveau_cmp, 2), // Ajout du CMP calculé
+                    "date_mouvement" => $request->date_mouvement,
+                    "id_exercice" => $exerciceOuvert->id,
+                ]);
+
+                // ÉTAPE 4: Mise à jour du stock avec la nouvelle quantité et le nouveau CMP
+                $stock->Qte_actuel += $article['qte'];
+                $stock->cout_moyen_pondere = round($nouveau_cmp, 2);
+                $stock->save();
+
+                // Stocker les informations pour le retour
+                $mouvements[] = $mouvement;
+                $resultats_cmp[] = [
+                    'id_article' => $article['id_Article'],
+                    'ancienne_quantite' => $ancienne_quantite,
+                    'ancien_cmp' => round($ancien_cmp, 2),
+                    'nouvelle_quantite' => $stock->Qte_actuel,
+                    'nouveau_cmp' => round($nouveau_cmp, 2),
+                    'qte_ajoutee' => $article['qte'],
+                    'prix_unitaire' => $article['prixUnitaire']
+                ];
+            }
+
+            // ÉTAPE 5: Traitement des pièces jointes si présentes
+            if ($request->hasFile('piece_jointe_mouvement')) {
+                foreach ($request->file('piece_jointe_mouvement') as $index => $file) {
+                    // Générer un nom unique pour le fichier
+                    $fileName = time() . '_' . $index . '_' . $file->getClientOriginalName();
+
+                    // Stocker le fichier
+                    $file->storeAs('piece_jointe_mouvement', $fileName, 'public');
+
+                    // Créer une entrée pour chaque mouvement
+                    foreach ($mouvements as $mouvement) {
+                        PieceJointeMouvement::create([
+                            'url' => 'storage/piece_jointe_mouvement/' . $fileName,
+                            'id_mouvement_stock' => $mouvement->id
+                        ]);
+                    }
+                }
+            }
+
+            // Valider la transaction
+            DB::commit();
+            LogJournalisation::create([
+                    'action' => "Création du mouvement de stock ID: {$mouvement->id} pour l'article {$article['id_Article']}",
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->header('User-Agent'),
+                    'user_id'    => $request->user()->id,
+                    'user_name'   => $request->user()->name,
+                    'date_action' => now(),
+            ]);
+
+            return new PostResource(true, 'Les mouvements d\'entrée de stock ont été bien enregistrés avec calcul du CMP !', [
+                'mouvements' => $mouvements,
+                'calculs_cmp' => $resultats_cmp,
+                'resume' => [
+                    'nombre_articles' => count($mouvements),
+                    'fournisseur_id' => $request->id_fournisseur,
+                    'numero_borderau' => $request->numero_borderau,
+                    'date_mouvement' => $request->date_mouvement
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            // Annuler la transaction en cas d'erreur
+            DB::rollBack();
+            LogJournalisation::create([
+                'action' => 'Erreur création multiple mouvements stock: ' . $e->getMessage(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'user_id'    => $request->user()->id,
+                'user_name'   => $request->user()->name,
+                'date_action' => now(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de l\'enregistrement des mouvements',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }

@@ -7,11 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Parametrage\CompagniePetrolier;
 use App\Models\Parametrage\CouponTicket;
+use App\Traits\BelongsToTenant;
+
 
 class ExerciceMouvementTicket extends Model
 {
     //
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $table = 'exercice_mouvement_ticket';
 

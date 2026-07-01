@@ -6,11 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Parametrage\Employe;
 use App\Models\Parametrage\Bureau;
+use App\Traits\BelongsToTenant;
+
 
 
 class AffectationArticle extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
 
     protected $fillable = [

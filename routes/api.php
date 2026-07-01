@@ -1,59 +1,57 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Parametrage\MarqueController;
-use App\Http\Controllers\Parametrage\CommuneController;
-use App\Http\Controllers\Parametrage\CouponTicketController;
-use App\Http\Controllers\Parametrage\StockTicketController;
-use App\Http\Controllers\Parametrage\CompagniePetrolierController;
-use App\Http\Controllers\Parametrage\MagazinController;
-use App\Http\Controllers\Parametrage\ModeleController;
-use App\Http\Controllers\Parametrage\TypeInterventionController;
-use App\Http\Controllers\Parametrage\CategorieArticleController;
-use App\Http\Controllers\Parametrage\FournisseurController;
-use App\Http\Controllers\Parametrage\TypeAffectationController;
-use App\Http\Controllers\Parametrage\TypeMouvementController;
-use App\Http\Controllers\Parametrage\BureauController;
-use App\Http\Controllers\Parametrage\UniteDeMesureController;
-use App\Http\Controllers\Parametrage\StatusImmoController;
-use App\Http\Controllers\Parametrage\TypeImmoController;
-use App\Http\Controllers\Parametrage\SousTypeImmoController;
-use App\Http\Controllers\Parametrage\GroupeTypeImmoController;
-use App\Http\Controllers\Parametrage\ModuleController;
-use App\Http\Controllers\Parametrage\FonctionnaliteController;
-use App\Http\Controllers\Parametrage\PermissionController;
-use App\Http\Controllers\Parametrage\RoleController;
+use App\Http\Controllers\AnnulationTicketController;
+use App\Http\Controllers\Api\SiteSettingController;
+use App\Http\Controllers\Article_ExoController;
 use App\Http\Controllers\ArticleController;
-use App\Http\Controllers\DashboardStockController;
-use App\Http\Controllers\MouvementStockController;
-use App\Http\Controllers\ExerciceController;
-use App\Http\Controllers\Parametrage\EmployeController;
 use App\Http\Controllers\Auth\AuthentificationController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
-use App\Http\Controllers\VehiculeController;
+use App\Http\Controllers\CategorieSortieTicketController;
+use App\Http\Controllers\DashboardStockController;
+use App\Http\Controllers\DemandeImmoController;
+use App\Http\Controllers\ExerciceController;
 use App\Http\Controllers\ImmobilisationController;
 use App\Http\Controllers\InterventionController;
 use App\Http\Controllers\InterventionVehiculeController;
-use App\Http\Controllers\TransfertController;
+use App\Http\Controllers\LogJournalisationController;
+use App\Http\Controllers\MouvementStockController;
 use App\Http\Controllers\MouvementTicketController;
-use App\Http\Controllers\RetourTicketController;
-use App\Http\Controllers\AnnulationTicketController;
-use App\Http\Controllers\TrajetController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\DemandeImmoController;
-use App\Http\Controllers\Rapport\Stock\StockRapportController;
+use App\Http\Controllers\Parametrage\BureauController;
+use App\Http\Controllers\Parametrage\CategorieArticleController;
+use App\Http\Controllers\Parametrage\CommuneController;
+use App\Http\Controllers\Parametrage\CompagniePetrolierController;
+use App\Http\Controllers\Parametrage\CouponTicketController;
+use App\Http\Controllers\Parametrage\EmployeController;
+use App\Http\Controllers\Parametrage\FonctionnaliteController;
+use App\Http\Controllers\Parametrage\FournisseurController;
+use App\Http\Controllers\Parametrage\GroupeTypeImmoController;
+use App\Http\Controllers\Parametrage\MagazinController;
+use App\Http\Controllers\Parametrage\MarqueController;
+use App\Http\Controllers\Parametrage\ModeleController;
+use App\Http\Controllers\Parametrage\ModuleController;
+use App\Http\Controllers\Parametrage\PermissionController;
+use App\Http\Controllers\Parametrage\RoleController;
+use App\Http\Controllers\Parametrage\SousTypeImmoController;
+use App\Http\Controllers\Parametrage\StatusImmoController;
+use App\Http\Controllers\Parametrage\StockTicketController;
+use App\Http\Controllers\Parametrage\TypeAffectationController;
+use App\Http\Controllers\Parametrage\TypeImmoController;
+use App\Http\Controllers\Parametrage\TypeInterventionController;
+use App\Http\Controllers\Parametrage\TypeMouvementController;
+use App\Http\Controllers\Parametrage\UniteDeMesureController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Rapport\ImmobilisationRapportController;
 use App\Http\Controllers\Rapport\Parc\RapportParcController;
+use App\Http\Controllers\Rapport\Stock\StockRapportController;
 use App\Http\Controllers\Rapport\Ticket\RapportTicketController;
-use App\Http\Controllers\Api\SiteSettingController;
-use App\Http\Controllers\Article_ExoController;
-use App\Http\Controllers\CategorieSortieTicketController;
-use App\Http\Controllers\ExerciceMouvementTicketController;
+use App\Http\Controllers\RetourTicketController;
 use App\Http\Controllers\SortiePatrimoineController;
-use App\Http\Controllers\LogJournalisationController;
-use App\Http\Controllers\ProfileController;
-
+use App\Http\Controllers\TrajetController;
+use App\Http\Controllers\TransfertController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\VehiculeController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -62,34 +60,37 @@ Route::get('/user', function (Request $request) {
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('permissions', PermissionController::class);
 
-    Route::post('register', [AuthentificationController::class, 'register']);
-    Route::post('login', [AuthentificationController::class, 'login'])->name("login");
+Route::post('register', [AuthentificationController::class, 'register']);
+Route::post('login', [AuthentificationController::class, 'login'])->name('login');
 
+Route::post('/forgot-password', [ForgotPasswordController::class, 'sendOTP']);
+Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOTP']);
+Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
+Route::post('/bonjour', [ForgotPasswordController::class, 'direBonjour']);
 
-    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendOTP']);
-    Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOTP']);
-    Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
-    Route::post('/bonjour', [ForgotPasswordController::class, 'direBonjour']);
-
-    Route::middleware('auth:api')->get('/profile', function (Request $request) {
-        return response()->json([
-            'success' => true,
-            'data' => $request->user()->load('role', 'employe'),
-        ]);
-    });
+// Route::middleware('auth:api')->get('/profile', function (Request $request) {
+//     return response()->json([
+//         'success' => true,
+//         'data' => $request->user()->load('role', 'employe'),
+//     ]);
+// });
 
 Route::get('/download-grouped-file/{code_mouvement}', [MouvementStockController::class, 'downloadGroupedFile']);
 
 Route::get('/site-settings', [SiteSettingController::class, 'index']);
 
-
-
-
-Route::middleware('auth:api')->group(function () {
+Route::middleware(['auth:api', 'resolve.tenant'])->group(function () {
 
     Route::apiResource('users', UserController::class); // Ceci crée les routes CRUD complètes pour /api/users
 
     Route::put('/profile', [ProfileController::class, 'updateProfile']);
+
+    Route::get('/profile', function (Request $request) {
+    return response()->json([
+        'success' => true,
+        'data' => $request->user()->load('role', 'employe'),
+    ]);
+});
 
     Route::get('/stock/coupon-compagnies', [CouponTicketController::class, 'getCouponTicketsWithCompagnies']);
     Route::apiResource('marques', MarqueController::class);
@@ -120,13 +121,15 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/demande-immo/fiche/{id}', [DemandeImmoController::class, 'genererFicheDemandeImmo']);
     Route::get('/demande-imo/groupeTypeImmo', [DemandeImmoController::class, 'groupeTypeImmo']);
     Route::apiResource('modules', ModuleController::class);
-    //Route::apiResource('roles', RoleController::class);
+    // Route::apiResource('roles', RoleController::class);
     Route::apiResource('fonctionnalites', FonctionnaliteController::class);
-    //Route::apiResource('permissions', PermissionController::class);
+    // Route::apiResource('permissions', PermissionController::class);
     Route::post('permissions/toggle', [PermissionController::class, 'togglePermission']);
     Route::middleware('auth:api')->group(function () {
         Route::apiResource('articles', ArticleController::class);
     });
+
+    Route::apiResource('tenant-settings', TenantSettingController::class);
 
     Route::get('etat_stock-imprimer', [ArticleController::class, 'imprimer']);
     Route::apiResource('immobilisations', ImmobilisationController::class)->except(['show']);
@@ -148,8 +151,6 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('trajets', TrajetController::class);
     Route::apiResource('exercices', ExerciceController::class);
     Route::apiResource('categorieSortieTicket', CategorieSortieTicketController::class);
-
-
 
     Route::get('mouvement-info/{id}', [RetourTicketController::class, 'getMouvementInfo']);
     Route::get('mouvement-ticket/getAllSortieTicketWhereNotInRetour', [RetourTicketController::class, 'getAllSortieTicketWhereNotInRetour']);
@@ -194,8 +195,6 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('mouvement-ticket/sortie/{id}', [MouvementTicketController::class, 'deleteSortieTicket']);
     Route::post('get-quantite-ticket-attribution', [MouvementTicketController::class, 'getQuantiteTicketAttribution']);
 
-
-
     // Route::post('reset-password/{user}', [AuthentificationController::class, 'resetPassword']);
     // Routes pour les utilisateurs
 
@@ -207,12 +206,10 @@ Route::middleware('auth:api')->group(function () {
     // Route::put('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'update']);
     // Route::delete('/intervention-vehicules/{interventionVehicule}', [InterventionVehiculeController::class, 'destroy']);
 
-
     Route::get('vehicules-imprimer', [VehiculeController::class, 'imprimerVehicules']);
 
-    //Rapport
+    // Rapport
     // Route::post('rapport-entrestock', [EntrerController::class, 'rapport_EntreeStock']);
-
 
     Route::get('/rapports/immobilisations', [ImmobilisationRapportController::class, 'getRapportData']);
 
@@ -241,7 +238,7 @@ Route::middleware('auth:api')->group(function () {
 
     Route::get('rapports/periodique/imprimer', [MouvementTicketController::class, 'imprimerRapportPeriodique']);
     Route::get('rapports/periodiqueMontant/imprimer', [MouvementTicketController::class, 'imprimerRapportPeriodiqueMontant']);
-    
+
     // NOUVELLE ROUTE : Pour récupérer les données du rapport d'état de stock (JSON)
     Route::get('/rapports/etat-stock', [StockRapportController::class, 'getRapportFicheStock']);
 
@@ -261,7 +258,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/site-settings/store', [SiteSettingController::class, 'store']); // <-- C'EST LA ROUTE MANQUANTE
     Route::get('/imprimerSorties', [MouvementStockController::class, 'imprimerSortiesStock']);
 
-    //Route::get('/count-assurance-expiresoon', [InterventionVehiculeController::class, 'getVehiculesAssuranceExpireSoon']);
+    // Route::get('/count-assurance-expiresoon', [InterventionVehiculeController::class, 'getVehiculesAssuranceExpireSoon']);
     Route::get('/assurance-expiresoon', [InterventionVehiculeController::class, 'getVehiculesAssuranceExpireSoon']);
 
     Route::get('/transferts/print/{id}', [TransfertController::class, 'printSingleTransfert']);
@@ -269,7 +266,8 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/vehicules/import', [VehiculeController::class, 'import']);
 
     Route::post('/articles/import', [ArticleController::class, 'import']);
-    Route::post('/immobilisations/import', [ImmobilisationController::class, 'import']);Route::post('/vehicules/{vehicule}/carte-grise', [VehiculeController::class, 'addCarteGrise']);
+    Route::post('/immobilisations/import', [ImmobilisationController::class, 'import']);
+    Route::post('/vehicules/{vehicule}/carte-grise', [VehiculeController::class, 'addCarteGrise']);
 
     Route::post('/vehicules/{vehicule}/carte-grise', [VehiculeController::class, 'addCarteGrise']);
 
@@ -289,7 +287,6 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/mouvement-tickets/{id}/televerser-bon', [MouvementTicketController::class, 'televerserBonDeSortie']);
     Route::get('/mouvement-tickets/{id}/voir-bon', [MouvementTicketController::class, 'voirBonDeSortie']);
 
-
     Route::get('/generer-fiche-demande/{code_mouvement}', [MouvementStockController::class, 'genererFicheDemande']);
 
     Route::get('/mouvements/fiche/{id}', [MouvementStockController::class, 'genererFicheIndividuelle']);
@@ -298,27 +295,19 @@ Route::middleware('auth:api')->group(function () {
 
     Route::get('/view-file', [MouvementStockController::class, 'viewFile']);
 
-
-
     Route::get('/rapports/parBureau', [ImmobilisationRapportController::class, 'getRapportData']);
 
     Route::get('/mouvements/demande-sortie/check-status-and-generate/{id}', [MouvementStockController::class, 'checkStatusAccorde']);
 
-
     Route::post('/rapport-periodique', [MouvementTicketController::class, 'rapportperiodique']);
     Route::get('rapports/periodique', [MouvementTicketController::class, 'rapportperiodique']);
-
 
     Route::post('/rapport-periodiqueMontant', [MouvementTicketController::class, 'rapportperiodiqueMontant']);
     Route::get('rapports/periodiqueMontant', [MouvementTicketController::class, 'rapportperiodiqueMontant']);
 
-
-
     Route::get('/mouvements/demande-sortie/check-status-and-generate/{codeMouvement}', [MouvementStockController::class, 'checkStatusAccorde']);
-    //Route::get('/getrapport-periodique', [MouvementTicketController::class, 'getrapportperiodique']);
+    // Route::get('/getrapport-periodique', [MouvementTicketController::class, 'getrapportperiodique']);
     Route::get('/mouvements/demande-sortie/check-status-and-generate/{id}', [MouvementStockController::class, 'checkStatusAccorde']);
-
-    
 
     Route::get('/mouvements/demande-sortie/check-status-and-generate/{id}', [MouvementStockController::class, 'checkStatusAccorde']);
 
@@ -338,7 +327,6 @@ Route::middleware('auth:api')->group(function () {
 
     Route::get('immobilisations/designation-by-code/{code}', [ImmobilisationController::class, 'getDesignationByCode']);
 
-
     Route::prefix('logs')->group(function () {
 
         // 1. ROUTE SPÉCIFIQUE (Doit être en premier)
@@ -354,4 +342,11 @@ Route::middleware('auth:api')->group(function () {
     });
 
     Route::patch('/users/{user}/toggle-active', [UserController::class, 'toggleActiveStatus']);
+
+    // Prévoir l'API côté M_REQUEST
+    Route::post(
+        '/demandes/{reference}/fiche',
+        [DemandeController::class, 'uploadFiche']
+    );
+
 });

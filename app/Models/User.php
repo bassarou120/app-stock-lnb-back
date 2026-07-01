@@ -33,6 +33,7 @@ class User extends Authenticatable
     public const ROLE = 'role_id';
     public const LAST_ACTIVITY = 'last_activity';
     public const EMPLOYE = 'employe_id';
+    public const TENANT = 'tenant_id';
 
     /**
      * The attributes that are mass assignable.
@@ -51,6 +52,7 @@ class User extends Authenticatable
         self::ROLE,
         self::LAST_ACTIVITY,
         self::EMPLOYE,
+        self::TENANT,
     ];
 
     /**
@@ -94,4 +96,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(LogJournalisation::class, 'user_id', 'id');
     }
+
+    public function tenant()
+{
+    return $this->belongsTo(Tenant::class);
+}
 }

@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
+use App\Traits\BelongsToTenant;
+
+
 /**
  * @OA\Schema(
  *     schema="Status_immo",
@@ -21,7 +24,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class StatusImmo extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $fillable = [
         'libelle_status_immo',

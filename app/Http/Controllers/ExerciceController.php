@@ -250,6 +250,7 @@ class ExerciceController extends Controller
                 // --- GESTION DES ARTICLES ---
                 $articlesExercice = DB::table('article_exercice')
                     ->where('id_exercice', $exercice->id)
+                    ->where('tenant_id', currentTenantId())
                     ->get();
 
                 foreach ($articlesExercice as $article) {
@@ -270,6 +271,7 @@ class ExerciceController extends Controller
                     DB::table('article_exercice')
                         ->where('id_article', $article->id_article)
                         ->where('id_exercice', $exercice->id)
+                        ->where('tenant_id', currentTenantId())
                         ->update([
                             'stock_fin_exercice' => $stock_fin,
                             'cmp_fin_exercice' => $cmp_fin,
@@ -280,6 +282,7 @@ class ExerciceController extends Controller
                     DB::table('article_exercice')->insert([
                         'id_article' => $article->id_article,
                         'id_exercice' => $nouvelExercice->id,
+                        'tenant_id' => currentTenantId(),
                         'stock_debut_exercice' => $stock_fin,
                         'stock_fin_exercice' => 0,
                         'cmp_debut_exercice' => $cmp_fin,

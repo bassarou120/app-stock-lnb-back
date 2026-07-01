@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
+use App\Traits\BelongsToTenant;
+
+
 /**
  * @OA\Schema(
  *     schema="Sous_type_immo",
@@ -28,7 +31,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class SousTypeImmo extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $fillable = [
         'id_type_immo',

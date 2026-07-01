@@ -7,12 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Parametrage\TypeIntervention;
 use App\Models\Parametrage\Bureau;
 use App\Models\Parametrage\Employe;
-
+use App\Traits\BelongsToTenant;
 
 
 class Transfert extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
 
     protected $fillable = [

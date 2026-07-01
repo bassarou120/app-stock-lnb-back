@@ -11,6 +11,7 @@ use App\Models\Parametrage\GroupeTypeImmo;
 use App\Models\Parametrage\SousTypeImmo;
 use App\Models\Parametrage\StatusImmo;
 use App\Models\Vehicule;
+use App\Traits\BelongsToTenant;
 
 /**
  * @OA\Schema(
@@ -69,7 +70,7 @@ use App\Models\Vehicule;
 
 class Immobilisation extends Model
 {
-    use HasFactory;
+    use HasFactory,BelongsToTenant;
 
     protected $fillable = [
         'bureau_id',

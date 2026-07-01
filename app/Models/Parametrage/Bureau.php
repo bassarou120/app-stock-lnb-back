@@ -3,6 +3,8 @@
 namespace App\Models\Parametrage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToTenant;
+
 
 /**
  * @OA\Schema(
@@ -20,7 +22,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Bureau extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $table = 'bureaus';
     protected $fillable = [

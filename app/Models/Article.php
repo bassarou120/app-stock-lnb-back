@@ -10,6 +10,7 @@ use App\Models\Stock;          // Import nécessaire
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Parametrage\UniteDeMesure; // Si vous avez cette relation sur l'article
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Traits\BelongsToTenant;
 
 /**
  * @OA\Schema(
@@ -37,7 +38,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Article extends Model
 {
-    use HasFactory;
+    use HasFactory,BelongsToTenant;
 
     protected $fillable = [
         'libelle',

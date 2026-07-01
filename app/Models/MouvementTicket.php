@@ -9,6 +9,7 @@ use App\Models\Parametrage\CouponTicket;
 use App\Models\Parametrage\Commune;
 use App\Models\Vehicule;
 use App\Models\CategorieSortieTicket;
+use App\Traits\BelongsToTenant;
 
 
 use Illuminate\Database\Eloquent\Model;
@@ -38,7 +39,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class MouvementTicket extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $guarded=[];
     protected $fillable = [];

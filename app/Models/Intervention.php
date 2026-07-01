@@ -5,11 +5,12 @@ namespace App\Models;
 use App\Models\Parametrage\TypeIntervention;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\BelongsToTenant;
 
 
 class Intervention extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
 
     protected $fillable = [

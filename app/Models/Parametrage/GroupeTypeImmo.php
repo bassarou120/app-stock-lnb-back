@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
+use App\Traits\BelongsToTenant;
+
+
 /**
  * @OA\Schema(
  *     schema="Groupe_type_immo",
@@ -22,7 +25,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class GroupeTypeImmo extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $fillable = [
         'libelle',

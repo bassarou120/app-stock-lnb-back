@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\MouvementTicket;
 use App\Models\Parametrage\Commune;
+use App\Traits\BelongsToTenant;
 
 class Trajet extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $fillable = [
         'commune_depart',

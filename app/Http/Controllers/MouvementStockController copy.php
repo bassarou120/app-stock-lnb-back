@@ -1483,7 +1483,8 @@ class MouvementStockController extends Controller
         return new PostResource(true, 'Sortie de stock mise à jour avec succès !', $mouvement);
     }
 
-    //1 fonction qui fait la validation unique d'article
+//1
+
     public function updateDemandeStock(Request $request, $id)
     {
         $mouvementStock = MouvementStock::findOrFail($id);
@@ -1866,23 +1867,6 @@ class MouvementStockController extends Controller
 
         $pdf = PDF::loadView('pdf.demande_sortie', $data);
 
-        $pdfDirectory = storage_path('app/temp_fiches');
-
-        if (!file_exists($pdfDirectory)) {
-            mkdir($pdfDirectory, 0777, true);
-        }
-
-        $pdfFileName = 'Fiche_Demande_Sortie_' . $codeMouvement . '.pdf';
-
-        $pdfPath = $pdfDirectory . '/' . $pdfFileName;
-
-        $pdf->save($pdfPath);
-
-        $this->envoyerFicheVersMRequest(
-            $mouvementPrincipal,
-            $pdfPath
-        );
-
         LogJournalisation::create([
             'action'     => "Génération et impression de la fiche de demande (PDF) [Code: {$codeMouvement}, Fiche: {$numeroFiche}]",
             'ip_address' => request()->ip(),
@@ -1922,23 +1906,6 @@ class MouvementStockController extends Controller
         ];
 
         $pdf = PDF::loadView('pdf.demande_sortie', $data);
-
-        $pdfDirectory = storage_path('app/temp_fiches');
-
-        if (!file_exists($pdfDirectory)) {
-            mkdir($pdfDirectory, 0777, true);
-        }
-
-        $pdfFileName = 'Fiche_Demande_Sortie_' . $mouvement->id . '.pdf';
-
-        $pdfPath = $pdfDirectory . '/' . $pdfFileName;
-
-        $pdf->save($pdfPath);
-
-        $this->envoyerFicheVersMRequest(
-            $mouvement,
-            $pdfPath
-        );
 
         LogJournalisation::create([
             'action'     => "Génération et impression de la fiche de demande individuelle (PDF) [ID: {$id}, Fiche: {$numeroFiche}]",
@@ -2203,109 +2170,5 @@ public function storeCorrectionEntreeStock(Request $request)
         ], 500);
     }
 }
-
-
-protected function envoyerFicheVersMRequest(
-    MouvementStock $mouvement,
-    string $pdfPath
-)
-{
-    $reference = $mouvement->ref_m_request;
-    $baseUrl = rtrim(config('services.m_request.base_url'), '/');
-
-    if (!$reference || !$baseUrl || !file_exists($pdfPath)) {
-        logger()->warning('Envoi fiche M_REQUEST impossible', [
-            'reference' => $reference,
-            'baseUrl' => $baseUrl,
-            'pdfPath' => $pdfPath
-        ]);
-
-        return false;
-    }
-
-    $url = "{$baseUrl}/api/demandes/" . urlencode($reference) . "/fiche";
-
-    try {
-
-        $response = Http::timeout(30)
-            ->attach(
-                'file',
-                file_get_contents($pdfPath),
-                basename($pdfPath)
-            )
-            ->post($url, [
-                'reference' => $reference,
-                'date_generation' => now()->toDateTimeString(),
-            ]);
-
-        if ($response->failed()) {
-
-            logger()->error('Erreur envoi fiche vers M_REQUEST', [
-                'url' => $url,
-                'response' => $response->body()
-            ]);
-
-            return false;
-        }
-
-        logger()->info('Fiche envoyée vers M_REQUEST', [
-            'url' => $url
-        ]);
-
-        return true;
-
-    } catch (\Throwable $e) {
-
-        logger()->error('Exception envoi fiche vers M_REQUEST', [
-            'url' => $url,
-            'error' => $e->getMessage()
-        ]);
-
-        return false;
-    }
-}
-
-
-
-// ajouter dans M-request 
-
-public function uploadFiche(Request $request, $reference)
-{
-    $request->validate([
-        'file' => 'required|file|mimes:pdf'
-    ]);
-
-    $demande = Demande::where(
-        'reference',
-        $reference
-    )->firstOrFail();
-
-    $path = $request
-        ->file('file')
-        ->store('fiches_demandes', 'public');
-
-    $demande->fiche_pdf = $path;
-
-    $demande->save();
-
-    return response()->json([
-        'success' => true
-    ]);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 }

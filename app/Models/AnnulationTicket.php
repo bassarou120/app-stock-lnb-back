@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Parametrage\CouponTicket;
 use App\Models\Parametrage\CompagniePetrolier;
 use App\Models\Parametrage\Employe;
+use App\Traits\BelongsToTenant;
+
 
 class AnnulationTicket extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $fillable = ['mouvementTicket_id', 'coupon_ticket_id', 'compagnie_petrolier_id', 'qte'];
 

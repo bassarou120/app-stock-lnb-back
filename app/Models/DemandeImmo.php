@@ -7,11 +7,12 @@ use App\Models\Parametrage\Employe;
 use App\Models\Exercice;
 use App\Models\Parametrage\GroupeTypeImmo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\BelongsToTenant;
 
 
 class DemandeImmo extends Model
 {
-    use HasFactory;
+    use HasFactory,BelongsToTenant;
     protected $guarded = [];
     //
 

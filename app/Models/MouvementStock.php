@@ -10,11 +10,12 @@ use App\Models\Parametrage\Employe;
 use App\Models\Parametrage\Bureau;
 use App\Models\Parametrage\UniteDeMesure;
 use App\Models\Parametrage\TypeMouvement;
+use App\Traits\BelongsToTenant;
 
 
 class MouvementStock extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
     protected $guarded = [];
 
 

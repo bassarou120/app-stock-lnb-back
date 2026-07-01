@@ -245,6 +245,7 @@ class ArticleController extends Controller
                 DB::table('article_exercice')->insert([
                     'id_article' => $article->id,
                     'id_exercice' => $exerciceOuvert->id,
+                    'tenant_id' => currentTenantId(),
                     'stock_debut_exercice' => 0,
                     'stock_fin_exercice' => 0,
                     'created_at' => now(),
@@ -368,6 +369,7 @@ class ArticleController extends Controller
             // Récupération des données agrégées pour le CMP
             $stockData = DB::table('stocks')
                 ->where('id_Article', $article->id)
+                ->where('tenant_id', currentTenantId()) 
                 ->select(
                     // IMPORTANT : Utilisation des guillemets doubles pour les colonnes sensibles à la casse dans DB::raw()
                     DB::raw('SUM("Qte_actuel" * cout_moyen_pondere) as total'),
@@ -390,12 +392,14 @@ class ArticleController extends Controller
             // Correction ici : Retrait des guillemets doubles de 'Qte_actuel' dans ->value()
             $stockActuel = DB::table('stocks')
                 ->where('id_Article', $article->id)
+                ->where('tenant_id', currentTenantId())
                 ->orderBy('id', 'desc')
                 ->value('Qte_actuel') ?? 0;
 
             // 4. Mise à jour de la table article_exercice
             DB::table('article_exercice')
                 ->where('id_article', $article->id)
+                ->where('tenant_id', currentTenantId())
                 ->update([
                     // total_qte représente le stock actuel agrégé
                     'stock_debut_exercice' => $totalQte,
@@ -725,6 +729,7 @@ class ArticleController extends Controller
                 DB::table('article_exercice')->insert([
                     'id_article' => $article->id,
                     'id_exercice' => $id_exercice,
+                    'tenant_id' => currentTenantId(),  
                     'stock_debut_exercice' => $quantite_en_int,
                     'stock_fin_exercice' => $quantite_en_int,
                     'created_at' => now(),

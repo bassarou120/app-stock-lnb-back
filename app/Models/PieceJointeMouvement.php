@@ -3,10 +3,12 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToTenant;
+
 
 class PieceJointeMouvement extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     // Spécifier la table associée
     protected $table = 'piece_jointe_mouvement';

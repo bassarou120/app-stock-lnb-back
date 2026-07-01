@@ -5,6 +5,8 @@ namespace App\Models\Parametrage;
 use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\BelongsToTenant;
+
 
 /**
  * @OA\Schema(
@@ -23,7 +25,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Fournisseur extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $fillable = [
         'nom',
